@@ -30,15 +30,15 @@
 
 | 세션 | 날짜 | 세션 Intent | 대상 Milestone | 대상 Task | 결과 |
 |------|------|------------|----------------|-----------|------|
-| #001 | 2026-08-13 | 첫 세션 온보딩 + DEFINE 반입 (INT-001 승인, 산출물 확정, DEFINE 6종) | 공통 | 프로젝트 공통 | 진행 중 |
+| #001 | 2026-08-13 | 온보딩 + 설계서 전체 반입(DEFINE·DESIGN·BUILD준비) + F20 신규 + Gate 1·3 통과 + 커밋 | MS-001 | 프로젝트 공통 | 완료 |
 
 ---
 
 ## 다음 시작점
 
-1. Gate 3(Design→Impl) 점검 → 구현 착수
-2. TASK-001: `yo code`로 devswitcher-tools(TS·esbuild) 스캐폴드 + F5 Hello World
-3. TASK-002(types.ts) → TASK-003(어댑터 칩 스텁)
+1. TASK-001 스캐폴드 — `yo code`는 대화형이라 비대화형 방식(파일 직접 생성) 먼저 결정 후 src/ 구조 + package.json + F5 Hello World
+2. TASK-002(types.ts, interface_contract 기준) → TASK-003(4개 어댑터 칩 스텁)
+3. 세션 종료 후 미커밋 변경분(Gate 3·Build 전환) 커밋
 
 ---
 
@@ -53,7 +53,9 @@
 
 ## 이월 항목
 
-- 없음
+- C-1: `ui_spec.md`(화면설계서, 권장) — UI 구현 착수 시 작성
+- C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
+- 세션 종료 후 미커밋 변경분(Gate 3·Build 전환) 커밋
 
 ---
 

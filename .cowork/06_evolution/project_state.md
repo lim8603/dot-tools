@@ -16,7 +16,7 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Design (반입 완료 — Gate 3 대기, 다음은 코드 착수) |
+| 현재 Phase | Build (Gate 3 통과 — 코드 착수 대기) |
 | 활성 Intent | INT-001 (Approved, F20 추가 반영) |
 | 활성 Milestone | MS-001 (M0 셋업) |
 | 활성 Task | TASK-001 (스캐폴드) |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- 설계서 전체 반입 완료(DEFINE+DESIGN+BUILD 준비). MS-001~008·TASK-001~003 등록, 폴더 구조 확정. 다음은 Gate 3 점검 → 코드 착수(TASK-001 `yo code`).
+- 설계서 전체 반입 완료 + Gate 1·3 통과 → **Build 진입**. 초기 반입분 커밋(1d54dc7). 다음은 TASK-001 스캐폴드(yo code 비대화형 방식 결정부터).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -69,9 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. Gate 3(Design→Impl) 점검 — 도메인모델·ADR·인터페이스·tech_stack·milestone·task 충족 확인
-2. 구현 착수: TASK-001 (`yo code`로 스캐폴드 + F5 Hello World)
-3. TASK-002(types.ts) → TASK-003(어댑터 칩 스텁)
+1. TASK-001 스캐폴드 착수 — `yo code`가 대화형이므로 **비대화형 방식(파일 직접 생성 또는 플래그) 먼저 결정** 후 src/ 구조 + package.json 생성 + F5 Hello World
+2. TASK-002(types.ts, interface_contract 기준) → TASK-003(4개 어댑터 칩 스텁, Python 리트머스)
+3. (이월) 세션 종료 후 미커밋 변경분(Gate 3·Build 전환) 커밋
 
 ---
 
@@ -89,7 +89,8 @@
 
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
-| 없음 | - | - | - |
+| C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — 상태바 칩 레이아웃·설정 다이얼로그·마법사 QuickPick | UI 구현(MS-004/006/008) 착수 시 | 세션 #001 Gate 3 |
+| C-2 | MS-002~008 상세 Task 분해 | 해당 Milestone 착수 시 | task_registry 경량 운영 |
 
 **저심각 · 기록 (지시 시에만)**
 
@@ -116,6 +117,7 @@
 | Q1 | 진행 방향 | High | `docs/*` | Resolved — 설계서 전체 반입 |
 | Q2 | 현재 Phase | Medium | `project_state.md` | Resolved — Define부터 정식화 |
 | Q3 | INT-001 승인 및 산출물 계획 확정 | High | `intents/INT-001*`, `deliverable_plan.md` | Resolved — 2026-08-13 승인 |
+| Q4 | Gate 3: domain_model(도메인 모델) 검토 승인 | Medium | `domain_model.md` | Resolved — 2026-08-13 승인, Build 전환 |
 
 - `우선순위`: `High` / `Medium` / `Low`
 - `상태`: `Open` / `Resolved` / `Deferred`
@@ -143,6 +145,7 @@
 | D-04 | Gate 1 통과 | `quality_gate.md`, DEFINE 문서 | 2026-08-13 |
 | D-05 | 신규: 프로젝트 시작 마법사(F20) 도입 — 전 언어·수동 호출·기본 템플릿·네이티브 위임 | `ADR-010` | 2026-08-13 |
 | D-06 | 설계서 DD-01~09를 ADR-001~009로 승격 | `adr_registry.md` | 2026-08-13 |
+| D-07 | Gate 3 통과 (domain_model 승인) → Build 전환 | `quality_gate.md`, `domain_model.md` | 2026-08-13 |
 
 ---
 

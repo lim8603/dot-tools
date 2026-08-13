@@ -11,6 +11,7 @@
 | 관련 Intent | INT-001 |
 | Bounded Context | DevSwitcher Extension Host (단일 컨텍스트) |
 | 버전 | v1 (상세설계서 §3 반입) |
+| 검토 | 2026-08-13 Human Approved (Gate 3) |
 
 ---
 
