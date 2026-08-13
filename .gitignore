@@ -1,0 +1,23 @@
+# ─── Node.js / TypeScript ───
+node_modules/
+npm-debug.log*
+*.tsbuildinfo
+
+# ─── VSCode 확장 빌드 산출물 ───
+dist/
+out/
+*.vsix
+
+# ─── VSCode 확장 테스트 ───
+.vscode-test/
+
+# ─── Member personal session logs ───
+.cowork/members/*/workspace/session_logs/*.md
+!.cowork/members/*/workspace/session_logs/.gitkeep
+
+# ─── Upgrade staging area ───
+.cowork/.upgrade/
+
+# ─── OS ───
+.DS_Store
+Thumbs.db

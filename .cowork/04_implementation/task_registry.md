@@ -1,0 +1,55 @@
+# Task Registry
+
+> Task 인덱스 및 경량 WBS — 실제 실행 단위를 등록하고 추적한다
+
+---
+
+## 목적
+
+- 현재 진행 중인 Task와 의존 관계를 빠르게 파악한다
+- WBS의 기본 인덱스로 사용한다
+- 상세 실행 계획이 필요한 Task는 `tasks/TASK-*.md`로 확장한다
+
+---
+
+## 기록 규칙
+
+- registry에는 `TASK-000` 같은 더미 ID를 남기지 않는다.
+- 항목이 없을 때는 표에 예시 행을 넣지 않고 `현재 등록 Task 없음`만 남긴다.
+- `담당`, `상태`, `의존`은 실제 운영 상태만 기록한다.
+- `문서 경로`는 `tasks/TASK-*.md`를 생성한 경우에만 채우고, 경량 운영이면 비워둘 수 있다.
+
+---
+
+## 최소 동기화 규칙
+
+- `task_registry.md`, `tasks/TASK-*.md`, `project_state.md`의 활성 Task 요약은 최소한 `담당`, `상태`, `마지막 갱신일`, `다음 액션`을 같은 의미로 유지한다.
+- 상세 실행 맥락, 판단 근거, 작업 로그는 `tasks/TASK-*.md`나 세션 로그에 두고, registry에는 재개에 필요한 핵심만 적는다.
+- `project_state.md`에는 현재 활성 또는 다음 세션에 바로 재개할 Task만 요약한다.
+
+---
+
+## Task 목록
+
+| Task ID | 제목 | 관련 Milestone | 관련 Intent | 관련 User Story | 담당 | 상태 | 마지막 갱신일 | 다음 액션 | 의존 | 문서 경로 | 비고 |
+|---------|------|----------------|-------------|-----------------|------|------|---------------|-----------|------|----------|------|
+| TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | INT-001 | 없음 | AI | Planned | 2026-08-13 | `yo code`로 devswitcher-tools(TS·esbuild) 스캐폴드 생성 후 F5 Hello World 확인 | 없음 | | M0 |
+| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | INT-001 | 없음 | AI | Planned | 2026-08-13 | `interface_contract.md` 기준으로 types.ts 작성 (+ NewProjectTarget·createProject 계약) | TASK-001 | | M1. 단일 정의 지점 |
+| TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | INT-001 | US-003 | AI | Planned | 2026-08-13 | cargo/cmake/dotnet/python 어댑터에 chips·actions·manifestGlobs·canCreateProject 선언 (Python 리트머스) | TASK-002 | | M1. 인터페이스 확정 검증 |
+
+> 현재 등록 Task: TASK-001~003 (M0~M1 착수분). M2 이후 Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
+
+- `담당`: `Human` / `AI` / `Role-*` / `(Role-* 인수자)`
+- `상태`: `Planned` / `In Progress` / `Review` / `Done`
+- `마지막 갱신일`: `YYYY-MM-DD`
+- `다음 액션`: 다음 세션이 바로 이어받을 수 있는 한 줄 지시
+- `의존`: 실제 연결된 `TASK-*` 또는 `없음`
+
+---
+
+## 경량 운영 규칙
+
+- 짧은 작업은 이 문서와 세션 로그만으로 관리할 수 있다.
+- 장시간 작업, 승인 지점이 많은 작업, 재개 가능성이 높은 작업은 `tasks/TASK-*.md`를 생성한다.
+- `deliverable_plan.md`와 `export_spec.md`에서 WBS source로 이 문서를 우선 사용한다.
+- `다음 액션`은 다음 세션이 바로 이어받을 수 있는 한 줄 지시로 유지하고, 여러 단계 상세 계획은 상세 Task 문서로 넘긴다.
