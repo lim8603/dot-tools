@@ -133,9 +133,11 @@ export const cargoAdapter: LanguageAdapter = {
       id: 'architecture',
       icon: 'chip',
       label: 'Architecture',
-      // F19 §13.4: list installed + not-installed targets together (installed first);
-      // picking a not-installed one runs `rustup target add` via onPick. Unselected =
-      // host default (no --target).
+      // F19 §13.4: installed targets show by default; the not-installed tail is marked
+      // `secondary` so the QuickPick keeps it behind a toggle (secondaryToggle). Picking
+      // a not-installed one runs `rustup target add` via onPick. Unselected = host
+      // default (no --target).
+      secondaryToggle: 'Show installable targets',
       listItems: async () => {
         const targets = await bridge.listAllTargets();
         return [...targets]
@@ -144,7 +146,8 @@ export const cargoAdapter: LanguageAdapter = {
             id: t.triple,
             label: t.triple,
             description: abbreviateTriple(t.triple),
-            detail: t.installed ? undefined : '$(cloud-download) not installed — select to add',
+            detail: t.installed ? undefined : 'not installed — select to add',
+            secondary: !t.installed,
           }));
       },
       onPick: async (_project, value) => {

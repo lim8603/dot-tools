@@ -25,6 +25,8 @@ export interface ChipItem {
   label: string;
   description?: string; // QuickPick right-side description
   detail?: string; // QuickPick bottom detail line
+  /** Hidden until the secondary toggle is on (e.g. not-installed targets, §13.4). */
+  secondary?: boolean;
 }
 
 /**
@@ -37,6 +39,12 @@ export interface ChipDescriptor {
   label: string; // QuickPick placeholder / settings tab name
   multiSelect?: boolean; // when true the value is string[] (features)
   required?: boolean; // when unset, block the action (e.g. target)
+  /**
+   * When set, the QuickPick hides `secondary` items behind a toggle button whose
+   * tooltip is this string (e.g. 'Show installable targets'), so a long tail of
+   * not-installed options stays collapsed by default (§13.4). Single-select only.
+   */
+  secondaryToggle?: string;
   /** Read the available items from the canonical source (e.g. Cargo.toml). */
   listItems(project: ProjectInfo): Promise<ChipItem[]>;
   /** Abbreviated rendering for the status bar. */
