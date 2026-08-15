@@ -45,8 +45,8 @@
 | TASK-010 | 실행 (TaskRunner + Build/Run 플로우) | MS-005 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — **F5 검증 통과**(Build 성공·Run "Hello..." 출력·실패 시 exit101 토스트). main 병합(FF) | 없음 | | M4. 액션버튼 실동작 |
 | TASK-011 | 디버그 플로우 (createDebugConfig + CodeLLDB) | MS-005 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — **F5 검증 통과**(CodeLLDB→build→hello.exe 실행→중단점 정지). ensureExtension 루프 fix(Reload). main 병합(FF) | TASK-010 | | M4. F19·Doctor 이월 |
 | TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | INT-001 | US-010·US-012 | AI | Review | 2026-08-15 | 완료(코드) — buildConfigArgs·buildRustflags·tomlScalar·parseArgsLine + cargoAdapter 주입(compiler→`--config`·linker→RUSTFLAGS·env). mocha 통과. **F5는 TASK-014와 함께** | 없음 | | M5. pre/postBuild 후속 |
-| TASK-013 | SettingsPanel Webview 셸 | MS-006 | INT-001 | US-010 | AI | Review | 2026-08-15 | 완료(코드) — WebviewPanel(CSP)·ready/state·프로젝트/Features/프로파일RO 탭·`openSettings`·상태바 기어. **F5 검증 대기** | TASK-012 | | M5 |
-| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | INT-001 | US-010·US-012 | AI | Review | 2026-08-15 | 완료(코드) — 옵션 에디터(enum/bool/int/string)·applyOption(순수)·runArgs·명령 미리보기(ProcessExecution). mocha 6 신규(총 61). **F5 검증 대기** | TASK-013 | | M5 |
+| TASK-013 | SettingsPanel Webview 셸 | MS-006 | INT-001 | US-010 | AI | Review | 2026-08-15 | **F5 검증 통과**(설정 페이지·탭·자동갱신). 병합 대기 | TASK-012 | | M5 |
+| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | INT-001 | US-010·US-012 | AI | Review | 2026-08-15 | **F5 검증 통과**(옵션 편집→명령 미리보기 build/run·오버레이 빌드 주입·입력 UX 개선). mocha 61. 병합 대기 | TASK-013 | | M5 |
 
 > 현재 등록 Task: TASK-001~014. MS-006 코어(012·013·014) 우선 진행, export/import(TASK-015, F12)은 다음으로 분리. MS-007 이후 Task는 착수 시 상세화.
 

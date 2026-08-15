@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — In Progress (코어 우선) |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — 코어 F5 통과·미병합 |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_004.md |
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | Review | 100% (코드) | F5(TASK-014와 함께) |
-| TASK-013 | SettingsPanel Webview 셸 | MS-006 | Review | 100% (코드) | F5 검증 대기 |
-| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | Review | 100% (코드) | F5 검증 대기 |
+| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | Review | 100% (F5 통과) | 병합 대기 |
+| TASK-013 | SettingsPanel Webview 셸 | MS-006 | Review | 100% (F5 통과) | 병합 대기 |
+| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | Review | 100% (F5 통과) | 병합 대기 |
 
 > TASK-001~011 Done (MS-001~005 완료·main 병합, 2026-08-15). TASK-015(export/import) 분리. MS-003·004·005 상세: session #004.
 
@@ -35,15 +35,15 @@
 | #001 | 2026-08-13 | 온보딩 + 설계서 전체 반입(DEFINE·DESIGN·BUILD준비) + F20 신규 + Gate 1·3 통과 + 커밋 | MS-001 | 프로젝트 공통 | 완료 |
 | #002 | 2026-08-15 | VS2026식 프로젝트 속성 논의 → 호출 구성 오버레이(ADR-011)·설정 페이지·옵션 카탈로그(ADR-012)·언어별 능력 정리, F21/FR-014 신규 반영 | MS-006(설계) | 프로젝트 공통 | 완료 |
 | #003 | 2026-08-15 | TASK-001 F5·병합 → OQ-002 확정 → TASK-002 types.ts → TS2584 수정 → TASK-003 어댑터 스텁 → MS-002 병합 → 상세설계서 v1.2·imported_context 이동 → MS-003 착수·TASK-004(CargoBridge+mocha) | MS-001·002·003 | TASK-001~004 | 완료 |
-| #004 | 2026-08-15 | TASK-005·006(MS-003) → **MS-004 분해·구현·F5 검증 통과·병합**: TASK-007(데이터)·008(UI)·009(배선). 상태바·QuickPick·StateStore·reconcile·Watcher·activate + cargo 픽스처. mocha 44. CLAUDE/AGENTS 컨텍스트 작성·launch clean-room | MS-003·004 | TASK-005~009 | 완료 |
+| #004 | 2026-08-15 | **MS-003·004·005 완료·병합 + MS-006 코어 F5 통과(미병합)**. TASK-005~014: CargoBridge I/O·CargoAdapter·상태바/저장/감시·실행/디버그·**설정 페이지(옵션 편집·명령 미리보기·오버레이 주입)**. mocha 61. CLAUDE/AGENTS 컨텍스트·ui_spec 작성 | MS-003~006 | TASK-005~014 | MS-006 병합만 남음 |
 
 ---
 
 ## 다음 시작점
 
-1. **MS-006(M5 설정 페이지·호출 구성) Task 분해 → 착수** — WebviewPanel "설정 페이지"(ADR-012)·옵션 카탈로그 브라우저·InvocationConfig 오버레이 편집·export/import(F12). C-1(ui_spec)·C-4(ProfileExport 정합화) 트리거 도래
-2. 이후 MS-007(품질·배포·통합테스트)·MS-008(F20 시작 마법사)
-3. 이월: F19(rustup target 자동설치)·Doctor(§13.5)는 MS-007
+1. **MS-006 코어 병합** — `feature/ms-006-settings-page`(TASK-012·013·014, F5 통과) → main 병합 (B-1)
+2. **TASK-015(export/import F12)** — ProfileExport 타입(C-4 정합화)·`devswitcher.profile.json`·검증
+3. 이후 MS-007(품질·배포·통합테스트)·MS-008(F20 마법사). 이월: F19·Doctor·pre/postBuild(C-5)
 
 ---
 
@@ -63,7 +63,8 @@
 - C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
 - C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영(편집/승격, 구 §8.7) — v2 착수 시
 - C-4: `ProfileExport`(F12) 타입 + data_model §2 export 예시 정합화(runArgs 승격 반영) — MS-006 착수 시
-- (완료) MS-003·004·005 모두 main FF 병합 완료 (TASK-004~011). 미병합 브랜치 없음
+- **MS-006 코어 미병합**: `feature/ms-006-settings-page`(TASK-012·013·014, F5 통과) — 다음 세션 첫 액션: 병합
+- (완료) MS-003·004·005 main FF 병합 완료 (TASK-004~011)
 
 ---
 
