@@ -45,7 +45,7 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
   {
     id: 'linker',
     category: 'linker',
-    label: 'Linker',
+    label: 'Linker program',
     description: 'Overrides the linker for the active target (injected via RUSTFLAGS).',
     example: 'RUSTFLAGS="-C linker=lld"',
     type: 'string',
