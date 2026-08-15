@@ -31,7 +31,7 @@ Milestone은 `Phase`와 다르다.
 | MS-001 | M0 셋업 — 스캐폴드 + F5 Hello World | INT-001 | Build | Done | TASK-001 | | 스캐폴드 + F5 Hello World 검증 완료(2026-08-15). main 병합 |
 | MS-002 | M1 코어 타입·칩 프레임워크 | INT-001 | Build | Done | TASK-002, TASK-003 | | `types.ts` + 4개 어댑터 칩 스텁(Python 리트머스) + F20 createProject 계약. 인터페이스 확정 검증(tsc) 완료, main 병합(2026-08-15) |
 | MS-003 | M2 CargoBridge + CargoAdapter | INT-001 | Build | Done | TASK-004, TASK-005, TASK-006 | | 메타데이터/빌드 JSON 파싱·인자 조립·features·resolveExecutable + 단위테스트(34). TASK-004·005·006 Done — build/run/resolveExecutable/chips/listProjects 실동작. main 병합(FF, 2026-08-15). **디버그 구성=M4, cargo createProjectTask=MS-008(F20)로 이월** |
-| MS-004 | M3 상태바·상태 저장·감시 | INT-001 | Build | Review | TASK-007, TASK-008, TASK-009 | | 칩 렌더링·QuickPick·StateStore·reconcile·ManifestWatcher 코드 완료(TASK-007·008 Done, 009 Review). **F5 end-to-end 검증 대기**. 통과 시 Rust 실사용 가능 |
+| MS-004 | M3 상태바·상태 저장·감시 | INT-001 | Build | Done | TASK-007, TASK-008, TASK-009 | | 칩 렌더링·QuickPick·StateStore·reconcile·ManifestWatcher. TASK-007·008·009 Done. **F5 end-to-end 검증 통과**, main 병합(FF, 2026-08-15). Rust 선택 UX 실사용 가능 |
 | MS-005 | M4 실행·디버그 | INT-001 | Build | Planned | 없음 | | TaskRunner·problem matcher·디버그 플로우·키바인딩 |
 | MS-006 | M5 설정 페이지 | INT-001 | Build | Planned | 없음 | | Webview **페이지**(F21·ADR-012)·호출 구성 오버레이(ADR-011)·옵션 카탈로그·export/import. **Cargo.toml 국소편집은 v2 이월** |
 | MS-007 | M6 품질·배포 | INT-001 | Build | Planned | 없음 | | Doctor·WSL 스모크·통합테스트·README·VSIX |
