@@ -16,17 +16,17 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-006 코어 F5 검증 통과 — 병합 대기) |
+| 현재 Phase | Build (MS-006 코어 main 병합 완료 — TASK-015 남음) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성, In Progress — 코어 검증 완료·미병합) |
-| 활성 Task | TASK-012·013·014 (Review — F5 통과·병합 대기). TASK-015(export/import) 분리 |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성, In Progress — 코어 병합 완료, export/import 남음) |
+| 활성 Task | TASK-015 (export/import F12 — Planned, 다음 착수) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
 | 마지막 갱신일 | 2026-08-15 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-15_004.md |
+| 참조 세션 로그 | session_2026-08-15_005.md |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. MS-001~005 완료·main 병합. **MS-006 코어(설정 페이지) F5 검증 통과 — 미병합 `feature/ms-006-settings-page`.** WebviewPanel 설정 페이지(옵션 카탈로그 편집·build/run 명령 미리보기·자동갱신) + InvocationConfig→cargo 주입(`--config`/RUSTFLAGS/env). mocha 61. **이제 상태바 전환·빌드·실행·디버그 + 호출 구성 편집까지 실동작.** **다음: MS-006 병합 + TASK-015(export/import F12).** cargo가 실행 경로 해석(DD-05).
+- Build 진행 중. MS-001~005 완료·main 병합. **MS-006 코어(설정 페이지) main FF 병합 완료(335f982, 브랜치 삭제).** WebviewPanel 설정 페이지(옵션 카탈로그 편집·build/run 명령 미리보기·자동갱신) + InvocationConfig→cargo 주입(`--config`/RUSTFLAGS/env). mocha 61. **이제 상태바 전환·빌드·실행·디버그 + 호출 구성 편집까지 실동작.** **다음: TASK-015(export/import F12) 착수.** cargo가 실행 경로 해석(DD-05).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-012·013·014 | MS-006 코어 (주입·Webview·호출구성 탭) | AI | Review | 2026-08-15 | **F5 검증 통과** — 설정 페이지 옵션 편집·명령 미리보기(build/run)·오버레이 빌드 주입·자동갱신. **미병합** `feature/ms-006-settings-page`. 다음 세션: 병합 + TASK-015 |
+| TASK-015 | export/import (F12) | AI | Planned | 2026-08-15 | `ProfileExport` 타입 확정(C-4 정합화)·`devswitcher.profile.json` export/import·검증. MS-006 마지막 Task |
 
-> TASK-001~011 Done (MS-001~005 완료, main 병합). TASK-015(export/import)은 분리. MS-003·004·005 상세는 session_2026-08-15_004.md.
+> TASK-001~014 Done (MS-001~005 완료 + MS-006 코어 병합, main). MS-003·004·005 상세는 session_2026-08-15_004.md, MS-006 코어 병합은 session_2026-08-15_005.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,9 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-006 코어 병합** — `feature/ms-006-settings-page`(TASK-012·013·014, F5 검증 통과)를 main 병합 → 그 뒤 **TASK-015(export/import F12)** 착수. C-4(ProfileExport 정합화)는 TASK-015에서.
+1. **TASK-015(export/import F12) 착수** — `ProfileExport` 타입 확정(C-4 정합화)·`devswitcher.profile.json` export/import·검증. MS-006 마지막 Task → 완료 시 MS-006 Done.
 2. 이후 MS-007(품질·배포·통합테스트)·MS-008(F20 시작 마법사)
-3. 이월: F19(rustup target 자동설치)·Doctor(§13.5)·pre/postBuild 실행·프로파일 편집(v2)는 MS-007/후속
+3. 이월: F19(rustup target 자동설치)·Doctor(§13.5)·pre/postBuild 실행(C-5)·프로파일 편집(v2)는 MS-007/후속
 
 ---
 
@@ -83,7 +83,7 @@
 
 | # | 항목 | 내용 | 출처 |
 |---|------|------|------|
-| B-1 | **MS-006 코어 미병합** — `feature/ms-006-settings-page`(TASK-012·013·014, F5 검증 통과). 다음 세션 첫 액션: main 병합 → TASK-015 착수 | 세션 #004 |
+| ~~B-1~~ | **해소(2026-08-15, 세션 #005)** — MS-006 코어(TASK-012·013·014) main FF 병합 완료(335f982), `feature/ms-006-settings-page` 브랜치 삭제. 다음: TASK-015 착수 | 세션 #004 → #005 병합 |
 
 **트리거 대기 (도래 시 해당 세션이 흡수)**
 
@@ -115,6 +115,7 @@
 - **세션 #004 (계속)**: **MS-003 main FF 병합**(d249de2, 브랜치 삭제). **MS-004(M3) 코드 완료** — 3분할 구현: TASK-007 데이터(AdapterRegistry 스캔·매칭 + StateStore workspaceState·reconcile, 순수코어 `stateReconcile.ts` mocha 8)·TASK-008 UI(StatusBarController 칩/버튼 렌더 어댑터무지 + picks QuickPick + `defaultChipFormat` mocha 2)·TASK-009 배선(Orchestrator pickChip/switchProject·applyDefaults·ManifestWatcher 500ms 디바운스·extension.ts activate·package.json 5커맨드+activationEvents·cargo 픽스처 `src/test/fixtures/cargo/hello`). mocha 44. 액션버튼 렌더만(실행=MS-005), 툴체인경고칩(E1)=MS-007, 30일GC/export=후속. **F5 end-to-end 검증 통과**. **MS-004 Done → main FF 병합.** CLAUDE.md·AGENTS.md 프로젝트 컨텍스트 작성.
 - **세션 #004 (계속)**: **MS-005(M4 실행·디버그) 코드 완료 — F5 검증 대기.** 2분할: TASK-010 실행(`core/taskRunner.ts` executeTask+onDidEndTaskProcess 종료코드·프로젝트별 동시실행 거부 E9 · orchestrator.build()/run() = required 칩 검증 E4→Task 실행→실패 시 Problems 포커스 토스트 · 상태바 spin · `$devswitcher-rustc` 자체 problemMatcher(package.json, Rust 확장 없이 resolve) · ctrl+alt+b/r/d 키바인딩)·TASK-011 디버그(`cargoAdapter.createDebugConfig`=resolveExecutable+순수 `buildLldbConfig` · `core/ensureExtension.ts` CodeLLDB 온디맨드 설치 §13.3 · orchestrator.debug() §7.4 전체 플로우 · launch.json "Run Extension (with extensions)" 구성 추가). mocha 46(buildLldbConfig 2 신규). **F5 검증 통과**(Build/Run + Debug 중단점 정지). `ensureExtension` 온디맨드 설치 루프 fix(39af4ac). **MS-005 Done·main FF 병합.**
 - **세션 #004 (계속)**: **MS-006 코어(설정 페이지) 구현·F5 검증 통과 — 미병합 `feature/ms-006-settings-page`.** 3분할: TASK-012(오버레이 주입 — `buildConfigArgs`/`tomlScalar`/`buildRustflags`/`parseArgsLine`, cargoAdapter가 compiler→`--config profile.<p>.<id>`·linker→RUSTFLAGS·env/outputDir 주입, execCapture에 env 추가로 resolveExecutable 동일 아티팩트)·TASK-013(`ui/settingsPanel/` WebviewPanel CSP·단방향 state·프로젝트/Features/프로파일RO 탭·`openSettings`+상태바 기어)·TASK-014(옵션 카탈로그 에디터·`core/invocationConfig.ts applyOption`(compiler/linker record·outputDir·env[label])·`core/argsLine.ts`(parseArgsLine 이동)·build/run 명령 미리보기(Task의 ProcessExecution 역읽기)). mocha 61. F5 피드백 반영: 명령 미리보기 2줄(runArgs 표시)·**자동갱신**(orchestrator `viewSync`→settingsPanel.refresh, Refresh 버튼 제거)·키바인딩 제거(충돌)·enum 기본값 튐 수정(실효값 표시)·입력창 넓힘/라벨 위 배치·**launch 기본을 확장 포함으로**(clean은 별도 구성). ui_spec.md 작성(C-1 해소). **다음: MS-006 병합 + TASK-015(export/import).**
+- **세션 #005**: **MS-006 코어 main FF 병합 완료**(335f982, `feature/ms-006-settings-page` 삭제). 병합 전 게이트 재확인 — check-types/eslint clean·mocha 61·esbuild 41.4kb OK. B-1 해소. **다음: TASK-015(export/import F12)** — `ProfileExport` 타입 확정(C-4 정합화)·`devswitcher.profile.json` export/import·검증 → 완료 시 MS-006 Done.
 
 ---
 
@@ -217,9 +218,9 @@
 | Milestone | MS-003 | M2 CargoBridge/CargoAdapter | Done | main 병합(FF, 2026-08-15). 디버그·createProject 이월 |
 | Milestone | MS-004 | M3 상태바·저장·감시 | Done | F5 검증 통과, main 병합(2026-08-15) |
 | Milestone | MS-005 | M4 실행·디버그 | Done | F5 검증 통과(빌드·실행·중단점), main 병합(2026-08-15) |
-| Milestone | MS-006 | M5 설정 페이지·호출 구성 | In Progress | 코어(012·013·014) F5 통과·미병합. export/import(015) 남음 |
+| Milestone | MS-006 | M5 설정 페이지·호출 구성 | In Progress | 코어(012·013·014) main 병합 완료. export/import(015) 남음 |
 | Milestone | MS-007~008 | M6 + F20 마법사 | Planned | milestone_registry |
-| Task | TASK-012·013·014 | MS-006 코어 | Review | F5 통과, 병합 대기(B-1) |
+| Task | TASK-015 | export/import (F12) | Planned | MS-006 마지막 Task, 다음 착수 |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`

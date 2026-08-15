@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — 코어 F5 통과·미병합 |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — 코어 main 병합 완료, export/import 남음 |
 | 마지막 갱신일 | 2026-08-15 |
-| 참조 세션 로그 | session_2026-08-15_004.md |
+| 참조 세션 로그 | session_2026-08-15_005.md |
 
 ---
 
@@ -20,11 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | Review | 100% (F5 통과) | 병합 대기 |
-| TASK-013 | SettingsPanel Webview 셸 | MS-006 | Review | 100% (F5 통과) | 병합 대기 |
-| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | Review | 100% (F5 통과) | 병합 대기 |
+| TASK-015 | export/import (F12) | MS-006 | Planned | 0% | 없음 (다음 착수) |
 
-> TASK-001~011 Done (MS-001~005 완료·main 병합, 2026-08-15). TASK-015(export/import) 분리. MS-003·004·005 상세: session #004.
+> TASK-001~014 Done (MS-001~005 완료 + MS-006 코어 main 병합, 2026-08-15). MS-003·004·005 상세: session #004, MS-006 코어 병합: session #005.
 
 ---
 
@@ -41,9 +39,8 @@
 
 ## 다음 시작점
 
-1. **MS-006 코어 병합** — `feature/ms-006-settings-page`(TASK-012·013·014, F5 통과) → main 병합 (B-1)
-2. **TASK-015(export/import F12)** — ProfileExport 타입(C-4 정합화)·`devswitcher.profile.json`·검증
-3. 이후 MS-007(품질·배포·통합테스트)·MS-008(F20 마법사). 이월: F19·Doctor·pre/postBuild(C-5)
+1. **TASK-015(export/import F12)** — ProfileExport 타입(C-4 정합화)·`devswitcher.profile.json`·검증 → 완료 시 MS-006 Done
+2. 이후 MS-007(품질·배포·통합테스트)·MS-008(F20 마법사). 이월: F19·Doctor·pre/postBuild(C-5)
 
 ---
 
@@ -62,8 +59,8 @@
 - C-1: `ui_spec.md`(화면설계서, 권장) — UI 구현 착수 시 작성 (설정 페이지 옵션 브라우저 포함)
 - C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
 - C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영(편집/승격, 구 §8.7) — v2 착수 시
-- C-4: `ProfileExport`(F12) 타입 + data_model §2 export 예시 정합화(runArgs 승격 반영) — MS-006 착수 시
-- **MS-006 코어 미병합**: `feature/ms-006-settings-page`(TASK-012·013·014, F5 통과) — 다음 세션 첫 액션: 병합
+- C-4: `ProfileExport`(F12) 타입 + data_model §2 export 예시 정합화(runArgs 승격 반영) — TASK-015 착수 시
+- (완료) MS-006 코어 main FF 병합 완료 (TASK-012·013·014, 335f982, 세션 #005)
 - (완료) MS-003·004·005 main FF 병합 완료 (TASK-004~011)
 
 ---
