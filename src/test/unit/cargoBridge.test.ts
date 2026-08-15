@@ -3,15 +3,19 @@ import type { InvocationConfig, Selection } from '../../core/types';
 import {
   abbreviateTriple,
   assembleCargoArgs,
+  buildConfigArgs,
   buildLldbConfig,
   buildProfileList,
+  buildRustflags,
   defaultBinTarget,
   featuresToArgs,
   formatFeatureCount,
+  parseArgsLine,
   parseBinTargets,
   parseFeatures,
   parseWorkspacePackages,
   pickExecutable,
+  tomlScalar,
   type CargoMetadata,
 } from '../../adapters/cargo/cargoBridge';
 
@@ -148,6 +152,83 @@ describe('assembleCargoArgs', () => {
       '--flag',
       'x',
     ]);
+  });
+
+  it('places overlay --config args before the -- program separator on run', () => {
+    const args = assembleCargoArgs(
+      'run',
+      'app',
+      sel({ profile: 'dev', target: 'app' }),
+      { runArgs: ['x'] },
+      false,
+      ['--config', 'profile.dev.opt-level=3'],
+    );
+    assert.deepEqual(args, [
+      'run',
+      '-p',
+      'app',
+      '--profile',
+      'dev',
+      '--bin',
+      'app',
+      '--config',
+      'profile.dev.opt-level=3',
+      '--',
+      'x',
+    ]);
+  });
+});
+
+// ── overlay injection (TASK-012, §10.4) ───────────────────────────────────────
+
+describe('tomlScalar', () => {
+  it('renders numbers/bools bare and quotes real strings', () => {
+    assert.equal(tomlScalar(3), '3');
+    assert.equal(tomlScalar(true), 'true');
+    assert.equal(tomlScalar('thin'), '"thin"');
+  });
+
+  it('keeps numeric and boolean strings bare (opt-level 3, lto false)', () => {
+    assert.equal(tomlScalar('3'), '3');
+    assert.equal(tomlScalar('false'), 'false');
+    assert.equal(tomlScalar('s'), '"s"');
+  });
+});
+
+describe('buildConfigArgs', () => {
+  it('maps compiler options to profile-scoped --config pairs', () => {
+    assert.deepEqual(buildConfigArgs({ 'opt-level': '3', lto: 'thin' }, 'release'), [
+      '--config',
+      'profile.release.opt-level=3',
+      '--config',
+      'profile.release.lto="thin"',
+    ]);
+  });
+
+  it('returns nothing for an empty overlay', () => {
+    assert.deepEqual(buildConfigArgs({}, 'dev'), []);
+  });
+});
+
+describe('buildRustflags', () => {
+  it('emits -C linker= for the linker option', () => {
+    assert.equal(buildRustflags({ linker: 'lld' }), '-C linker=lld');
+    assert.equal(buildRustflags({}), '');
+  });
+});
+
+describe('parseArgsLine', () => {
+  it('splits on whitespace', () => {
+    assert.deepEqual(parseArgsLine('--flag value  x'), ['--flag', 'value', 'x']);
+  });
+
+  it('keeps quoted segments together', () => {
+    assert.deepEqual(parseArgsLine('--path "a b" \'c d\''), ['--path', 'a b', 'c d']);
+  });
+
+  it('handles escaped quotes and empty input', () => {
+    assert.deepEqual(parseArgsLine('"a\\"b"'), ['a"b']);
+    assert.deepEqual(parseArgsLine('   '), []);
   });
 });
 
