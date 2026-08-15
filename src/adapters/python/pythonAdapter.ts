@@ -53,4 +53,5 @@ export const pythonAdapter: LanguageAdapter = {
   createProjectTask: (_target) => notImplemented('PythonAdapter.createProjectTask', 'MS-008'),
   persistSetting: (_project, _key, _value) => notImplemented('PythonAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('PythonAdapter.invalidateCache', 'v2'),
+  collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet
 };

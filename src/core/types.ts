@@ -142,6 +142,49 @@ export interface OptionSpec {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// §13. Diagnostics (F19 / DD-09) — Doctor's adapter-agnostic check model
+// Adapters emit raw DiagnosticProbe[] (they own the vscode/exec calls); the pure
+// core (core/diagnostics.ts) derives status + ordering into DiagnosticItem[], so
+// Doctor itself stays adapter-agnostic (상세설계서 §13.5). The 3 automation tiers
+// map to §13.2: 1 full-auto (install ext / rustup target), 2 semi (run OS install
+// command), 3 guide-only (WSL/Docker).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type DiagnosticStatus = 'ok' | 'warn' | 'error' | 'info'; // ✅ / ⚠️ / ❌ / ℹ️
+export type DiagnosticTier = 1 | 2 | 3;
+
+/** How important a check is — drives status when the check is not satisfied. */
+export type DiagnosticSeverity = 'critical' | 'optional' | 'info';
+
+/** A resolution action the Doctor UI (TASK-017) can carry out. Adapter-agnostic. */
+export type DiagnosticResolution =
+  | { kind: 'installExtension'; extensionId: string } // tier 1
+  | { kind: 'installTarget'; triple: string } // tier 1 (rustup target add, TASK-018)
+  | { kind: 'runCommand'; command: string; args: string[] } // tier 2
+  | { kind: 'openUrl'; url: string }; // tier 2/3 guide
+
+/** A raw check emitted by an adapter (pure data — no vscode). */
+export interface DiagnosticProbe {
+  id: string; // stable id, e.g. 'cargo' | 'vadimcn.vscode-lldb'
+  label: string; // display name, e.g. 'cargo', 'CodeLLDB'
+  severity: DiagnosticSeverity;
+  present: boolean; // installed / available?
+  detail?: string; // version string or note
+  tier: DiagnosticTier;
+  resolution?: DiagnosticResolution; // how to fix when not present
+}
+
+/** A classified check the Doctor UI renders (status derived from the probe). */
+export interface DiagnosticItem {
+  id: string;
+  label: string;
+  status: DiagnosticStatus;
+  detail?: string;
+  tier: DiagnosticTier;
+  resolution?: DiagnosticResolution; // dropped when status is 'ok' (nothing to fix)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // §4 + §5 + §7. LanguageAdapter — the core contract
 // All per-language differences hide behind this interface (ADR-003). Adding or
 // changing an adapter never touches UI/orchestrator code.
@@ -190,6 +233,13 @@ export interface LanguageAdapter {
 
   /** Invalidate cache on manifest change (F17). */
   invalidateCache(project?: ProjectInfo): void;
+
+  /**
+   * F19 — the diagnostic checks Doctor runs for this adapter (§13.5). The adapter
+   * owns the vscode/exec probing (toolchain versions, extension presence); the pure
+   * core classifies and orders the result. Stub adapters return [].
+   */
+  collectDiagnostics(): Promise<DiagnosticProbe[]>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

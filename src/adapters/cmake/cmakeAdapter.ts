@@ -50,4 +50,5 @@ export const cmakeAdapter: LanguageAdapter = {
   createProjectTask: (_target) => notImplemented('CMakeAdapter.createProjectTask', 'MS-008'),
   persistSetting: (_project, _key, _value) => notImplemented('CMakeAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('CMakeAdapter.invalidateCache', 'v2'),
+  collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet
 };

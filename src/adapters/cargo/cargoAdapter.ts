@@ -1,7 +1,7 @@
 import { dirname } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
-import { InvocationConfig, LanguageAdapter, ProjectInfo, Selection } from '../../core/types';
+import { DiagnosticProbe, InvocationConfig, LanguageAdapter, ProjectInfo, Selection } from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import {
   abbreviateTriple,
@@ -37,6 +37,10 @@ import { CARGO_OPTION_CATALOG } from './optionCatalog';
 
 /** Single toolchain per host — one bridge instance holds the metadata cache. */
 const bridge = new CargoBridge();
+
+/** Friendly names for the extensions Doctor reports (F19); falls back to the id. */
+const EXTENSION_LABELS: Record<string, string> = { 'vadimcn.vscode-lldb': 'CodeLLDB' };
+const extensionLabel = (id: string): string => EXTENSION_LABELS[id] ?? id;
 
 const CARGO_TASK_TYPE = 'devSwitcher.cargo';
 
@@ -257,4 +261,44 @@ export const cargoAdapter: LanguageAdapter = {
   persistSetting: (_project, _key, _value) => notImplemented('CargoAdapter.persistSetting', 'v2'),
 
   invalidateCache: (project) => bridge.invalidateCache(project?.manifestPath),
+
+  // F19 (§13.5) — probe the Rust toolchain (cargo critical / rustup optional) and each
+  // required extension. Doctor's pure core (core/diagnostics) turns these into ordered
+  // items; TASK-018 will add rustup-target probes here.
+  collectDiagnostics: async (): Promise<DiagnosticProbe[]> => {
+    const tc = await bridge.checkToolchain();
+    const probes: DiagnosticProbe[] = [
+      {
+        id: 'cargo',
+        label: 'cargo',
+        severity: 'critical',
+        present: tc.cargo !== undefined,
+        detail: tc.cargo,
+        tier: 2,
+        resolution: { kind: 'openUrl', url: 'https://rustup.rs' },
+      },
+      {
+        id: 'rustup',
+        label: 'rustup',
+        severity: 'optional',
+        present: tc.rustup !== undefined,
+        detail: tc.rustup,
+        tier: 2,
+        resolution: { kind: 'openUrl', url: 'https://rustup.rs' },
+      },
+    ];
+    for (const extId of cargoAdapter.requiredExtensions) {
+      const ext = vscode.extensions.getExtension(extId);
+      probes.push({
+        id: extId,
+        label: extensionLabel(extId),
+        severity: 'optional',
+        present: ext !== undefined,
+        detail: ext?.packageJSON?.version as string | undefined,
+        tier: 1,
+        resolution: { kind: 'installExtension', extensionId: extId },
+      });
+    }
+    return probes;
+  },
 };
