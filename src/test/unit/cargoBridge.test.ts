@@ -3,6 +3,7 @@ import type { InvocationConfig, Selection } from '../../core/types';
 import {
   abbreviateTriple,
   assembleCargoArgs,
+  buildLldbConfig,
   buildProfileList,
   defaultBinTarget,
   featuresToArgs,
@@ -247,5 +248,27 @@ describe('buildProfileList', () => {
       { id: 'release', label: 'release', description: 'Release' },
       { id: 'bench', label: 'bench', description: 'custom' },
     ]);
+  });
+});
+
+// ── buildLldbConfig (상세설계서 §8.6) ─────────────────────────────────────────
+
+describe('buildLldbConfig', () => {
+  it('builds a CodeLLDB launch config named after the target', () => {
+    assert.deepEqual(buildLldbConfig('app', '/w/target/debug/app', ['--flag'], '/w'), {
+      type: 'lldb',
+      request: 'launch',
+      name: 'Debug app',
+      program: '/w/target/debug/app',
+      args: ['--flag'],
+      cwd: '/w',
+      sourceLanguages: ['rust'],
+    });
+  });
+
+  it('falls back to a generic name and empty args', () => {
+    const config = buildLldbConfig(undefined, '/w/target/debug/app', [], '/w');
+    assert.equal(config.name, 'Debug');
+    assert.deepEqual(config.args, []);
   });
 });
