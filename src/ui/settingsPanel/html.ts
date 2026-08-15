@@ -75,6 +75,12 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   }
   .empty { padding: 24px; opacity: .7; text-align: center; }
   code { font-family: var(--vscode-editor-font-family); }
+  h3.cat { margin: 18px 0 6px; font-size: .95em; text-transform: capitalize; opacity: .85;
+    border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 3px; }
+  .opt { padding: 6px 0; }
+  .opt .row { padding: 2px 0; }
+  .preview { background: var(--vscode-textCodeBlock-background); padding: 10px 12px;
+    border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -178,12 +184,58 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       '<p class="muted">Editing profile definitions (Cargo.toml) is planned for v2.</p>';
   }
 
+  function currentOptionValue(o) {
+    const inv = state.invocation || {};
+    if (o.category === 'compiler') return (inv.compiler || {})[o.id];
+    if (o.category === 'linker') return (inv.linker || {})[o.id];
+    if (o.category === 'output') return inv.outputDir;
+    if (o.category === 'env') return (inv.env || {})[o.label];
+    return undefined;
+  }
+
+  function renderOption(o) {
+    const val = currentOptionValue(o);
+    const attrs = 'data-action="set-option" data-option-id="' + esc(o.id) + '" data-type="' + esc(o.type) + '"';
+    let editor;
+    if (o.type === 'enum') {
+      editor = '<select ' + attrs + '><option value="">(default)</option>' +
+        (o.allowedValues || []).map((v) =>
+          '<option value="' + esc(v) + '"' + (String(val) === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('') +
+        '</select>';
+    } else if (o.type === 'bool') {
+      editor = '<input type="checkbox" ' + attrs + (val === true ? ' checked' : '') + ' />';
+    } else if (o.type === 'int') {
+      editor = '<input type="number" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
+    } else {
+      editor = '<input type="text" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
+    }
+    return '<div class="opt"><div class="row"><b>' + esc(o.label) + '</b> ' + editor + '</div>' +
+      '<div class="muted">' + esc(o.description) +
+      (o.example ? ' &nbsp;<code>' + esc(o.example) + '</code>' : '') + '</div></div>';
+  }
+
   function renderInvocation() {
-    // TASK-014 fills in the master-detail option editor; show categories for now.
-    const cats = state.configCategories.map((cat) => '<div class="row item">' + esc(cat) + '</div>').join('');
-    return '<h2>Invocation config</h2>' +
-      '<p class="muted">Overlay categories for this adapter:</p>' + cats +
-      '<p class="muted">The option-catalog editor and command preview arrive in TASK-014.</p>';
+    const byCat = {};
+    state.optionCatalog.forEach((o) => { (byCat[o.category] = byCat[o.category] || []).push(o); });
+
+    let html = '<h2>Invocation config <span class="muted">· profile: ' + esc(state.profile) + '</span></h2>';
+    state.configCategories.forEach((cat) => {
+      html += '<h3 class="cat">' + esc(cat) + '</h3>';
+      if (cat === 'runArgs') {
+        const args = state.invocation.runArgs || [];
+        html += '<div class="row"><input type="text" id="runargs-input" style="flex:1" ' +
+          'placeholder="--flag value" value="' + esc(args.join(' ')) + '" /></div>' +
+          '<div class="muted">argv: [' + args.map((t) => '<code>' + esc(t) + '</code>').join(', ') + ']</div>';
+      } else if (cat === 'buildEvent') {
+        html += '<div class="muted">Pre/post-build commands — planned.</div>';
+      } else {
+        const opts = byCat[cat] || [];
+        html += opts.length ? opts.map(renderOption).join('') : '<div class="muted">No options.</div>';
+      }
+    });
+    html += '<h3 class="cat">Command preview</h3><pre class="preview"><code>' +
+      esc(state.commandPreview || '(unavailable)') + '</code></pre>';
+    return html;
   }
 
   function renderGeneral() {
@@ -207,6 +259,17 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       const checked = Array.from(document.querySelectorAll('.feature-cb'))
         .filter((cb) => cb.checked).map((cb) => cb.value);
       post({ type: 'setChipValue', chipId: 'features', value: checked });
+    } else if (el.id === 'runargs-input') {
+      post({ type: 'setRunArgs', line: el.value });
+    } else if (el.dataset && el.dataset.action === 'set-option') {
+      const id = el.dataset.optionId;
+      const type = el.dataset.type;
+      let value;
+      if (type === 'bool') value = el.checked;
+      else if (type === 'int') value = el.value === '' ? undefined : Number(el.value);
+      else value = el.value; // enum / string
+      if (value === undefined || value === '') post({ type: 'clearOption', optionId: id });
+      else post({ type: 'setOption', optionId: id, value: value });
     }
   });
 

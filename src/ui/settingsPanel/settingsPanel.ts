@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
-import type { ChipItem, ChipValue, InvocationConfig, OptionSpec } from '../../core/types';
+import { applyOption, setRunArgsLine } from '../../core/invocationConfig';
+import type { ChipItem, ChipValue, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo } from '../../core/types';
 import { getSettingsHtml } from './html';
 
 /** One chip rendered in the settings page (options + current value). */
@@ -26,6 +27,7 @@ export interface SettingsState {
   configCategories: string[];
   optionCatalog: OptionSpec[];
   invocation: InvocationConfig;
+  commandPreview: string;
 }
 
 /** Messages the webview sends to the extension (상세설계서 §10.3). */
@@ -33,7 +35,9 @@ type InMessage =
   | { type: 'ready' }
   | { type: 'switchProject'; projectId: string }
   | { type: 'setChipValue'; chipId: string; value: ChipValue }
-  | { type: 'setInvocation'; profile: string; config: InvocationConfig };
+  | { type: 'setOption'; optionId: string; value: OptionValue }
+  | { type: 'clearOption'; optionId: string }
+  | { type: 'setRunArgs'; line: string };
 
 /**
  * SettingsPanel — the WebviewPanel settings page (TASK-013, F21 / ADR-012 / 상세설계서 §10).
@@ -81,29 +85,66 @@ export class SettingsPanel {
   }
 
   private async onMessage(message: InMessage): Promise<void> {
-    const activeId = this.store.activeProjectId;
-    switch (message.type) {
-      case 'ready':
-        await this.postState();
-        return;
-      case 'switchProject':
-        await this.store.setActiveProject(message.projectId);
-        break;
-      case 'setChipValue':
-        if (!activeId) {
-          return;
-        }
-        await this.store.setValue(activeId, message.chipId, message.value);
-        break;
-      case 'setInvocation':
-        if (!activeId) {
-          return;
-        }
-        await this.store.setInvocation(activeId, message.profile, message.config);
-        break;
+    if (message.type === 'ready') {
+      await this.postState();
+      return;
     }
+
+    const activeId = this.store.activeProjectId;
+    if (message.type === 'switchProject') {
+      await this.store.setActiveProject(message.projectId);
+    } else if (activeId !== undefined) {
+      switch (message.type) {
+        case 'setChipValue':
+          await this.store.setValue(activeId, message.chipId, message.value);
+          break;
+        case 'setOption': {
+          const spec = this.specFor(activeId, message.optionId);
+          if (spec) {
+            await this.editInvocation(activeId, (config) => applyOption(config, spec, message.value));
+          }
+          break;
+        }
+        case 'clearOption': {
+          const spec = this.specFor(activeId, message.optionId);
+          if (spec) {
+            await this.editInvocation(activeId, (config) => applyOption(config, spec, undefined));
+          }
+          break;
+        }
+        case 'setRunArgs':
+          await this.editInvocation(activeId, (config) => setRunArgsLine(config, message.line));
+          break;
+      }
+    }
+
     this.onChanged(); // keep the status bar in sync
     await this.postState();
+  }
+
+  /** Apply an overlay edit for the active (project × profile) and persist it. */
+  private async editInvocation(
+    projectId: string,
+    edit: (config: InvocationConfig) => InvocationConfig,
+  ): Promise<void> {
+    const project = this.registry.project(projectId);
+    if (!project) {
+      return;
+    }
+    const profile = this.activeProfile(project);
+    const next = edit(this.store.getInvocation(project.id, profile));
+    await this.store.setInvocation(project.id, profile, next);
+  }
+
+  private specFor(projectId: string, optionId: string): OptionSpec | undefined {
+    const project = this.registry.project(projectId);
+    const adapter = project ? this.registry.adapterFor(project) : undefined;
+    return adapter?.optionCatalog.find((option) => option.id === optionId);
+  }
+
+  private activeProfile(project: ProjectInfo): string {
+    const value = this.store.getValue(project.id, 'profile');
+    return typeof value === 'string' ? value : 'dev';
   }
 
   private async postState(): Promise<void> {
@@ -124,7 +165,16 @@ export class SettingsPanel {
     const project = activeId ? this.registry.project(activeId) : undefined;
     const adapter = project ? this.registry.adapterFor(project) : undefined;
     if (!project || !adapter) {
-      return { projects, profile: 'dev', actionsBuild: false, chips: [], configCategories: [], optionCatalog: [], invocation: {} };
+      return {
+        projects,
+        profile: 'dev',
+        actionsBuild: false,
+        chips: [],
+        configCategories: [],
+        optionCatalog: [],
+        invocation: {},
+        commandPreview: '',
+      };
     }
 
     const profileValue = this.store.getValue(project.id, 'profile');
@@ -149,6 +199,7 @@ export class SettingsPanel {
       });
     }
 
+    const invocation = this.store.getInvocation(project.id, profile);
     return {
       projects,
       activeProjectId: project.id,
@@ -158,8 +209,30 @@ export class SettingsPanel {
       chips,
       configCategories: adapter.configCategories,
       optionCatalog: adapter.optionCatalog,
-      invocation: this.store.getInvocation(project.id, profile),
+      invocation,
+      commandPreview: this.commandPreview(adapter, project, invocation),
     };
+  }
+
+  /**
+   * The cargo command the current selection + overlay would run, read from the Task's
+   * ProcessExecution (adapter-agnostic). Empty for stub adapters that can't build a Task.
+   */
+  private commandPreview(adapter: LanguageAdapter, project: ProjectInfo, config: InvocationConfig): string {
+    try {
+      const selection = this.store.getSelection(project.id);
+      const task = adapter.actions.build
+        ? adapter.createBuildTask(project, selection, config)
+        : adapter.createRunTask(project, selection, config);
+      const execution = task.execution;
+      if (execution instanceof vscode.ProcessExecution) {
+        const parts = [execution.process, ...execution.args.map((a) => (/\s/.test(a) ? `"${a}"` : a))];
+        return parts.join(' ');
+      }
+    } catch {
+      // stub adapter (notImplemented) or assembly error — no preview
+    }
+    return '';
   }
 
   private disposePanel(): void {

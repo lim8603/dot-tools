@@ -178,53 +178,6 @@ export function buildRustflags(linker: Record<string, OptionValue>): string {
   return flags.join(' ');
 }
 
-/**
- * Tokenize a run-args input line by shell quoting rules (F16, §10.3), so the
- * settings page can accept one string and preview the resulting argv. Handles
- * single/double quotes and backslash escapes inside double quotes.
- */
-export function parseArgsLine(line: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let started = false;
-  let quote: "'" | '"' | undefined;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (quote === "'") {
-      if (ch === "'") {
-        quote = undefined;
-      } else {
-        current += ch;
-      }
-    } else if (quote === '"') {
-      if (ch === '"') {
-        quote = undefined;
-      } else if (ch === '\\' && (line[i + 1] === '"' || line[i + 1] === '\\')) {
-        current += line[++i];
-      } else {
-        current += ch;
-      }
-    } else if (ch === "'" || ch === '"') {
-      quote = ch;
-      started = true;
-    } else if (ch === ' ' || ch === '\t') {
-      if (started) {
-        tokens.push(current);
-        current = '';
-        started = false;
-      }
-    } else {
-      current += ch;
-      started = true;
-    }
-  }
-  if (started) {
-    tokens.push(current);
-  }
-  return tokens;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Executable resolution (상세설계서 §8.5)
 // ─────────────────────────────────────────────────────────────────────────────
