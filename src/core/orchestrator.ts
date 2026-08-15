@@ -15,12 +15,20 @@ import { ensureExtension } from './ensureExtension';
  * (INV-2). build()/run() execute real cargo tasks (TASK-010); debug() lands in TASK-011.
  */
 export class Orchestrator {
+  /** Notified after any state change so open views (settings page) can re-sync. */
+  private viewSync: () => void = () => {};
+
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
     private readonly statusBar: StatusBarController,
     private readonly taskRunner: TaskRunner,
   ) {}
+
+  /** Register a view-sync callback (e.g. the settings page) invoked on every re-render. */
+  setViewSync(callback: () => void): void {
+    this.viewSync = callback;
+  }
 
   /** First activation: scan, reconcile stored state, render (상세설계서 §3.3). */
   async initialize(): Promise<void> {
@@ -213,11 +221,13 @@ export class Orchestrator {
     const context = this.activeContext();
     if (!context) {
       this.statusBar.hideAll();
+      this.viewSync();
       return;
     }
     const { project, adapter } = context;
     await this.applyDefaults(project, adapter);
     this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+    this.viewSync();
   }
 
   /** Seed unset chips from their defaultValue (e.g. profile=dev, sole bin target). */

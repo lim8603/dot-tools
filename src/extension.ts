@@ -23,6 +23,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const taskRunner = new TaskRunner();
   const orchestrator = new Orchestrator(registry, store, statusBar, taskRunner);
   const settingsPanel = new SettingsPanel(registry, store, () => void orchestrator.renderActive());
+  // Keep an open settings page live when state changes from the status bar / watcher.
+  orchestrator.setViewSync(() => settingsPanel.refresh());
 
   context.subscriptions.push(
     statusBar,

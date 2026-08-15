@@ -52,23 +52,6 @@
         "category": "DevSwitcher"
       }
     ],
-    "keybindings": [
-      {
-        "command": "devSwitcher.build",
-        "key": "ctrl+alt+b",
-        "mac": "cmd+alt+b"
-      },
-      {
-        "command": "devSwitcher.run",
-        "key": "ctrl+alt+r",
-        "mac": "cmd+alt+r"
-      },
-      {
-        "command": "devSwitcher.debug",
-        "key": "ctrl+alt+d",
-        "mac": "cmd+alt+d"
-      }
-    ],
     "problemMatchers": [
       {
         "name": "devswitcher-rustc",

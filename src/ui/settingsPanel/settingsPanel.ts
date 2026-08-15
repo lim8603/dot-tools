@@ -79,6 +79,12 @@ export class SettingsPanel {
     );
   }
 
+  /** Re-send state to an open page (no-op when closed) — for external changes
+   *  (status-bar chip picks, manifest rescans) so the page stays live without Refresh. */
+  refresh(): void {
+    void this.postState();
+  }
+
   dispose(): void {
     this.disposePanel();
     this.panel?.dispose();
@@ -215,19 +221,32 @@ export class SettingsPanel {
   }
 
   /**
-   * The cargo command the current selection + overlay would run, read from the Task's
-   * ProcessExecution (adapter-agnostic). Empty for stub adapters that can't build a Task.
+   * The build and run commands the current selection + overlay would produce, read
+   * from each Task's ProcessExecution (adapter-agnostic). Two lines so compiler
+   * --config args (build) and run-args after `--` (run) are both visible. Empty lines
+   * are dropped; stub adapters that can't build a Task yield nothing.
    */
   private commandPreview(adapter: LanguageAdapter, project: ProjectInfo, config: InvocationConfig): string {
+    const selection = this.store.getSelection(project.id);
+    const lines: string[] = [];
+    if (adapter.actions.build) {
+      const build = this.previewOf(() => adapter.createBuildTask(project, selection, config));
+      if (build) {
+        lines.push(`build:  ${build}`);
+      }
+    }
+    const run = this.previewOf(() => adapter.createRunTask(project, selection, config));
+    if (run) {
+      lines.push(`run:    ${run}`);
+    }
+    return lines.join('\n');
+  }
+
+  private previewOf(make: () => vscode.Task): string {
     try {
-      const selection = this.store.getSelection(project.id);
-      const task = adapter.actions.build
-        ? adapter.createBuildTask(project, selection, config)
-        : adapter.createRunTask(project, selection, config);
-      const execution = task.execution;
+      const execution = make().execution;
       if (execution instanceof vscode.ProcessExecution) {
-        const parts = [execution.process, ...execution.args.map((a) => (/\s/.test(a) ? `"${a}"` : a))];
-        return parts.join(' ');
+        return [execution.process, ...execution.args.map((a) => (/\s/.test(a) ? `"${a}"` : a))].join(' ');
       }
     } catch {
       // stub adapter (notImplemented) or assembly error — no preview
