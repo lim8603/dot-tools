@@ -398,6 +398,16 @@ export class CargoBridge {
     return parsed;
   }
 
+  /**
+   * Cached metadata for a manifest without fetching — undefined on a miss. Lets the
+   * synchronous Task builders (createBuildTask/createRunTask, which cannot await)
+   * read hasDefaultFeature; by the time a build is triggered the cache is warm from
+   * project listing / chip population.
+   */
+  peekMetadata(manifestPath: string): CargoMetadata | undefined {
+    return this.metadataCache.get(manifestPath);
+  }
+
   /** Installed target triples from `rustup target list --installed` (아키텍처 칩). */
   async listInstalledTargets(): Promise<string[]> {
     const result = await execCapture('rustup', ['target', 'list', '--installed'], undefined, this.exec);
