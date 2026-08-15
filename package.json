@@ -1,0 +1,46 @@
+{
+  "name": "devswitcher-tools",
+  "displayName": "DevSwitcher Tools",
+  "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ / C# / Python)",
+  "version": "0.0.1",
+  "publisher": "seunghyun",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "workspace"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "devSwitcher.helloWorld",
+        "title": "DevSwitcher: Hello World"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "pretest": "npm run compile && npm run check-types"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.0",
+    "@typescript-eslint/parser": "^8.8.0",
+    "esbuild": "^0.23.1",
+    "eslint": "^9.11.0",
+    "typescript": "^5.6.2"
+  }
+}
