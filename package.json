@@ -2,10 +2,28 @@
   "name": "devswitcher-tools",
   "displayName": "DevSwitcher Tools",
   "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ / C# / Python)",
-  "version": "0.0.1",
-  "publisher": "seunghyun",
+  "version": "0.1.0",
+  "publisher": "lim8603",
   "private": true,
   "license": "MIT",
+  "author": "Seunghyun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lim8603/dot-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lim8603/dot-tools/issues"
+  },
+  "homepage": "https://github.com/lim8603/dot-tools#readme",
+  "keywords": [
+    "rust",
+    "cargo",
+    "status bar",
+    "build",
+    "run",
+    "debug",
+    "project switcher"
+  ],
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -13,6 +31,7 @@
     "workspace"
   ],
   "categories": [
+    "Programming Languages",
     "Other"
   ],
   "activationEvents": [

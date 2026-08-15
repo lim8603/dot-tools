@@ -1,14 +1,39 @@
-.vscode/**
-.vscode-test/**
-.cowork/**
-docs/**
+# ── VSIX contents ──
+# Ship only: dist/extension.js, README.md, LICENSE, CHANGELOG.md, package.json,
+# images/*.png. Everything else below is excluded to keep the package slim.
+# (node_modules, .git, and package-lock.json are excluded by vsce defaults.)
+
+# Source & build tooling (already bundled into dist/extension.js)
 src/**
 out/**
-node_modules/**
-**/*.map
-**/*.ts
+.vscode-test/**
 esbuild.js
 tsconfig.json
-eslint.config.js
-.gitignore
 **/tsconfig.*
+eslint.config.*
+.eslintrc*
+.vscode-test.mjs
+.mocharc.json
+**/*.ts
+**/*.map
+
+# AI-tool entrypoints & cowork process docs (not part of the shipped extension)
+.cowork/**
+docs/**
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.github/**
+.claude/**
+
+# Editor / repo config
+.vscode/**
+.gitignore
+.gitattributes
+.editorconfig
+*.code-workspace
+
+# Dev-only artifacts
+devswitcher.profile.json
+images/*.svg
+*.vsix
