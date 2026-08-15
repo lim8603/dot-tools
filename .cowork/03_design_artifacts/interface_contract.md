@@ -12,7 +12,7 @@
 | 관련 Intent | INT-001 |
 | 프로토콜 | in-process TypeScript 인터페이스 (IPC/네트워크 아님) |
 | 버전 | v1 — 상세설계서 §4 반입 + F20 프로젝트 생성 계약(ADR-010) 추가 |
-| 출처 | `docs/DevSwitcher-Tools_상세설계서.md` §4 |
+| 출처 | `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md` §4 |
 
 ---
 

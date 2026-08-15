@@ -69,8 +69,8 @@ Visual Studio 계열이 제공하는 "상단에서 프로파일·아키텍처·�
 
 ## 관련 문서
 
-- `docs/VSCode확장_개발계획서_개념설계.md` — 개념설계서(원천)
-- `docs/DevSwitcher-Tools_상세설계서.md` — 상세설계서 v1.1 "확정" (구현 착수 기준 문서, 개념설계와 충돌 시 우선)
+- `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Concept-Design.md` — 개념설계서(원천)
+- `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md` — 상세설계서 v1.2 (현행 아키텍처 스냅샷, 개념설계와 충돌 시 우선; 운영 SSOT는 .cowork registry/canonical)
 - `.cowork/02_project_definition/deliverable_plan.md` — 산출물 계획
 - 반입 완료: `functional_spec.md`(F1~F20), `risk_register.md`(R1~R11), `adr_registry.md`(ADR-001~010)
 - 향후: `domain_model.md`, `interface_contract.md`, `data_model.md`, `tech_stack.md`, `milestone_registry.md`(M0~M6 + F20)

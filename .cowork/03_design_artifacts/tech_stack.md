@@ -8,7 +8,7 @@
 
 프로젝트에서 사용하는 언어, 프레임워크, 라이브러리, 도구를 한 곳에 등록하고 각 선택의 근거 ADR을 연결한다.
 
-- 출처: `docs/DevSwitcher-Tools_상세설계서.md` §3.2, §8, §14~§15.
+- 출처: `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md` §3.2, §8, §14~§15.
 - `coding_convention.md`는 이 문서 기준으로 구성한다.
 
 ---

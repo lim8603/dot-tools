@@ -10,7 +10,7 @@
 | --- | --- |
 | 관련 Intent | INT-001 |
 | 버전 | v1 (설계서 v1.1 반입) |
-| 출처 | `docs/DevSwitcher-Tools_상세설계서.md`(우선), `docs/VSCode확장_개발계획서_개념설계.md` |
+| 출처 | `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md`(우선), `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Concept-Design.md` |
 
 > ID는 설계서의 `F1~F19` 번호 체계를 그대로 승계해 추적성을 유지한다. 상세 시퀀스/에러 처리는 상세설계서 해당 절을 기준으로 하고, 이 문서는 구조화된 캐노니컬 명세로 유지한다.
 

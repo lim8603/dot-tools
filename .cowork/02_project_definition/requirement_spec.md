@@ -110,5 +110,5 @@
 
 | ID | 근거 | 출처 문서/대화 | 비고 |
 |----|------|---------------|------|
-| SRC-001 | 개념설계(기능·아키텍처 원안) | `docs/VSCode확장_개발계획서_개념설계.md` | 원천 |
-| SRC-002 | 상세설계(DD-01~09, F15~F19, 원격·Doctor) | `docs/DevSwitcher-Tools_상세설계서.md` | 충돌 시 우선 |
+| SRC-001 | 개념설계(기능·아키텍처 원안) | `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Concept-Design.md` | 원천 |
+| SRC-002 | 상세설계(DD-01~12, F15~F21, 원격·Doctor·마법사·호출구성) | `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md` | 충돌 시 우선 |

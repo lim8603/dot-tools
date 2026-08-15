@@ -2,17 +2,18 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 버전 | 1.1 |
-| 작성일 | 2026-08-13 |
-| 상태 | 확정 (구현 착수 기준 문서) |
-| 기반 문서 | `docs/VSCode확장_개발계획서_개념설계.md` (개념설계서) |
+| 문서 버전 | 1.2 |
+| 작성일 | 2026-08-13 (v1.1) · 2026-08-15 갱신 (v1.2) |
+| 상태 | 현행 아키텍처 스냅샷 — F20·F21·OQ-002 반영. 운영 SSOT는 `.cowork/` |
+| 기반 문서 | `DevSwitcher-Tools_Concept-Design.md` (개념설계서, 동일 폴더) |
 | 확장 식별자 | `devswitcher-tools` |
 | 구현 언어 | TypeScript / 번들러 esbuild |
-| v1 구현 범위 | CargoAdapter(Rust) 단독 구현 + 3개 언어 어댑터 스텁 |
+| v1 구현 범위 | CargoAdapter(Rust) 단독 구현 + 3개 언어 어댑터 스텁. 시작 마법사(F20)는 4개 언어 실동작 |
 
-> **문서 성격**: 개념설계서의 방향을 계승하되, 검토 과정에서 확정된 설계 결정(§2)을 반영하여
-> 구현에 바로 착수할 수 있는 수준으로 타입·모듈·시퀀스·에러 처리를 확정한다.
+> **문서 성격**: 개념설계서의 방향을 계승하되, 검토·구현 과정에서 확정된 설계 결정(§2)을 반영한 **현행 아키텍처 스냅샷**이다.
 > 개념설계서와 이 문서가 충돌하는 부분은 **이 문서가 우선**한다.
+> **운영 기준(SSOT)은 `.cowork/`** (registry/canonical). 이 문서는 재사용을 위한 통합 참조본으로, `.cowork`에서 정제된 설계를 종합한다.
+> **v1.2 갱신(2026-08-15)**: F20 시작 마법사(ADR-010), F21 호출 구성 오버레이·설정 페이지(ADR-011·012), OQ-002(InvocationConfig 전달=별도 인자) 반영. DD-01~09는 `.cowork`의 ADR-001~009로, DD-10~12는 ADR-010~012로 승격됨.
 
 ---
 
@@ -46,6 +47,8 @@ Rust·C++·C#·Python 등 서로 다른 언어/빌드시스템을 **동일한 �
 | **F17** | **매니페스트 파일 감시** — Cargo.toml 변경 시 자동 갱신 | 신규 (DD-04) |
 | **F18** | **원격 개발 환경 호환** — WSL/Dev Containers/Remote-SSH에서 전 기능 동작 | 신규 (DD-08) |
 | **F19** | **환경 진단·의존성 처리(Doctor)** — 감지 → 3단계 자동화 → 복구 | 신규 (DD-09) |
+| **F20** | **시작 마법사** — 매니페스트 부재 폴더에서 수동 명령으로 새 프로젝트 생성(전 언어 실동작, 네이티브 도구 위임) | 신규 (DD-10 / ADR-010) |
+| **F21** | **호출 구성 오버레이** — 컴파일옵션·출력·링커·env·빌드전후를 파일 무편집으로 (프로젝트×구성)별 저장·주입 | 신규 (DD-11·12 / ADR-011·012) |
 
 **v1 제외 (Out of Scope)** — 개념설계서와 동일
 
@@ -53,6 +56,7 @@ Rust·C++·C#·Python 등 서로 다른 언어/빌드시스템을 **동일한 �
 - 새 디버거 어댑터 자체 구현 (기존 디버거 확장에 위임)
 - 원격 배포/타깃 관리, 멀티 워크스페이스 간 의존성 그래프
 - F11(환경/venv 선택)은 칩 프레임워크 상에서 **정의만** 하고 PythonAdapter 구현 시 활성화
+- **캐노니컬 파일 국소 편집(구 §8.7)은 v2로 이월**(ADR-011). v1은 호출 구성 오버레이(F21)를 파일 무편집으로 **주입만** 한다
 
 ### 1.3 v1 완료 기준 (Definition of Done)
 
@@ -64,12 +68,14 @@ Rust·C++·C#·Python 등 서로 다른 언어/빌드시스템을 **동일한 �
 6. PythonAdapter 스텁을 활성화했을 때 칩 구성이 선언대로 바뀌는 회귀 테스트를 통과한다 (리트머스 시험).
 7. WSL(또는 Dev Container)에서 폴더를 열었을 때 1~5가 동일하게 동작한다 (F18).
 8. `DevSwitcher: 환경 진단`이 툴체인·확장·target 상태를 정확히 보고하고, 1단계 항목을 즉시 설치한다 (F19).
+9. 매니페스트 부재 폴더에서 `DevSwitcher: 새 프로젝트`가 네이티브 도구로 기본 템플릿을 생성하고, 생성 후 ManifestWatcher가 자동 감지한다 (F20).
+10. 설정 페이지에서 호출 구성 오버레이(컴파일옵션·출력·env·빌드전후)를 (프로젝트×구성)별로 저장하고, 빌드/실행 시 `--config`/env로 주입한다. PythonAdapter에서는 컴파일러/링커/출력 카테고리가 사라지고 env·runArgs만 남는다 (F21, 설정 페이지 리트머스).
 
 ---
 
 ## 2. 설계 결정 사항 (Design Decisions)
 
-개념설계서 검토 과정에서 확정된 결정. 추후 `.cowork/03_design_artifacts/adrs/`로 승격 가능한 후보다.
+개념설계서 검토·구현 과정에서 확정된 결정. **DD-01~09는 `.cowork/03_design_artifacts/adrs/`의 ADR-001~009로, DD-10~12는 ADR-010~012로 승격됨** (운영 SSOT = ADR 레지스트리).
 
 | ID | 결정 | 기각된 대안 | 근거 |
 |---|---|---|---|
@@ -82,6 +88,9 @@ Rust·C++·C#·Python 등 서로 다른 언어/빌드시스템을 **동일한 �
 | **DD-07** | SSOT 파사드 원칙 유지: **값은 캐노니컬 파일에만**, 확장은 포인터+선택 상태만 소유 | — | 개념설계서 원칙 계승. DD-01은 이 원칙의 저장 위치만 정정한 것 |
 | **DD-08** | 원격 환경(WSL·Dev Containers·Remote-SSH)을 v1 지원 범위로 — `extensionKind: ["workspace"]` 선언 + 원격 안전 규칙(§12.2) | 로컬 전용 v1 | VSCode Remote 아키텍처에서는 확장 호스트가 원격 측에서 실행되므로, 안전 규칙만 지키면 추가 구현 없이 WSL/컨테이너/SSH 전체가 열림. DD-05(경로를 cargo에 위임)·DD-06(Uri 기반 스캔)이 이미 원격 안전 |
 | **DD-09** | 의존성은 온디맨드 3단계 처리(§13) — `extensionDependencies` 미사용 | CodeLLDB `extensionDependencies` 하드 의존(v1.0 원안) | 다언어 확장에서 전 어댑터의 디버거 확장을 강제 동반 설치하는 것은 부적절(Python 사용자에게 CodeLLDB 강제 설치). 확장은 `workbench.extensions.installExtension`으로 사용 시점 자동 설치가 가능하므로 하드 의존이 불필요 |
+| **DD-10** (ADR-010) | **시작 마법사(F20)** — 매니페스트 부재 폴더에서 수동 명령으로 새 프로젝트 생성. 파일 생성은 네이티브 도구(`cargo new`·`dotnet new` 등)에 위임, 전 언어 v1 실동작 | 확장이 직접 파일 생성 / 언어별 비대칭 방치 | 파일이 없으면 아무것도 못 하던 비대칭 해소. 확장은 오케스트레이션만, 생성 후 ManifestWatcher(F17) 단일 경로 재사용 |
+| **DD-11** (ADR-011) | **호출 구성 오버레이(F21)** — VS2026식 속성(컴파일옵션·출력·링커·env·빌드전후)을 캐노니컬 파일 편집 없이 `(프로젝트×구성)`별 저장 후 `--config`/env로 호출 시 주입. 설정 3계층(①확장설정 ②캐노니컬정의 ③오버레이) | 캐노니컬 파일 직접 편집(SSOT 충돌) | "소유 대신 조립" — 파일을 편집하지 않고 호출 시점에 덮어써 SSOT(DD-07)를 유지. 캐노니컬 파일 편집은 v2 이월 |
+| **DD-12** (ADR-012) | **설정 페이지 + 옵션 카탈로그(F21)** — WebviewPanel "설정 페이지"에 어댑터 선언 옵션 카탈로그(설명·예제·타입 에디터) 마스터-디테일 브라우저 | 단순 폼 다이얼로그 | 옵션을 잘 모르는 개발자도 설명·예제로 학습하며 설정. UI는 `OptionSpec[]`만 알고 언어 무지(DD-03 연장) |
 
 ---
 
@@ -129,15 +138,19 @@ src/
  ├─ ui/
  │   ├─ statusBar.ts              # 칩/버튼 렌더링 (어댑터 무지)
  │   ├─ picks.ts                  # QuickPick 헬퍼 (단일/복수 선택)
- │   └─ settingsPanel/            # Webview (HTML/메시지 프로토콜)
+ │   ├─ newProjectWizard.ts       # 시작 마법사 플로우 (F20)
+ │   └─ settingsPanel/            # Webview "설정 페이지" (옵션 카탈로그 브라우저 + 호출 구성, F21)
  ├─ adapters/
+ │   ├─ notImplemented.ts         # 스텁 헬퍼 (미구현 메서드 throw) — 구현됨
+ │   ├─ index.ts                  # ALL_ADAPTERS: LanguageAdapter[] (배럴) — 구현됨
  │   ├─ cargo/
- │   │   ├─ cargoAdapter.ts       # LanguageAdapter 구현
+ │   │   ├─ cargoAdapter.ts       # LanguageAdapter 구현 (v1 선언 스텁 완료)
  │   │   ├─ cargoBridge.ts        # cargo CLI 호출 + JSON 파싱 (순수 로직 분리 → 단위 테스트 대상)
- │   │   └─ cargoToml.ts          # Cargo.toml 국소 편집 (FileFacade의 TOML 구현)
- │   ├─ cmake/cmakeAdapter.ts     # 스텁
- │   ├─ dotnet/dotnetAdapter.ts   # 스텁
- │   └─ python/pythonAdapter.ts   # 스텁 (칩 선언 포함)
+ │   │   ├─ optionCatalog.ts      # cargo 옵션 카탈로그 (OptionSpec[], F21) — 구현됨
+ │   │   └─ cargoToml.ts          # Cargo.toml 국소 편집 (v2 이월, ADR-011)
+ │   ├─ cmake/cmakeAdapter.ts     # 스텁 (+ createProjectTask F20)
+ │   ├─ dotnet/dotnetAdapter.ts   # 스텁 (+ createProjectTask F20)
+ │   └─ python/pythonAdapter.ts   # 스텁 (칩 선언 포함, 리트머스)
  └─ test/
      ├─ unit/                     # cargoBridge 등 순수 로직 (VSCode 호스트 불필요)
      └─ integration/              # @vscode/test-electron
@@ -217,11 +230,11 @@ export interface ProjectInfo {
 
 export interface Selection {
   projectId: string;
-  /** chipId → 선택 값 */
+  /** chipId → 선택 값 (profile 칩 포함) */
   values: Record<string, ChipValue>;
-  /** 실행/디버그 시 프로그램에 전달할 인자 (F16) */
-  runArgs: string[];
 }
+// 실행 인자(runArgs)는 InvocationConfig.runArgs로 승격 — (프로젝트×구성)별 저장(F21/ADR-011).
+// Selection은 칩 선택만 담는다 (OQ-002 확정: 2026-08-15).
 
 // ───────────────────────── 액션·실행 ─────────────────────────
 
@@ -236,6 +249,42 @@ export interface TaskResult {
   succeeded: boolean;             // exitCode === 0
 }
 
+// ───────────────────────── 프로젝트 생성 (F20 / ADR-010) ─────────────────────────
+
+/** 시작 마법사가 새 프로젝트를 만들 대상. 파일 생성은 네이티브 도구에 위임. */
+export interface NewProjectTarget {
+  folderUri: vscode.Uri;    // 생성 대상 폴더 (빈 워크스페이스 폴더 또는 사용자 선택)
+  projectName: string;
+}
+
+// ───────────────────────── 호출 구성 오버레이 (F21 / ADR-011·012) ─────────────────────────
+
+export type OptionValue = string | number | boolean | string[];
+
+/** 한 (프로젝트 × 구성)에 적용되는 호출 구성 오버레이. 파일 미편집, 호출 시 주입. */
+export interface InvocationConfig {
+  compiler?: Record<string, OptionValue>;   // 카탈로그 옵션 id → 값 (opt-level 등)
+  linker?: Record<string, OptionValue>;
+  outputDir?: string;                        // 출력 위치 (CARGO_TARGET_DIR 등)
+  env?: Record<string, string>;              // 환경변수 (PYTHONPATH 등)
+  runArgs?: string[];                        // 실행 인자 (F16 승격)
+  preBuild?: string[];                       // 빌드/실행 전 명령 (ShellExecution)
+  postBuild?: string[];                      // 빌드/실행 후 명령
+}
+
+/** 설정 페이지가 렌더하는 옵션 카탈로그 항목 (ADR-012). 어댑터 선언 → UI는 이것만 안다. */
+export interface OptionSpec {
+  id: string;                 // 'opt-level'
+  category: string;           // 'compiler' | 'linker' | 'output' | 'env' | 'buildEvent' | 'runArgs'
+  label: string;
+  description: string;        // 옵션을 모르는 개발자용 교육 텍스트
+  example: string;
+  type: 'enum' | 'bool' | 'int' | 'string' | 'stringList';
+  allowedValues?: string[];   // enum일 때 드롭다운 값
+  defaultValue?: OptionValue;
+  injection: 'config' | 'env' | 'flag' | 'preTask' | 'postTask';
+}
+
 // ───────────────────────── 어댑터 인터페이스 ─────────────────────────
 
 export interface LanguageAdapter {
@@ -248,20 +297,30 @@ export interface LanguageAdapter {
   readonly manifestGlobs: string[];
   /** 필요 확장 ID 목록 (F14). 예: ['vadimcn.vscode-lldb'] */
   readonly requiredExtensions: string[];
+  /** F20 — 새 프로젝트 생성 지원 여부. v1: 4개 어댑터 모두 true */
+  readonly canCreateProject: boolean;
+  /** F21/ADR-012 — 설정 페이지에 선언하는 옵션 카탈로그. UI는 이것만 렌더(언어 무지) */
+  readonly optionCatalog: OptionSpec[];
+  /** F21/ADR-012 — 지원 설정 페이지 카테고리(가변). Python은 compiler/linker/output 없음(리트머스) */
+  readonly configCategories: string[];
 
   /** 글롭 매칭된 매니페스트들로부터 프로젝트 열거 (DD-06: 루트 확인이 아니라 파일 목록 기반) */
   listProjects(manifests: vscode.Uri[]): Promise<ProjectInfo[]>;
 
+  // config = 활성 (프로젝트×구성) 호출 오버레이. OQ-002 확정(2026-08-15): 별도 인자로 전달.
   /** 빌드 Task 생성. actions.build === false면 미호출 (DD-02: Task 객체 반환, 실행은 TaskRunner) */
-  createBuildTask(project: ProjectInfo, sel: Selection): vscode.Task;
-  /** 실행 Task 생성 (runArgs 포함, F16) */
-  createRunTask(project: ProjectInfo, sel: Selection): vscode.Task;
+  createBuildTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task;
+  /** 실행 Task 생성 (config.runArgs 주입, F16) */
+  createRunTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task;
   /** 디버그 구성 생성. 호출 전 Orchestrator가 ensureBuilt를 보장 (§7.4) */
-  createDebugConfig(project: ProjectInfo, sel: Selection): Promise<vscode.DebugConfiguration>;
+  createDebugConfig(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.DebugConfiguration>;
   /** 디버그 전 최신 빌드 보장 + 산출물 경로 해석에 필요한 어댑터별 준비 (DD-05) */
-  resolveExecutable(project: ProjectInfo, sel: Selection): Promise<string>;
+  resolveExecutable(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string>;
 
-  /** 설정 패널 저장 → 캐노니컬 파일 국소 편집 (F4/DD-07) */
+  /** F20 — 네이티브 도구로 기본 템플릿 프로젝트를 생성하는 Task (cargo new 등). 실행은 TaskRunner */
+  createProjectTask(target: NewProjectTarget): vscode.Task;
+
+  /** 설정 저장 → 캐노니컬 파일 국소 편집 (F4/DD-07). v1은 미사용, v2 이월(ADR-011) */
   persistSetting(project: ProjectInfo, key: string, value: unknown): Promise<void>;
   /** 매니페스트 변경 시 내부 캐시 무효화 (F17) */
   invalidateCache(project?: ProjectInfo): void;
@@ -277,6 +336,15 @@ export interface LanguageAdapter {
 | `detect(root)` + `listProjects(root)` | `manifestGlobs` + `listProjects(manifests)` | DD-06. 글롭 스캔 결과를 넘겨받아 하위 폴더·멀티루트 대응 |
 | `build/run(sel): Promise<...>` (내부에서 터미널 실행) | `createBuildTask/createRunTask(sel): vscode.Task` (실행은 TaskRunner) | DD-02. 실행 책임을 오케스트레이터로 이동해 종료 코드·problem matcher 일원화 |
 | `debug(sel)` 내부에서 경로 조합 | `resolveExecutable()` + `createDebugConfig()` 분리 | DD-05. 경로 해석을 명시적 단계로 승격 |
+
+**v1.2 추가 (2026-08-15)**
+
+| 추가 | 내용 | 사유 |
+|---|---|---|
+| `canCreateProject` + `createProjectTask()` | 시작 마법사 계약 (F20) | 파일 부재 폴더에서 네이티브 도구로 새 프로젝트 생성 (DD-10) |
+| `optionCatalog` + `configCategories` | 옵션 카탈로그·지원 카테고리 선언 (F21) | 설정 페이지가 어댑터 선언만 보고 렌더 (DD-12). Python은 `['env','runArgs']`만 → 리트머스 |
+| 태스크 메서드에 `config: InvocationConfig` 인자 | 호출 구성 오버레이 전달 (F21) | 파일 무편집 주입. Selection은 칩 선택만 (OQ-002 별도 인자안) |
+| `Selection.runArgs` 제거 | `InvocationConfig.runArgs`로 승격 | (프로젝트×구성)별 저장 (ADR-011) |
 
 ---
 
@@ -363,14 +431,15 @@ class StatusBarController {
 ```ts
 interface PersistedState {
   activeProjectId?: string;
-  /** projectId → (chipId → 값) */
+  /** projectId → (chipId → 값). profile 칩 포함 */
   selections: Record<string, Record<string, ChipValue>>;
-  /** projectId → 실행 인자 (F16) */
-  runArgs: Record<string, string[]>;
+  /** 호출 구성 오버레이 (F21/ADR-011) — projectId → profile명 → 오버레이. (프로젝트×구성)별 */
+  invocation: Record<string, Record<string, InvocationConfig>>;
 }
 ```
 
-- **값이 아니라 선택만 저장한다** (DD-07 유지). 프로파일 정의·빌드 플래그 등 실제 값은 캐노니컬 파일에만 존재.
+- **값이 아니라 선택 + 호출 오버레이만 저장한다** (DD-07 보완). 프로파일 정의·빌드 플래그 등 실제 값은 캐노니컬 파일에만 존재.
+- `invocation`은 `(projectId × profile)`로 키잉되어 Debug/Release/커스텀별 다른 옵션·env·runArgs·전후명령을 담는다. `runArgs`는 구 `Record<projectId, string[]>`에서 `InvocationConfig.runArgs`로 승격됨.
 - 프로젝트별 독립 유지: Rust ↔ C++ 프로젝트를 오가도 각자 마지막 선택 복원 (개념설계 요구 유지).
 - `devSwitcher.projects` 목록은 저장하지 않는다 — **매 활성화 시 재스캔**이 원천이며, 저장하면 이중 진실이 됨
   (개념설계의 `settings.json` 프로젝트 목록 항목은 폐기).
@@ -406,6 +475,7 @@ for (projectId in state.selections):
 
 - **Import 시 검증**: projectId가 현재 스캔 결과에 존재하는 것만 반영, 나머지는 결과 요약에 표시.
 - projectId는 §4 정의(`adapterId:상대경로`)라 기계 독립적 — 팀 온보딩 시 그대로 공유 가능.
+- ⚠ 위 export 예시의 `runArgs`(selection 레벨)는 ADR-011의 `InvocationConfig` 승격 이전 형태다. export 포맷(F12)은 호출 오버레이 차원을 포함하도록 재정의 필요 — 구현 시점(설정 페이지/M5)에 확정.
 
 ---
 
@@ -595,7 +665,9 @@ async createDebugConfig(project, sel) {
 - CodeLLDB(`vadimcn.vscode-lldb`)는 온디맨드 설치(DD-09) — 최초 디버그 시 확인 후 자동 설치 (§13.3).
 - 설치 거부 시 디버그 중단 + Doctor 안내 (F19).
 
-### 8.7 persistSetting — Cargo.toml 국소 편집 (F4·DD-07)
+### 8.7 persistSetting — Cargo.toml 국소 편집 (F4·DD-07) 【v2 이월】
+
+> **v1 범위 밖 (ADR-011).** v1은 호출 구성 오버레이(F21)로 파일 무편집 주입만 한다. 아래 캐노니컬 파일 국소 편집은 v2에서 구현한다.
 
 - 파서: `smol-toml`(읽기) + **라인 단위 치환**(쓰기) — TOML 직렬화 재작성은 주석·포맷을 파괴하므로,
   설정 패널에서 편집 가능한 항목을 "값 치환으로 안전한 것"으로 한정한다:
@@ -622,12 +694,23 @@ async createDebugConfig(project, sel) {
 
 ---
 
-## 10. 설정 다이얼로그 (SettingsPanel, Webview)
+## 10. 설정 페이지 (SettingsPanel, WebviewPanel) 【F21·ADR-012】
+
+> v1.1의 "설정 다이얼로그"를 **설정 페이지**(에디터 탭 = WebviewPanel)로 확장(ADR-012). 마스터-디테일 옵션 브라우저와 호출 구성 오버레이를 담기에 페이지 형태가 적합.
 
 ### 10.1 원칙
 
-개념설계서 §6 계승: **값을 자체 저장하지 않는다.** 열 때 활성 어댑터의 캐노니컬 파일을 파싱해 폼을 채우고,
-저장 시 그 파일만 국소 수정한다(§8.7). 단, 캐노니컬 파일이 없는 항목(runArgs 등 선택 상태)은 StateStore(DD-01)에 저장한다.
+개념설계서 §6 계승: **값을 자체 저장하지 않는다.** 캐노니컬 파일의 정의(계층 ②)는 읽기 전용으로 표시하고,
+호출 구성 오버레이(계층 ③, F21)는 `(프로젝트×구성)`별로 StateStore(DD-01)에 저장했다가 빌드/실행 시 주입한다.
+v1은 캐노니컬 파일을 편집하지 않는다(구 §8.7은 v2 이월, ADR-011).
+
+**설정 3계층 (ADR-011)**
+
+| 계층 | 무엇 | 저장 위치 | 스코프 |
+|---|---|---|---|
+| ① 확장 설정 | 확장 동작(`scan.exclude`·`statusBar.abbreviate`) | `settings.json` | 확장/워크스페이스 |
+| ② 프로필 정의 (SSOT) | `opt-level`·features·bin 이름 = "프로젝트의 진실" | 캐노니컬 파일(Cargo.toml 등) | (프로젝트 × 구성) |
+| ③ 호출 구성 오버레이 | RUSTFLAGS·출력경로·링커·env·runArgs·전후명령 | `workspaceState` | (프로젝트 × 구성) |
 
 ### 10.2 탭 구성 — 칩 디스크립터 기반 동적 구성 (DD-03)
 
@@ -636,7 +719,7 @@ async createDebugConfig(project, sel) {
 | 프로젝트 | 항상 | 감지된 전체 프로젝트(언어 무관) 목록, 활성 전환, 새로고침 | StateStore (activeProjectId) |
 | 프로파일 | `chips`에 `profile` 존재 | 프로파일 목록, 커스텀 프로파일 생성/편집 (`opt-level`·`lto` 등) | **Cargo.toml** (§8.7) |
 | Features | `chips`에 `features` 존재 | feature 체크박스 목록 (QuickPick과 동일 데이터) | StateStore (선택), 정의는 읽기 전용 |
-| 실행 | 항상 | **실행 인자(runArgs) 편집 (F16)**, 타깃 선택 | StateStore |
+| 호출 구성 | `configCategories` 비어있지 않음 | **옵션 카탈로그 브라우저**(마스터-디테일: 카테고리→옵션→설명·예제·타입 에디터) + 실행 인자(runArgs)·빌드 전후 명령 편집, 명령 미리보기 (F21) | StateStore (InvocationConfig, 프로젝트×구성별) |
 | 일반 | 항상 | export/import (F12), 단축키 안내 | — |
 
 탭 표시 여부를 칩 존재로 판단하므로, 어댑터 추가 시 설정 패널 코드도 수정이 없다.
@@ -649,8 +732,8 @@ type InMsg =
   | { type: 'ready' }                                            // 초기 데이터 요청
   | { type: 'switchProject', projectId: string }
   | { type: 'setChipValue', chipId: string, value: ChipValue }   // StateStore 저장
-  | { type: 'setRunArgs', args: string[] }                       // F16
-  | { type: 'persistSetting', key: string, value: unknown }      // 캐노니컬 파일 편집 (§8.7)
+  | { type: 'setInvocation', profile: string, config: InvocationConfig }  // 호출 오버레이 저장 (F21)
+  | { type: 'persistSetting', key: string, value: unknown }      // 캐노니컬 파일 편집 (§8.7, v2)
   | { type: 'export' } | { type: 'import' };
 
 // 확장 → Webview
@@ -664,6 +747,26 @@ type OutMsg =
   파싱 결과를 미리보기로 표시한다.
 - Webview는 `retainContextWhenHidden: false` + 상태는 항상 확장에서 재요청 (메모리 절약).
 - CSP: `default-src 'none'; script-src ${webview.cspSource}; style-src ${webview.cspSource}` — 외부 리소스 금지.
+
+### 10.4 언어별 호출 구성 능력 (Invocation Config by Language)
+
+VS2026식 속성을 각 어댑터가 "파일 무편집 주입"으로 어디까지 흡수하는지 요약(SSOT: `.cowork` interface_contract §8). `정의`=캐노니컬 파일에 있어 v1 읽기전용(편집은 v2), `—`=언어상 해당 없음.
+
+| 카테고리 | Rust (cargo) | C++ (cmake) | C# (dotnet) | Python |
+|---|---|---|---|---|
+| **구성 축(=profile)** | dev/release/커스텀 `--profile` | `CMAKE_BUILD_TYPE`/`--config` | `-c Debug/Release`+커스텀 | — (대신 environment 축) |
+| **컴파일러 옵션** | `--config profile.*`/`RUSTFLAGS` | `-D CMAKE_CXX_FLAGS` | `-p:Optimize/LangVersion` | 해석형 — 소수 |
+| **링커** | `--config`/`RUSTFLAGS -C linker=` | `-D CMAKE_EXE_LINKER_FLAGS` | 게시 옵션(`-p:PublishTrimmed`) | — |
+| **출력 위치** | `CARGO_TARGET_DIR` | `-B`/`-D *_OUTPUT_DIRECTORY` | `-o`/`-p:OutputPath` | — |
+| **출력 이름** | `[[bin]].name`(정의→v2) | 타깃 속성(정의→v2) | `-p:AssemblyName`(주입 가능) | — |
+| **환경변수** | Task env | Task env | Task env | Task env (PYTHONPATH) |
+| **빌드 전/후 이벤트** | pre/post Task | pre/post Task | `-p:Pre/PostBuildEvent`/Task | 실행 전/후 훅 |
+| **주입 시점** | 빌드 시점 | configure+build 분리 ⚠ | 빌드 시점(`-p:`) | 실행 시점 |
+| **v1 실데이터** | ✅ 실구현 | 스텁 | 스텁 | 스텁(리트머스) |
+
+- **Python 리트머스**: `actions.build=false` → 설정 페이지에서 컴파일러/링커/출력 카테고리가 사라지고 env·runArgs만 남는다. `configCategories`가 선언대로 바뀌면 설정 페이지 프레임워크가 검증됨(INV-2).
+- **인클루드 폴더는 C++에서만** 살아남(다른 언어는 개념 부재/env 대체). **출력 이름은 dotnet만 주입 가능**(`-p:AssemblyName`).
+- **cmake는 configure/build 2단계**라 주입 지점이 cargo와 다름 → 어댑터가 흡수.
 
 ---
 
@@ -895,13 +998,14 @@ DD-01에 따라 workspaceState로 이동했고, 프로젝트 목록은 매 스�
 | 마일스톤 | 내용 | 산출물 | 예상 |
 |---|---|---|---|
 | **M0** 셋업 | yo code 스캐폴드, esbuild, F5 Hello World | 빌드되는 빈 확장 | 0.5일 |
-| **M1** 코어 타입·칩 프레임워크 | §4 타입 확정, 4개 어댑터의 칩 선언을 스텁으로 전부 작성해 타입 검증 (Python 리트머스) | `core/types.ts`, 스텁 4종 | 1일 |
+| **M1** 코어 타입·칩 프레임워크 | §4 타입 확정(InvocationConfig·OptionSpec·config 별도인자 포함), 4개 어댑터 칩 선언 스텁 전부 작성해 타입 검증 (Python 리트머스) | `core/types.ts`, 어댑터 스텁 4종 | 1일 |
 | **M2** CargoBridge + CargoAdapter | 메타데이터/빌드 JSON 파싱, 인자 조립, features(F15), resolveExecutable(DD-05) + 단위 테스트 | `adapters/cargo/*`, `test/unit/*` | 2일 |
 | **M3** 상태바·상태 저장·감시 | 칩 렌더링(§5), QuickPick, StateStore(DD-01)·reconcile, ManifestWatcher(F17) | `ui/statusBar.ts`, `core/stateStore.ts`, `core/manifestWatcher.ts` | 1.5일 |
 | **M4** 실행·디버그 | TaskRunner(DD-02), problem matcher, 디버그 플로우(§7.4), 키바인딩 | `core/taskRunner.ts`, 동작하는 빌드/실행/디버그 | 1일 |
-| **M5** 설정 패널 | Webview(§10), runArgs 편집(F16), Cargo.toml 국소 편집(§8.7), export/import(F12) | `ui/settingsPanel/*` | 1.5일 |
+| **M5** 설정 페이지 | Webview 페이지(§10), 옵션 카탈로그·호출 구성 오버레이(F21/ADR-011·012), export/import(F12). Cargo.toml 국소 편집은 v2 이월 | `ui/settingsPanel/*` | 1.5일 |
 | **M6** 품질·배포 | Doctor 명령(F19), WSL 원격 스모크 검증(F18), 통합 테스트 체크리스트(§15.2), README, VSIX 패키징 | Doctor + `devswitcher-tools-0.1.0.vsix` | 2일 |
-| **합계** | | 개인용 v0.1 (Rust 실사용 + 3개 언어 스텁 + 원격 지원) | **약 9.5일** |
+| **시작 마법사(F20)** | `newProjectWizard` UI + `devSwitcher.newProject` + 4개 어댑터 `createProjectTask`(`cargo new` 등). 의존: M1·M4 | 4개 언어 새 프로젝트 생성 | 1일 |
+| **합계** | | 개인용 v0.1 (Rust 실사용 + 3개 언어 스텁 + 원격 지원 + 시작 마법사) | **약 10.5일** |
 
 > 개념설계 대비 +4일: 칩 프레임워크 일반화(+0.5), features(+0.5), watcher·reconcile(+0.5), Task API·디버그 플로우 분리(+0.5),
 > 단위 테스트 픽스처(+0.5), 설정 패널 runArgs(+0.5), Doctor·원격 스모크 검증(+1). **M4까지 완료하면 실사용 가능** — M5·M6은 편의·품질 기능.
@@ -992,8 +1096,9 @@ DD-01에 따라 workspaceState로 이동했고, 프로젝트 목록은 매 스�
 |---|---|---|
 | 1.0 | 2026-08-13 | 최초 작성 — 개념설계서 검토 결정 DD-01~07 반영 |
 | 1.1 | 2026-08-13 | 원격 환경 지원(§12, F18·DD-08)·환경 진단(§13, F19·DD-09) 신설, 의존성 온디맨드 전환, 아키텍처 칩 target 자동 설치, 백로그·리스크(R10·R11)·로드맵(9.5일) 갱신 |
+| 1.2 | 2026-08-15 | **F20 시작 마법사(DD-10/ADR-010), F21 호출 구성 오버레이·설정 페이지(DD-11·12/ADR-011·012), OQ-002(InvocationConfig 별도 인자) 반영.** §4 타입(NewProjectTarget·InvocationConfig·OptionSpec, config 인자, Selection.runArgs 제거), §6.1 PersistedState invocation 차원, §10 설정 페이지·언어별 능력 매트릭스(§10.4) 추가. `.cowork`로 이관되어 운영 SSOT는 registry/canonical, 본 문서는 재사용용 통합 스냅샷 |
 
 ---
 
-*이 문서는 개념설계서(`VSCode확장_개발계획서_개념설계.md`)의 검토·논의 결과를 반영한 구현 기준 문서다.
-설계 변경 시 §2 결정 표에 DD 항목을 추가하고 본문을 갱신한다.*
+*이 문서는 개념설계서(`DevSwitcher-Tools_Concept-Design.md`)의 검토·논의 결과를 반영한 현행 아키텍처 스냅샷이다. 운영 SSOT는 `.cowork/`.
+설계 변경 시 `.cowork`의 ADR·canonical 문서를 먼저 갱신하고, 재사용 스냅샷이 필요할 때 이 문서를 동기화한다.*
