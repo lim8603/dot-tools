@@ -1,7 +1,7 @@
 import { dirname } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
-import { DiagnosticProbe, InvocationConfig, LanguageAdapter, ProjectInfo, Selection } from '../../core/types';
+import { ChipItem, DiagnosticProbe, InvocationConfig, LanguageAdapter, ProjectInfo, Selection } from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import {
   abbreviateTriple,
@@ -41,6 +41,9 @@ const bridge = new CargoBridge();
 /** Friendly names for the extensions Doctor reports (F19); falls back to the id. */
 const EXTENSION_LABELS: Record<string, string> = { 'vadimcn.vscode-lldb': 'CodeLLDB' };
 const extensionLabel = (id: string): string => EXTENSION_LABELS[id] ?? id;
+
+/** Architecture-chip sentinel: pick this to clear the target back to host default (§8.3). */
+const HOST_DEFAULT_TARGET = '__host_default__';
 
 const CARGO_TASK_TYPE = 'devSwitcher.cargo';
 
@@ -134,22 +137,27 @@ export const cargoAdapter: LanguageAdapter = {
       icon: 'chip',
       label: 'Architecture',
       unsetText: 'default', // unselected = host default target (no --target)
+      clearValueId: HOST_DEFAULT_TARGET, // 'Host default' entry clears back to unset
       // F19 §13.4: installed targets show by default; the not-installed tail is marked
       // `secondary` so the QuickPick keeps it behind a toggle (secondaryToggle). Picking
-      // a not-installed one runs `rustup target add` via onPick. Unselected = host
-      // default (no --target).
+      // a not-installed one runs `rustup target add` via onPick. The 'Host default' entry
+      // returns to the unset state (no --target).
       secondaryToggle: 'Show installable targets',
       listItems: async () => {
         const targets = await bridge.listAllTargets();
-        return [...targets]
-          .sort((a, b) => Number(b.installed) - Number(a.installed))
-          .map((t) => ({
+        const items: ChipItem[] = [
+          { id: HOST_DEFAULT_TARGET, label: 'Host default', description: 'no --target override' },
+        ];
+        for (const t of [...targets].sort((a, b) => Number(b.installed) - Number(a.installed))) {
+          items.push({
             id: t.triple,
             label: t.triple,
             description: abbreviateTriple(t.triple),
             detail: t.installed ? undefined : 'not installed — select to add',
             secondary: !t.installed,
-          }));
+          });
+        }
+        return items;
       },
       onPick: async (_project, value) => {
         if (typeof value !== 'string') {

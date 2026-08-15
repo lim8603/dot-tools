@@ -149,6 +149,12 @@ export class Orchestrator {
     if (value === undefined) {
       return; // cancelled
     }
+    // The clear sentinel (e.g. architecture 'Host default') removes the value → unset.
+    if (chip.clearValueId !== undefined && value === chip.clearValueId) {
+      await this.store.clearValue(project.id, chipId);
+      this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+      return;
+    }
     // Post-pick hook (e.g. rustup target add for a not-installed target, §13.4);
     // false = install declined/failed, so the pick is not stored.
     if (chip.onPick && !(await chip.onPick(project, value))) {

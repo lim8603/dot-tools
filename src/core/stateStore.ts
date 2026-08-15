@@ -50,6 +50,15 @@ export class StateStore {
     await this.persist();
   }
 
+  /** Remove a chip's stored value so it returns to its unset state (e.g. architecture → default). */
+  async clearValue(projectId: string, chipId: string): Promise<void> {
+    const values = this.state.selections[projectId];
+    if (values && chipId in values) {
+      delete values[chipId];
+      await this.persist();
+    }
+  }
+
   /** The (project × profile) invocation overlay (empty when none yet, ADR-011). */
   getInvocation(projectId: string, profile: string): InvocationConfig {
     return this.state.invocation[projectId]?.[profile] ?? {};

@@ -55,6 +55,12 @@ export interface ChipDescriptor {
    * target). Leave unset for chips whose blank state should read as "pick me".
    */
   unsetText?: string;
+  /**
+   * Item id that means "clear this chip" — picking it removes the stored value so the
+   * chip returns to its unset (`unsetText`) state. Lets an optional chip offer a way
+   * back to default (e.g. the architecture chip's 'Host default' entry).
+   */
+  clearValueId?: string;
   defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
   /**
    * Optional post-pick hook (F19 §13.4). Runs after the user picks a value, before it

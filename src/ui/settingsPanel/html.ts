@@ -82,6 +82,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 3px; }
   .opt { padding: 8px 0; }
   .opt-label { padding: 2px 0; }
+  .opt .meta { margin-top: 3px; }
   .opt .row { padding: 2px 0; flex-wrap: wrap; }
   /* Editor sits under its label and grows to use the width (like RunArgs). */
   .opt input[type="text"], .opt input[type="number"], #runargs-input {
@@ -216,20 +217,23 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     } else if (o.type === 'bool') {
       editor = '<input type="checkbox" ' + attrs + (val === true ? ' checked' : '') + ' />';
     } else if (o.type === 'int') {
-      editor = '<input type="number" ' + attrs + ' placeholder="' + esc(o.example || '') + '"' +
-        ' value="' + esc(val === undefined ? '' : val) + '" />';
+      editor = '<input type="number" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
     } else {
-      editor = '<input type="text" ' + attrs + ' placeholder="' + esc(o.example || '') + '"' +
-        ' value="' + esc(val === undefined ? '' : val) + '" />';
+      editor = '<input type="text" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
     }
-    // Help line: the description, then how the entered value is injected (teaching),
-    // with the bare example shown as the field placeholder above — never as text to paste.
+    // Two muted lines: the description, then a meta line (example value · how it is
+    // injected · docs). Fields stay empty — examples never sit in the input as a
+    // placeholder that reads like entered text.
+    const meta = [];
+    if (o.example) meta.push('e.g. <code>' + esc(o.example) + '</code>');
+    if (o.injectsAs) meta.push('injects <code>' + esc(o.injectsAs) + '</code>');
+    if (o.docUrl) meta.push('<a href="' + esc(o.docUrl) + '">docs ↗</a>');
     return '<div class="opt">' +
       '<div class="opt-label"><b>' + esc(o.label) + '</b></div>' +
       '<div class="row">' + editor + '</div>' +
-      '<div class="muted">' + esc(o.description) +
-      (o.injectsAs ? ' &nbsp;injects: <code>' + esc(o.injectsAs) + '</code>' : '') +
-      (o.docUrl ? ' &nbsp;<a href="' + esc(o.docUrl) + '">docs ↗</a>' : '') + '</div></div>';
+      '<div class="muted">' + esc(o.description) + '</div>' +
+      (meta.length ? '<div class="muted meta">' + meta.join(' &nbsp;·&nbsp; ') + '</div>' : '') +
+      '</div>';
   }
 
   function renderInvocation() {
