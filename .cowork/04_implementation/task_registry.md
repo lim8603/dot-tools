@@ -42,8 +42,8 @@
 | TASK-007 | 데이터 계층 (AdapterRegistry + StateStore) | MS-004 | INT-001 | US-001·US-002 | AI | Done | 2026-08-15 | 완료 — AdapterRegistry(스캔·매칭)·StateStore(setValue·reconcile). reconcile 순수코어(stateReconcile.ts) mocha 8. 30일 GC·export/import은 후속 | 없음 | | M3 |
 | TASK-008 | UI 계층 (StatusBar + QuickPick) | MS-004 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — StatusBarController(칩/버튼 렌더·경고/에러 배경)·picks(QuickPick). defaultChipFormat mocha 2. 액션 버튼 렌더만, 툴체인 경고칩(E1)은 MS-007 이월 | TASK-007 | | M3 |
 | TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | MS-004 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — **F5 end-to-end 검증 통과**(상태바 hello+4칩·QuickPick 선택/복원·액션버튼 안내). main 병합(FF) | TASK-007·008 | | M3. Rust 선택 UX 실사용 가능 |
-| TASK-010 | 실행 (TaskRunner + Build/Run 플로우) | MS-005 | INT-001 | US-003 | AI | In Progress | 2026-08-15 | TaskRunner(executeTask+종료코드·동시실행 거부 E9)·`$rustc` 매처(자체 problemMatcher)·orchestrator build()/run()(required 칩 검증 E4·실패 토스트)·진행중 spin·키바인딩 | 없음 | | M4. 액션버튼 실동작 |
-| TASK-011 | 디버그 플로우 (createDebugConfig + CodeLLDB) | MS-005 | INT-001 | US-003 | AI | Planned | 2026-08-15 | createDebugConfig(§8.6, 순수 buildLldbConfig)·CodeLLDB 온디맨드 설치(§13.3)·orchestrator.debug()(§7.4)·debug 키바인딩·확장포함 launch 구성 | TASK-010 | | M4. rustup target 자동설치(F19)·Doctor는 이월 |
+| TASK-010 | 실행 (TaskRunner + Build/Run 플로우) | MS-005 | INT-001 | US-003 | AI | Review | 2026-08-15 | 코드 완료 — TaskRunner(종료코드·동시실행 거부)·자체 `$devswitcher-rustc` 매처·build()/run()(required 검증·실패 토스트)·spin·키바인딩. **F5 검증 대기** | 없음 | | M4. 액션버튼 실동작 |
+| TASK-011 | 디버그 플로우 (createDebugConfig + CodeLLDB) | MS-005 | INT-001 | US-003 | AI | Review | 2026-08-15 | 코드 완료 — createDebugConfig(순수 buildLldbConfig mocha 2)·ensureExtension(CodeLLDB 온디맨드)·debug()(§7.4)·debug 키바인딩·확장포함 launch. **F5 검증 대기**(확장 포함 구성) | TASK-010 | | M4. F19·Doctor 이월 |
 
 > 현재 등록 Task: TASK-001~011. MS-006 이후 Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
 
