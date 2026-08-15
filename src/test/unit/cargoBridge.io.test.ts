@@ -4,6 +4,7 @@ import {
   CargoBridge,
   defaultExec,
   execCapture,
+  parseTargetList,
   type CargoExec,
   type ExecResult,
 } from '../../adapters/cargo/cargoBridge';
@@ -153,6 +154,51 @@ describe('CargoBridge.listInstalledTargets', () => {
   it('returns an empty list when rustup exits non-zero', async () => {
     const { exec } = fakeExec(() => ({ exitCode: 1 }));
     assert.deepEqual(await new CargoBridge(exec).listInstalledTargets(), []);
+  });
+});
+
+// ── listAllTargets + parseTargetList + addTarget (F19 §13.4) ──────────────────
+
+describe('parseTargetList', () => {
+  it('marks (installed) targets and leaves the rest not-installed', () => {
+    const out = parseTargetList('aarch64-apple-darwin\nx86_64-pc-windows-msvc (installed)\n\n');
+    assert.deepEqual(out, [
+      { triple: 'aarch64-apple-darwin', installed: false },
+      { triple: 'x86_64-pc-windows-msvc', installed: true },
+    ]);
+  });
+});
+
+describe('CargoBridge.listAllTargets', () => {
+  it('runs `rustup target list` (no --installed) and parses the flags', async () => {
+    const { exec, calls } = fakeExec(() => ({ stdout: 'a-triple\nb-triple (installed)\n' }));
+    const targets = await new CargoBridge(exec).listAllTargets();
+    assert.deepEqual(targets, [
+      { triple: 'a-triple', installed: false },
+      { triple: 'b-triple', installed: true },
+    ]);
+    assert.deepEqual(calls[0].args, ['target', 'list']);
+  });
+
+  it('returns [] when rustup exits non-zero (missing toolchain)', async () => {
+    const { exec } = fakeExec(() => ({ exitCode: 1 }));
+    assert.deepEqual(await new CargoBridge(exec).listAllTargets(), []);
+  });
+});
+
+describe('CargoBridge.addTarget', () => {
+  it('runs `rustup target add <triple>` and reports success', async () => {
+    const { exec, calls } = fakeExec(() => ({ exitCode: 0 }));
+    const result = await new CargoBridge(exec).addTarget('wasm32-unknown-unknown');
+    assert.equal(result.ok, true);
+    assert.deepEqual(calls[0].args, ['target', 'add', 'wasm32-unknown-unknown']);
+  });
+
+  it('reports failure with stderr on a non-zero exit', async () => {
+    const { exec } = fakeExec(() => ({ exitCode: 1, stderr: 'error: unknown target' }));
+    const result = await new CargoBridge(exec).addTarget('bogus');
+    assert.equal(result.ok, false);
+    assert.equal(result.stderr, 'error: unknown target');
   });
 });
 

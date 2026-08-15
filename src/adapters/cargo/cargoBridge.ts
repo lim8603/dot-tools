@@ -438,6 +438,32 @@ export interface ToolchainStatus {
   ok: boolean;
 }
 
+/** One rustup target and whether it is installed (F19 §13.4). */
+export interface TargetInfo {
+  triple: string;
+  installed: boolean;
+}
+
+/**
+ * Parse `rustup target list` output. Each line is a triple, optionally suffixed with
+ * a parenthesised marker — `(installed)` on installed targets (rustup also uses no
+ * suffix for the rest). Blank lines are dropped; unknown markers count as not
+ * installed. Pure so it is unit-tested without a real rustup.
+ */
+export function parseTargetList(stdout: string): TargetInfo[] {
+  return stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const marker = line.match(/\(([^)]*)\)\s*$/);
+      return {
+        triple: line.replace(/\s*\([^)]*\)\s*$/, '').trim(),
+        installed: marker ? marker[1].includes('installed') : false,
+      };
+    });
+}
+
 /**
  * Stateful cargo/rustup boundary: owns the metadata cache and the injected exec
  * primitive. The adapter (TASK-006) holds one instance and translates ProjectInfo
@@ -511,6 +537,25 @@ export class CargoBridge {
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
+  }
+
+  /**
+   * All rustup targets with their installed flag (F19 §13.4) — installed and
+   * not-installed together so the Architecture chip can offer `rustup target add`.
+   * Returns [] when rustup is absent (E1 handles the toolchain warning separately).
+   */
+  async listAllTargets(): Promise<TargetInfo[]> {
+    const result = await execCapture('rustup', ['target', 'list'], undefined, this.exec);
+    if (result.exitCode !== 0) {
+      return [];
+    }
+    return parseTargetList(result.stdout);
+  }
+
+  /** Install a target via `rustup target add` (§13.4, tier 1 — no admin rights). */
+  async addTarget(triple: string): Promise<{ ok: boolean; stderr: string }> {
+    const result = await execCapture('rustup', ['target', 'add', triple], undefined, this.exec);
+    return { ok: result.exitCode === 0, stderr: result.stderr };
   }
 
   /**

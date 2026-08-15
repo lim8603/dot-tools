@@ -42,6 +42,12 @@ export interface ChipDescriptor {
   /** Abbreviated rendering for the status bar. */
   format?(value: ChipValue): string;
   defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
+  /**
+   * Optional post-pick hook (F19 §13.4). Runs after the user picks a value, before it
+   * is stored; return false to abort the selection. The Architecture chip uses it to
+   * `rustup target add` a not-installed target (declined/failed install → not stored).
+   */
+  onPick?(project: ProjectInfo, value: ChipValue): Promise<boolean>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

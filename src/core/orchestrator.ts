@@ -148,6 +148,11 @@ export class Orchestrator {
     if (value === undefined) {
       return; // cancelled
     }
+    // Post-pick hook (e.g. rustup target add for a not-installed target, §13.4);
+    // false = install declined/failed, so the pick is not stored.
+    if (chip.onPick && !(await chip.onPick(project, value))) {
+      return;
+    }
     await this.store.setValue(project.id, chipId, value);
     this.statusBar.render(adapter, project, this.store.getSelection(project.id));
   }

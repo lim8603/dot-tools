@@ -133,14 +133,48 @@ export const cargoAdapter: LanguageAdapter = {
       id: 'architecture',
       icon: 'chip',
       label: 'Architecture',
-      // M2: installed targets only. Unselected = host default (no --target).
-      // Not-installed enumeration + `rustup target add` on select (F19) is deferred.
-      listItems: async () =>
-        (await bridge.listInstalledTargets()).map((triple) => ({
-          id: triple,
-          label: triple,
-          description: abbreviateTriple(triple),
-        })),
+      // F19 §13.4: list installed + not-installed targets together (installed first);
+      // picking a not-installed one runs `rustup target add` via onPick. Unselected =
+      // host default (no --target).
+      listItems: async () => {
+        const targets = await bridge.listAllTargets();
+        return [...targets]
+          .sort((a, b) => Number(b.installed) - Number(a.installed))
+          .map((t) => ({
+            id: t.triple,
+            label: t.triple,
+            description: abbreviateTriple(t.triple),
+            detail: t.installed ? undefined : '$(cloud-download) not installed — select to add',
+          }));
+      },
+      onPick: async (_project, value) => {
+        if (typeof value !== 'string') {
+          return true;
+        }
+        const target = (await bridge.listAllTargets()).find((t) => t.triple === value);
+        if (!target || target.installed) {
+          return true; // already installed, or an unknown value — nothing to add
+        }
+        const install = 'Install';
+        const choice = await vscode.window.showInformationMessage(
+          `Rust target ${value} is not installed. Install it with rustup?`,
+          install,
+        );
+        if (choice !== install) {
+          return false;
+        }
+        const result = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: `Installing Rust target ${value}…` },
+          () => bridge.addTarget(value),
+        );
+        if (!result.ok) {
+          void vscode.window.showErrorMessage(
+            `DevSwitcher: failed to add target ${value}. ${result.stderr.trim()}`.trim(),
+          );
+          return false;
+        }
+        return true;
+      },
       format: (value) => (typeof value === 'string' ? abbreviateTriple(value) : String(value)),
     },
     {
