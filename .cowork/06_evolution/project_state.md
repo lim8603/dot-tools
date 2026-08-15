@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-007 진행 중 — Doctor 라인 016·017 병합, 018 착수) |
+| 현재 Phase | Build (MS-007 진행 중 — 016·017·018 병합, 019 착수) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — 016·017 Done, 018~021 남음) |
-| 활성 Task | TASK-018 (rustup target 자동 설치 — In Progress) |
+| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — 016·017·018 Done, 019~021 남음) |
+| 활성 Task | TASK-019 (pre/postBuild 실행 배선 — In Progress) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-018 | rustup target 자동 설치 (§13.4) | AI | In Progress | 2026-08-15 | 착수 — 아키텍처 칩이 설치+미설치 target 열거(`rustup target list`), 미설치 선택 시 `rustup target add` 확인·실행 |
+| TASK-019 | pre/postBuild 실행 배선 + buildEvent 편집 (C-5) | AI | In Progress | 2026-08-15 | 착수 — preBuild/postBuild 빌드/실행 전후 실제 실행(현재 저장만) + 설정 페이지 buildEvent 에디터. NFR-002 셸 정책 확인 |
 
-> MS-007: 016·017(Doctor) Done·main 병합. TASK-018~021 남음(018→019→020→021). TASK-001~015 Done(MS-001~006). MS-006 상세는 session_2026-08-15_005.md.
+> MS-007: 016·017(Doctor)·018(rustup target) Done·main 병합. TASK-019~021 남음(019→020→021). TASK-001~015 Done(MS-001~006).
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-018 진행** (rustup target 자동 설치 §13.4) — 아키텍처 칩 미설치 target 열거+`rustup target add`.
-2. 이후 019(pre/postBuild C-5)·020(통합테스트+체크리스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20 마법사)
+1. **TASK-019 진행** (pre/postBuild 실행 배선, C-5) — preBuild/postBuild 전후 실행 + buildEvent 에디터.
+2. 이후 020(통합테스트+체크리스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20 마법사)
 3. 이월: 프로파일 편집(v2, C-3)·extra rustflags/stringList 옵션(L-1)은 후속. C-2(분해)는 해소.
 
 ---

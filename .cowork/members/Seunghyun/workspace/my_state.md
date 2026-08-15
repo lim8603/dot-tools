@@ -20,10 +20,10 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-018 | rustup target 자동 설치 (§13.4) | MS-007 | In Progress | 0% | 없음 |
-| TASK-019~021 | pre/postBuild·통합테스트·README+VSIX | MS-007 | Planned | 0% | 018~ 순차 |
+| TASK-019 | pre/postBuild 실행 배선 + buildEvent 편집 (C-5) | MS-007 | In Progress | 0% | 없음 |
+| TASK-020~021 | 통합테스트·README+VSIX | MS-007 | Planned | 0% | 019~ 순차 |
 
-> TASK-001~015 Done (MS-001~006). **TASK-016·017(Doctor) Done·main 병합**(4ba6194·e842df3). MS-007 분해 완료(016~021). 상세: `tasks/TASK-016~021.md`.
+> TASK-001~015 Done (MS-001~006). **TASK-016·017·018 Done·main 병합**(Doctor+rustup target). MS-007 분해 완료(016~021). 상세: `tasks/TASK-016~021.md`.
 
 ---
 
