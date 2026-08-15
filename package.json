@@ -45,6 +45,11 @@
         "command": "devSwitcher.debug",
         "title": "Debug",
         "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.openSettings",
+        "title": "Open Settings",
+        "category": "DevSwitcher"
       }
     ],
     "keybindings": [

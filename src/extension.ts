@@ -6,6 +6,7 @@ import { Orchestrator } from './core/orchestrator';
 import { StateStore } from './core/stateStore';
 import { TaskRunner } from './core/taskRunner';
 import { StatusBarController } from './ui/statusBar';
+import { SettingsPanel } from './ui/settingsPanel/settingsPanel';
 
 /**
  * Extension entry point — wiring only (coding_convention: activate/deactivate 배선만).
@@ -21,14 +22,17 @@ export function activate(context: vscode.ExtensionContext): void {
   const statusBar = new StatusBarController();
   const taskRunner = new TaskRunner();
   const orchestrator = new Orchestrator(registry, store, statusBar, taskRunner);
+  const settingsPanel = new SettingsPanel(registry, store, () => void orchestrator.renderActive());
 
   context.subscriptions.push(
     statusBar,
+    settingsPanel,
     vscode.commands.registerCommand('devSwitcher.switchProject', () => orchestrator.switchProject()),
     vscode.commands.registerCommand('devSwitcher.pickChip', (chipId?: string) => orchestrator.pickChip(chipId)),
     vscode.commands.registerCommand('devSwitcher.build', () => orchestrator.build()),
     vscode.commands.registerCommand('devSwitcher.run', () => orchestrator.run()),
     vscode.commands.registerCommand('devSwitcher.debug', () => orchestrator.debug()),
+    vscode.commands.registerCommand('devSwitcher.openSettings', () => settingsPanel.open()),
   );
 
   const globs = [...new Set(ALL_ADAPTERS.flatMap((adapter) => adapter.manifestGlobs))];

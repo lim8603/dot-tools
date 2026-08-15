@@ -3,6 +3,7 @@ import type { LanguageAdapter, ProjectInfo, Selection } from '../core/types';
 import { defaultChipFormat } from './statusBarFormat';
 
 const PROJECT_CHIP = 'project';
+const SETTINGS_CHIP = 'settings';
 const ACTION_CHIPS = ['build', 'debug', 'run'] as const;
 
 /** Options that colour special states on top of a normal render (F6 / §5.4). */
@@ -60,8 +61,11 @@ export class StatusBarController {
     this.renderAction('debug', '$(debug-alt)', 'Debug', 'devSwitcher.debug', true, order++);
     this.renderAction('run', '$(play)', 'Run', 'devSwitcher.run', true, order++);
 
+    const gear = this.upsert(SETTINGS_CHIP, '$(gear)', 'DevSwitcher Settings', 'devSwitcher.openSettings', undefined, order++);
+    gear.show();
+
     // Hide any chip left over from a previously active adapter.
-    const visible = new Set<string>([PROJECT_CHIP, ...adapter.chips.map((c) => c.id), ...ACTION_CHIPS]);
+    const visible = new Set<string>([PROJECT_CHIP, SETTINGS_CHIP, ...adapter.chips.map((c) => c.id), ...ACTION_CHIPS]);
     for (const [id, item] of this.items) {
       if (!visible.has(id)) {
         item.hide();

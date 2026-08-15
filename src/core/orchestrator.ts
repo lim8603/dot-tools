@@ -207,7 +207,9 @@ export class Orchestrator {
     return this.store.getInvocation(project.id, typeof profile === 'string' ? profile : 'dev');
   }
 
-  private async renderActive(): Promise<void> {
+  /** Re-render the status bar from current state — public so the settings page can
+   *  push its changes (setChipValue/switchProject) back to the status bar. */
+  async renderActive(): Promise<void> {
     const context = this.activeContext();
     if (!context) {
       this.statusBar.hideAll();
