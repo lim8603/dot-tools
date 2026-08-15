@@ -16,17 +16,33 @@ export async function ensureExtension(extensionId: string, reason: string): Prom
   }
 
   const install = 'Install';
-  const choice = await vscode.window.showInformationMessage(reason, install, 'Cancel');
+  const choice = await vscode.window.showInformationMessage(reason, install);
   if (choice !== install) {
+    return false; // dismissed/cancelled
+  }
+
+  try {
+    await vscode.commands.executeCommand('workbench.extensions.installExtension', extensionId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    void vscode.window.showErrorMessage(`DevSwitcher: failed to install ${extensionId} — ${message}`);
     return false;
   }
 
-  await vscode.commands.executeCommand('workbench.extensions.installExtension', extensionId);
   if (vscode.extensions.getExtension(extensionId) !== undefined) {
     return true;
   }
 
-  // Installed but not yet loaded into this session — ask the user to retry.
-  void vscode.window.showInformationMessage(`${extensionId} installed. Please run the action again.`);
+  // Installed but not visible to this session yet — a window reload activates it.
+  // Offer the reload explicitly so the user isn't left re-triggering into the same
+  // prompt (which never resolves without a reload).
+  const reload = 'Reload Window';
+  const answer = await vscode.window.showInformationMessage(
+    `${extensionId} was installed but needs a window reload to activate. Reload now, then run the action again.`,
+    reload,
+  );
+  if (answer === reload) {
+    void vscode.commands.executeCommand('workbench.action.reloadWindow');
+  }
   return false;
 }
