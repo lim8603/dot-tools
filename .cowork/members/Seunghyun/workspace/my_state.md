@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-007 (M6 품질·배포·통합테스트) — Planned, 다음 착수 (MS-006 Done) |
+| 활성 Milestone | MS-007 (M6 품질·배포) — In Progress, TASK-016~021 분해 완료 |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_005.md |
 
@@ -20,9 +20,10 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| 없음 | MS-007 착수 시 분해 | MS-007 | - | - | - |
+| TASK-016 | Doctor 진단 모델 (순수 코어) | MS-007 | Planned | 0% | 없음 (다음 착수) |
+| TASK-017~021 | Doctor UI+E1·rustup target·pre/postBuild·통합테스트·README+VSIX | MS-007 | Planned | 0% | 016~ 순차 |
 
-> TASK-001~015 Done (MS-001~006 완료·main 병합, 2026-08-15). MS-003·004·005 상세: session #004, MS-006(코어 + TASK-015 export/import): session #005.
+> TASK-001~015 Done (MS-001~006 완료·main 병합, 2026-08-15). MS-007 분해 완료(016~021). 상세: `tasks/TASK-016~021.md`.
 
 ---
 
@@ -40,8 +41,8 @@
 
 ## 다음 시작점
 
-1. **MS-007(M6 품질·배포·통합테스트) 착수** — 먼저 Task 분해(C-2). 후보: 통합테스트·툴체인경고칩(E1)·Doctor(§13.5)·F19·pre/postBuild 배선(C-5)·vsix 패키징
-2. 이후 MS-008(F20 마법사). 이월: 프로파일 편집 v2(C-3)
+1. **TASK-016 착수** (Doctor 진단 모델·순수 코어) → 017(Doctor UI+E1 칩) → 018(rustup target)
+2. 이후 019(pre/postBuild C-5)·020(통합테스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20). 이월: 프로파일 편집 v2(C-3)·extra rustflags(L-1)
 
 ---
 

@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-001~006 완료·main 병합 — MS-007 착수 대기) |
+| 현재 Phase | Build (MS-001~006 완료 — MS-007 진행 중, Task 분해 완료) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-007 (M6 품질·배포·통합테스트, Planned — Task 분해 필요 C-2) |
-| 활성 Task | 없음 (MS-007 착수 시 분해) |
+| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — TASK-016~021 분해 완료) |
+| 활성 Task | TASK-016 (Doctor 진단 모델 — Planned, 다음 착수) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | - | - | - | - | MS-007 착수 시 Task 분해(C-2) |
+| TASK-016 | Doctor 진단 모델 + 어댑터 진단 계약 | AI | Planned | 2026-08-15 | 착수 — `core/diagnostics.ts`(상태·3단계 판정 순수 코어) + 어댑터 checks 계약. §13.5. 다음 세션 첫 액션 |
 
-> TASK-001~015 Done (MS-001~006 완료·main 병합). MS-003·004·005 상세는 session_2026-08-15_004.md, MS-006(코어 병합 + TASK-015 export/import)은 session_2026-08-15_005.md.
+> MS-007 Task 분해 완료: TASK-016~021 (016 Doctor 모델 → 017 Doctor UI+E1칩 → 018 rustup target → 019 pre/postBuild → 020 통합테스트 → 021 README+VSIX). TASK-001~015 Done(MS-001~006). MS-006 상세는 session_2026-08-15_005.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,9 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-007(M6 품질·배포·통합테스트) 착수** — 먼저 Task 분해(C-2). 후보: 통합테스트·툴체인 경고칩(E1)·Doctor(§13.5)·F19(rustup target 자동설치)·pre/postBuild 실행 배선(C-5)·패키징(vsix).
-2. 이후 MS-008(F20 시작 마법사)
-3. 이월: 프로파일 편집(v2, C-3)·ProfileExport 정합화는 TASK-015에서 해소(C-4). extra rustflags/stringList 옵션은 후속.
+1. **TASK-016 착수** (Doctor 진단 모델·순수 코어) → 017(Doctor UI+E1 칩) → 018(rustup target). MS-007 Doctor 라인부터.
+2. 이후 019(pre/postBuild C-5)·020(통합테스트+체크리스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20 마법사)
+3. 이월: 프로파일 편집(v2, C-3)·extra rustflags/stringList 옵션(L-1)은 후속. C-2(분해)는 해소.
 
 ---
 
@@ -90,7 +90,7 @@
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
 | ~~C-1~~ | **해소(2026-08-15, 세션 #004)** — `03_design_artifacts/ui_spec.md` 작성(설정 페이지 마스터-디테일·탭·명령 미리보기·데이터 흐름). 마법사 QuickPick 상세는 MS-008에서 보강 | (해소) | 세션 #001 Gate 3 → #004 작성 |
-| C-2 | MS-007~008 상세 Task 분해 (MS-002~006 분해 완료) | 해당 Milestone 착수 시 | task_registry 경량 운영 |
+| C-2 | **MS-007 분해 완료(2026-08-15, 세션 #005) — TASK-016~021**. MS-008(F20) 분해만 남음(착수 시) | MS-008 착수 시 | task_registry 경량 운영 |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 | ~~C-4~~ | **해소(2026-08-15, 세션 #005, TASK-015)** — `ProfileExport` 확정(= PersistedState 정렬: selections+invocation, activeProjectId 제외, runArgs는 ADR-011 승격 위치) + `data_model.md §2` 예시 정합화 | (해소) | 세션 #003 → #005 |
 | C-5 | pre/postBuild 명령 실제 실행 배선(현재 InvocationConfig에 저장만·주입 안 함) + 설정 페이지 buildEvent 편집(탭에 "planned" 표시 중) | MS-007 | 세션 #004 TASK-012 |
