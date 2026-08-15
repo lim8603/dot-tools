@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-001 (M0 셋업) |
+| 활성 Milestone | MS-002 (M1 코어 타입·칩) |
 | 마지막 갱신일 | 2026-08-15 |
-| 참조 세션 로그 | session_2026-08-15_002.md |
+| 참조 세션 로그 | session_2026-08-15_003.md |
 
 ---
 
@@ -20,8 +20,8 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | Review | 90% (F5 수동확인 대기) | 없음 |
-| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | Planned | 0% | 없음 (TASK-001 스캐폴드 완료) |
+| TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | Done | 100% | 없음 |
+| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | In Progress | 0% | 없음 |
 | TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | Planned | 0% | TASK-002 |
 
 ---
@@ -37,8 +37,8 @@
 
 ## 다음 시작점
 
-1. **F5로 TASK-001 Hello World 확인** (VSCode 열기 → F5 → `[Extension Development Host]`에서 `DevSwitcher: Hello World`) → 통과 시 `feature/task-001-scaffold` main 병합, TASK-001 Done
-2. TASK-002(core/types.ts — interface_contract §2~§7, InvocationConfig·OptionSpec 포함) → TASK-003(어댑터 칩 + optionCatalog·configCategories 스텁)
+1. **TASK-002(core/types.ts)** — interface_contract §2~§7, InvocationConfig·OptionSpec 포함
+2. TASK-003(어댑터 칩 + optionCatalog·configCategories 스텁)
 3. 설정 페이지/호출 구성 실구현은 MS-006(M5)
 
 ---
