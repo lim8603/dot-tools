@@ -44,8 +44,11 @@
 | TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | MS-004 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — **F5 end-to-end 검증 통과**(상태바 hello+4칩·QuickPick 선택/복원·액션버튼 안내). main 병합(FF) | TASK-007·008 | | M3. Rust 선택 UX 실사용 가능 |
 | TASK-010 | 실행 (TaskRunner + Build/Run 플로우) | MS-005 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — **F5 검증 통과**(Build 성공·Run "Hello..." 출력·실패 시 exit101 토스트). main 병합(FF) | 없음 | | M4. 액션버튼 실동작 |
 | TASK-011 | 디버그 플로우 (createDebugConfig + CodeLLDB) | MS-005 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — **F5 검증 통과**(CodeLLDB→build→hello.exe 실행→중단점 정지). ensureExtension 루프 fix(Reload). main 병합(FF) | TASK-010 | | M4. F19·Doctor 이월 |
+| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | INT-001 | US-010·US-012 | AI | In Progress | 2026-08-15 | InvocationConfig→cargo 주입(compiler→`--config`·linker→RUSTFLAGS)·순수 `buildConfigArgs`·`buildRustflags`·`tomlScalar`·`parseArgsLine`→mocha. pre/postBuild는 후속 | 없음 | | M5. 오버레이가 빌드에 실제 반영 |
+| TASK-013 | SettingsPanel Webview 셸 | MS-006 | INT-001 | US-010 | AI | Planned | 2026-08-15 | WebviewPanel(CSP)·메시지 프로토콜(ready/state)·프로젝트/Features/프로파일RO 탭·`openSettings` 명령 | TASK-012 | | M5. F5 |
+| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | INT-001 | US-010·US-012 | AI | Planned | 2026-08-15 | 마스터-디테일 옵션 브라우저·setInvocation(프로젝트×구성)·runArgs/전후 편집·명령 미리보기 | TASK-013 | | M5. F5 |
 
-> 현재 등록 Task: TASK-001~011. MS-006 이후 Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
+> 현재 등록 Task: TASK-001~014. MS-006 코어(012·013·014) 우선 진행, export/import(TASK-015, F12)은 다음으로 분리. MS-007 이후 Task는 착수 시 상세화.
 
 - `담당`: `Human` / `AI` / `Role-*` / `(Role-* 인수자)`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done`

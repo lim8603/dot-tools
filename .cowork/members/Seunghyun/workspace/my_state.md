@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — 착수 예정 |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — In Progress (코어 우선) |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_004.md |
 
@@ -20,9 +20,11 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| — | MS-006 미분해 | MS-006 | Planned | 0% | Task 분해 대기(C-1·C-4 트리거) |
+| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | In Progress | 0% | 없음 |
+| TASK-013 | SettingsPanel Webview 셸 | MS-006 | Planned | 0% | TASK-012 |
+| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | Planned | 0% | TASK-013 |
 
-> TASK-001~011 Done (MS-001~005 완료·main 병합, 2026-08-15). MS-003·004·005 상세: session #004.
+> TASK-001~011 Done (MS-001~005 완료·main 병합, 2026-08-15). TASK-015(export/import) 분리. MS-003·004·005 상세: session #004.
 
 ---
 

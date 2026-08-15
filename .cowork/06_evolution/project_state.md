@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-005 Done·병합 완료 → MS-006 설정 페이지) |
+| 현재 Phase | Build (MS-006 설정 페이지 In Progress — TASK-012) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성, 착수 예정 — Task 분해 필요) |
-| 활성 Task | 없음 (MS-006 미분해) |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성, In Progress — 코어 우선) |
+| 활성 Task | TASK-012 (오버레이 주입, In Progress) → 013·014 (015 분리) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,11 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | MS-006 미분해 | AI | - | 2026-08-15 | 착수 시 TASK-012~ 분해(WebviewPanel·옵션 카탈로그·InvocationConfig 오버레이·export/import). C-1·C-4 트리거 도래 |
+| TASK-012 | 호출 오버레이 주입 + 순수 코어 | AI | In Progress | 2026-08-15 | buildConfigArgs·buildRustflags·tomlScalar·parseArgsLine + cargoAdapter 주입. 브랜치 `feature/ms-006-settings-page` |
+| TASK-013 | SettingsPanel Webview 셸 | AI | Planned | 2026-08-15 | WebviewPanel·메시지·프로젝트/Features 탭 (TASK-012 후) |
+| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | AI | Planned | 2026-08-15 | 마스터-디테일·setInvocation·명령 미리보기 (TASK-013 후) |
 
-> TASK-001~011 모두 Done (MS-001~005 완료, main 병합). MS-003·004·005 상세는 session_2026-08-15_004.md.
+> TASK-001~011 Done (MS-001~005 완료, main 병합). TASK-015(export/import)은 분리. MS-003·004·005 상세는 session_2026-08-15_004.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -89,7 +91,7 @@
 
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
-| C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — **설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처·명령 미리보기, ADR-012)**·마법사 QuickPick. (상태바 레이아웃은 설계 §5로 충분 — MS-004에서 평가·생략) | 설정 페이지 구현(MS-006) 착수 시 | 세션 #001 Gate 3, #004 재평가 |
+| ~~C-1~~ | **해소(2026-08-15, 세션 #004)** — `03_design_artifacts/ui_spec.md` 작성(설정 페이지 마스터-디테일·탭·명령 미리보기·데이터 흐름). 마법사 QuickPick 상세는 MS-008에서 보강 | (해소) | 세션 #001 Gate 3 → #004 작성 |
 | C-2 | MS-005~008 상세 Task 분해 (MS-002·003·004 분해 완료) | 해당 Milestone 착수 시 | task_registry 경량 운영 |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 | C-4 | `ProfileExport`(F12 export/import) 타입 확정 + `data_model.md` §2 export 예시를 ADR-011 후속(runArgs 승격)에 맞게 정합화 | export/import 구현(MS-006) 착수 시 | 세션 #003 TASK-002 |

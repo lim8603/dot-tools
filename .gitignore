@@ -13,6 +13,7 @@ out/
 
 # ─── Rust test-fixture build output ───
 src/test/fixtures/**/target/
+src/test/fixtures/**/Cargo.lock
 
 # ─── Member personal session logs ───
 .cowork/members/*/workspace/session_logs/*.md

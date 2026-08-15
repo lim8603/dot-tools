@@ -1,125 +1,96 @@
-# UI Specification
+# UI Spec — 화면설계서 (경량)
 
-> 화면설계서 — 사용자 인터페이스의 구조, 레이아웃, 동작을 정의한다
-
----
-
-## 문서 정보
-
-| 항목 | 내용 |
-| --- | --- |
-| 관련 Intent | 활성 Intent 또는 관련 `INT-*` 참조 |
-| 버전 | 프로젝트 기준 |
+> DevSwitcher Tools의 사용자 대면 UI 설계. 상태바는 상세설계서 §5로 충분하므로 여기서는
+> **설정 페이지(SettingsPanel, MS-006)** 레이아웃을 중심으로 기술한다. (C-1, 세션 #004에서 착수)
+>
+> 근거: 상세설계서 §5(상태바)·§10(설정 페이지), ADR-011(호출 구성 오버레이), ADR-012(설정 페이지·옵션 카탈로그), `interface_contract.md` §7·§8.
 
 ---
 
-## 목적
+## 1. 상태바 (StatusBarController) — 요약
 
-각 화면의 **레이아웃, 구성 요소, 상호작용, 상태 전이**를 정의하여
-개발자와 디자이너가 동일한 UI를 구현하기 위한 기준선을 제공한다.
+구현 완료(MS-004). 상세는 상세설계서 §5. 좌측 정렬, 프로젝트 칩이 가장 왼쪽.
 
----
-
-## 작성 기준
-
-- 이 문서에서는 HTML 주석형 placeholder 대신 `없음`, `미정`, `미작성`, `미확정` 같은 가시 상태값을 사용한다.
-- 실제 화면이 아직 없으면 화면 목록과 공통 질문만 최소 상태로 유지한다.
-
----
-
-## 레퍼런스 사이트
-
-UI 논의 시 Human이 원하는 스타일과 화면 구성의 방향을 맞추기 위해 **레퍼런스 사이트**를 활용한다.
-
-- Human은 참고할 URL, 서비스명, 스크린샷 등의 레퍼런스를 제공한다
-- AI는 구조, UX 패턴, 제약을 분석해 이 문서에 요약한다
-- 복사한 대화 원문이나 긴 메모는 `imported_context/`에 두고, 여기에는 합의된 요약만 남긴다
-
-| # | 레퍼런스 사이트 | 차용 요소 | 비고 |
-| --- | --- | --- | --- |
-| 없음 | 제공된 레퍼런스 없음 | | |
-
-### 분석 결과 요약
-
-- **레이아웃**: 미정
-- **컬러/테마**: 미정
-- **핵심 UX 패턴**: 미정
-- **우리 프로젝트에 적용/변경 사항**: 미정
-
----
-
-## 화면 목록
-
-| ID | 화면명 | 설명 | 관련 기능 | 상태 |
-| --- | --- | --- | --- | --- |
-| 없음 | 현재 등록 화면 없음 | | | |
-
----
-
-## 화면 상세
-
-### 화면 상세 미작성
-
-#### 개요
-
-- 화면 목적과 사용 맥락 미작성
-
-#### 접근 경로
-
-- 미작성
-
-#### 레이아웃
-
-```text
-미작성
+```
+$(repo) hello  $(layers) dev  $(chip) (Architecture)  $(checklist) default  $(symbol-method) hello   [$(tools)][$(debug-alt)][$(play)]
+   프로젝트        Profile        Architecture(미선택)        Features            Target(required)          Build Debug Run
 ```
 
-#### 구성 요소
-
-| # | 요소 | 타입 | 설명 | 동작 |
-| --- | --- | --- | --- | --- |
-| 없음 | 없음 | 없음 | 현재 등록 요소 없음 | |
-
-#### 상태 전이
-
-| 현재 상태 | 이벤트 | 다음 상태 | 비고 |
-| --- | --- | --- | --- |
-| 없음 | 없음 | 없음 | 현재 등록 상태 전이 없음 |
-
-#### 입력 검증 규칙
-
-| 필드 | 규칙 | 에러 메시지 |
-| --- | --- | --- |
-| 없음 | 없음 | 없음 |
+- 미선택 표시 `(라벨)`, required 미선택 = `warningBackground`, 매니페스트 오류 = 프로젝트 칩 `errorBackground`, 실행 중 = `$(sync~spin)`.
+- 칩 클릭 → QuickPick, 액션 버튼 클릭 → build/run/debug.
 
 ---
 
-## 화면 흐름도 (Screen Flow)
+## 2. 설정 페이지 (SettingsPanel, WebviewPanel) — MS-006
 
-```text
-미작성
+진입: 명령 `DevSwitcher: Open Settings`(`devSwitcher.openSettings`). 에디터 탭으로 열리는 WebviewPanel.
+원칙(§10.1): **값을 자체 저장하지 않는다.** 캐노니컬 정의(계층②)는 읽기 전용, 호출 구성 오버레이(계층③)만 `(프로젝트×구성)`별 `workspaceState`에 저장.
+
+### 2.1 전체 레이아웃 (마스터-디테일)
+
+```
+┌─ DevSwitcher Settings ─────────────────────────────────────────────┐
+│ Project: [ hello ▼ ]   Profile: [ dev ▼ ]              [Refresh]    │  ← 상단 컨텍스트 바
+├──────────────┬─────────────────────────────────────────────────────┤
+│ TABS (좌)    │ DETAIL (우)                                          │
+│              │                                                      │
+│ • Project    │  (선택된 탭 내용)                                    │
+│ • Profile    │                                                      │
+│ • Features   │                                                      │
+│ • Invocation │                                                      │
+│ • General    │                                                      │
+└──────────────┴─────────────────────────────────────────────────────┘
 ```
 
+- **탭 표시 조건(§10.2, 칩/카테고리 기반 — 어댑터 추가 시 코드 무변경)**:
+  | 탭 | 표시 조건 | 저장 |
+  |---|---|---|
+  | Project | 항상 | activeProjectId |
+  | Profile | `chips`에 `profile` | (v1 읽기전용, 편집 v2) |
+  | Features | `chips`에 `features` | 선택=StateStore, 정의=RO |
+  | Invocation | `configCategories` 비어있지 않음 | InvocationConfig (프로젝트×구성) |
+  | General | 항상 | — (export/import은 TASK-015) |
+
+### 2.2 Invocation(호출 구성) 탭 — 옵션 카탈로그 브라우저 (핵심)
+
+```
+┌ Categories ─┬ Options (opt catalog) ─┬ Editor / Detail ──────────────┐
+│ Compiler  ▸ │ • Optimization level   │ Optimization level            │
+│ Linker      │ • LTO                  │ ─────────────────────────────  │
+│ Output      │ • Codegen units        │ How much the compiler         │
+│ Env         │                        │ optimizes... (description)    │
+│ Run args    │                        │                               │
+│ Build events│                        │ Value: [ 3 ▼ ]  (enum editor) │
+│             │                        │ e.g. cargo build --config     │
+│             │                        │      profile.dev.opt-level=3  │
+└─────────────┴────────────────────────┴───────────────────────────────┘
+  Command preview:  cargo build -p hello --profile dev --config profile.dev.opt-level=3
+```
+
+- 3단 마스터-디테일: **카테고리 → 옵션(OptionSpec) → 에디터**. 에디터 타입은 `OptionSpec.type`으로 결정:
+  - `enum` → 드롭다운(`allowedValues`) · `bool` → 토글 · `int` → 숫자 입력 · `string` → 텍스트 · `stringList` → 여러 줄.
+- 각 옵션은 **설명·예제**(`description`/`example`)를 함께 표기(옵션을 모르는 개발자 교육, ADR-012).
+- **Run args / Build events**는 카탈로그가 아닌 자유 편집: runArgs 1줄 입력 → 순수 `parseArgsLine()`로 토큰화해 미리보기.
+- 하단 **명령 미리보기**: 현재 선택+오버레이로 조립될 실제 `cargo …` 명령을 실시간 표시.
+- `configCategories`에 없는 카테고리는 숨김 — 예: Python은 `actions.build=false`라 Compiler/Linker/Output이 사라지고 Env·Run args만 남음(리트머스, INV-2).
+
+### 2.3 상호작용 / 데이터 흐름 (§10.3)
+
+- **단방향**: Webview는 상태를 자체 보관하지 않고, 변경 시 확장에 메시지를 보내고 → 확장이 갱신된 `state`를 되돌려줌.
+- 메시지: `ready`·`switchProject`·`setChipValue`·`setInvocation`·(`export`/`import`은 TASK-015) ↔ `state`/`error`.
+- **CSP**: `default-src 'none'; script-src ${cspSource}; style-src ${cspSource}` — 외부 리소스 금지. 스크립트/스타일은 인라인(nonce) 또는 확장 번들 자원만.
+- `retainContextWhenHidden: false` — 숨겨지면 상태는 다음 표시 시 재요청(메모리 절약).
+
 ---
 
-## 공통 가정 (Assumptions)
+## 3. QuickPick (칩 선택) — 요약
 
-| ID | 가정 | 영향 |
-| --- | --- | --- |
-| 없음 | 현재 등록 가정 없음 | |
+구현 완료(MS-004, §5.3). 단일=`showQuickPick`, 복수(features)=`canPickMany`, 현재값 `picked` 표시. 취소 시 미변경.
 
 ---
 
-## 미확정 UX 질문 (Open Questions)
+## 4. 미해결 / 후속
 
-| ID | 항목 | 질문 | 상태 |
-| --- | --- | --- | --- |
-| 없음 | - | - | - |
-
----
-
-## 관련 근거 / 출처 (Evidence & Sources)
-
-| ID | 근거 | 출처 문서/대화 | 비고 |
-| --- | --- | --- | --- |
-| 없음 | 현재 등록 근거 없음 | | |
+- 프로파일 **편집**(커스텀 프로파일 생성, `opt-level` 등 스칼라 국소편집) = **v2**(ADR-011, 구 §8.7). v1은 읽기전용.
+- export/import(F12) UI = TASK-015(분리). `devswitcher.profile.json`.
+- 시작 마법사(F20) QuickPick 플로우 = MS-008에서 별도 기술.
