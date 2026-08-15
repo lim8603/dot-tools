@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-005 (M4 실행·디버그) — 착수 예정 |
+| 활성 Milestone | MS-005 (M4 실행·디버그) — In Progress |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_004.md |
 
@@ -20,7 +20,8 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| — | MS-005 미분해 | MS-005 | Planned | 0% | Task 분해 대기 |
+| TASK-010 | 실행 (TaskRunner + Build/Run) | MS-005 | In Progress | 0% | 없음 |
+| TASK-011 | 디버그 (createDebugConfig + CodeLLDB) | MS-005 | Planned | 0% | TASK-010 |
 
 > TASK-001~009 Done (MS-001~004 완료·main 병합, 2026-08-15). MS-003·004 상세: session #004.
 

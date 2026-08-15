@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-004 Done·병합 완료 → MS-005 실행·디버그) |
+| 현재 Phase | Build (MS-005 실행·디버그 In Progress — TASK-010) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-005 (M4 실행·디버그, 착수 예정 — Task 분해 필요) |
-| 활성 Task | 없음 (MS-005 미분해) |
+| 활성 Milestone | MS-005 (M4 실행·디버그, In Progress) |
+| 활성 Task | TASK-010 (TaskRunner + Build/Run, In Progress) → 011(디버그) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,10 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | MS-005 미분해 | AI | - | 2026-08-15 | 착수 시 TASK-010~ 분해(TaskRunner·problem matcher·createDebugConfig·액션버튼 실행) |
+| TASK-010 | 실행 (TaskRunner + Build/Run) | AI | In Progress | 2026-08-15 | TaskRunner·$rustc 매처·build()/run() 플로우·spin·키바인딩. 브랜치 `feature/ms-005-run-debug` |
+| TASK-011 | 디버그 (createDebugConfig + CodeLLDB) | AI | Planned | 2026-08-15 | createDebugConfig·온디맨드 설치·debug() 플로우 (TASK-010 후) |
 
-> TASK-001~009 모두 Done (MS-001~004 완료, main 병합). MS-003·004 상세는 session_2026-08-15_004.md.
+> TASK-001~009 Done (MS-001~004 완료, main 병합). MS-003·004 상세는 session_2026-08-15_004.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
