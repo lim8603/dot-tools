@@ -1,23 +1,24 @@
 import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
-import type { LanguageAdapter, ProjectInfo } from './types';
+import type { TaskRunner } from './taskRunner';
+import type { InvocationConfig, LanguageAdapter, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
 
 /**
- * Orchestrator — active-context owner and command handler (TASK-009, 상세설계서 §3.1).
+ * Orchestrator — active-context owner and command handler (상세설계서 §3.1).
  *
- * Wires the data layer (AdapterRegistry, StateStore) to the UI (StatusBarController),
- * enforcing the one-way dependency UI → Orchestrator → Adapter (INV-2). Action-button
- * execution (build/run/debug) lands with the TaskRunner in MS-005; here those commands
- * just inform the user.
+ * Wires the data layer (AdapterRegistry, StateStore) to the UI (StatusBarController)
+ * and the TaskRunner, enforcing the one-way dependency UI → Orchestrator → Adapter
+ * (INV-2). build()/run() execute real cargo tasks (TASK-010); debug() lands in TASK-011.
  */
 export class Orchestrator {
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
     private readonly statusBar: StatusBarController,
+    private readonly taskRunner: TaskRunner,
   ) {}
 
   /** First activation: scan, reconcile stored state, render (상세설계서 §3.3). */
@@ -75,9 +76,83 @@ export class Orchestrator {
     this.statusBar.render(adapter, project, this.store.getSelection(project.id));
   }
 
-  /** Action buttons render in MS-004; execution (TaskRunner) is MS-005. */
-  async informActionDeferred(action: string): Promise<void> {
-    await vscode.window.showInformationMessage(`DevSwitcher: ${action} runs in a later milestone (MS-005).`);
+  async build(): Promise<void> {
+    const context = this.activeContext();
+    if (context && context.adapter.actions.build) {
+      await this.runCargoTask(context.project, context.adapter, 'build');
+    }
+  }
+
+  async run(): Promise<void> {
+    const context = this.activeContext();
+    if (context) {
+      await this.runCargoTask(context.project, context.adapter, 'run');
+    }
+  }
+
+  /** Debug flow (§7.4) lands in TASK-011. */
+  async debug(): Promise<void> {
+    await vscode.window.showInformationMessage('DevSwitcher: Debug runs in a later milestone (MS-005 / TASK-011).');
+  }
+
+  /** Build/run flow (상세설계서 §7.3): validate required chips → run → surface failure. */
+  private async runCargoTask(
+    project: ProjectInfo,
+    adapter: LanguageAdapter,
+    action: 'build' | 'run',
+  ): Promise<void> {
+    if (this.taskRunner.isRunning(project.id)) {
+      void vscode.window.showInformationMessage(`DevSwitcher: a task is already running for ${project.name}.`);
+      return;
+    }
+    if (!(await this.ensureRequiredChips(project, adapter))) {
+      return; // user cancelled a required-chip pick (E4)
+    }
+    const selection = this.store.getSelection(project.id);
+    const config = this.activeConfig(project);
+    const task =
+      action === 'build'
+        ? adapter.createBuildTask(project, selection, config)
+        : adapter.createRunTask(project, selection, config);
+
+    this.statusBar.markActionBusy(action);
+    try {
+      const result = await this.taskRunner.run(task, project.id);
+      if (!result.succeeded) {
+        const showProblems = 'Show Problems';
+        const choice = await vscode.window.showErrorMessage(
+          `DevSwitcher: ${action} failed (exit ${result.exitCode ?? 'unknown'}).`,
+          showProblems,
+        );
+        if (choice === showProblems) {
+          void vscode.commands.executeCommand('workbench.actions.view.problems');
+        }
+      }
+    } finally {
+      await this.renderActive(); // clear the busy spinner
+    }
+  }
+
+  /** E4: prompt any required chip that is unset before running; false = cancelled. */
+  private async ensureRequiredChips(project: ProjectInfo, adapter: LanguageAdapter): Promise<boolean> {
+    for (const chip of adapter.chips) {
+      if (!chip.required || this.store.getValue(project.id, chip.id) !== undefined) {
+        continue;
+      }
+      const value = await pickChipValue(chip, project, undefined);
+      if (value === undefined) {
+        return false;
+      }
+      await this.store.setValue(project.id, chip.id, value);
+      this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+    }
+    return true;
+  }
+
+  /** The invocation overlay for the active (project × profile) (ADR-011). */
+  private activeConfig(project: ProjectInfo): InvocationConfig {
+    const profile = this.store.getValue(project.id, 'profile');
+    return this.store.getInvocation(project.id, typeof profile === 'string' ? profile : 'dev');
   }
 
   private async renderActive(): Promise<void> {

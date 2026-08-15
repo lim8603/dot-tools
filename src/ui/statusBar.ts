@@ -69,6 +69,18 @@ export class StatusBarController {
     }
   }
 
+  /**
+   * Show an action button as busy — spinner, no command (§5.4). Cleared by the next
+   * render(), which the orchestrator calls when the task finishes.
+   */
+  markActionBusy(actionId: string): void {
+    const item = this.items.get(actionId);
+    if (item) {
+      item.text = '$(sync~spin)';
+      item.command = undefined;
+    }
+  }
+
   /** Hide the whole status bar (no projects, or extension idle — §5.4). */
   hideAll(): void {
     for (const item of this.items.values()) {

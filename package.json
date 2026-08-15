@@ -46,6 +46,45 @@
         "title": "Debug",
         "category": "DevSwitcher"
       }
+    ],
+    "keybindings": [
+      {
+        "command": "devSwitcher.build",
+        "key": "ctrl+alt+b",
+        "mac": "cmd+alt+b"
+      },
+      {
+        "command": "devSwitcher.run",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r"
+      },
+      {
+        "command": "devSwitcher.debug",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d"
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "devswitcher-rustc",
+        "owner": "rust",
+        "source": "rustc",
+        "fileLocation": ["autoDetect", "${workspaceFolder}"],
+        "pattern": [
+          {
+            "regexp": "^(warning|error)(?:\\[(.+?)\\])?: (.+)$",
+            "severity": 1,
+            "code": 2,
+            "message": 3
+          },
+          {
+            "regexp": "^\\s+-->\\s+(.+?):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ]
+      }
     ]
   },
   "scripts": {

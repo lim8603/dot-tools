@@ -4,6 +4,7 @@ import { AdapterRegistry } from './core/adapterRegistry';
 import { ManifestWatcher } from './core/manifestWatcher';
 import { Orchestrator } from './core/orchestrator';
 import { StateStore } from './core/stateStore';
+import { TaskRunner } from './core/taskRunner';
 import { StatusBarController } from './ui/statusBar';
 
 /**
@@ -18,15 +19,16 @@ export function activate(context: vscode.ExtensionContext): void {
   const registry = new AdapterRegistry();
   const store = new StateStore(context.workspaceState);
   const statusBar = new StatusBarController();
-  const orchestrator = new Orchestrator(registry, store, statusBar);
+  const taskRunner = new TaskRunner();
+  const orchestrator = new Orchestrator(registry, store, statusBar, taskRunner);
 
   context.subscriptions.push(
     statusBar,
     vscode.commands.registerCommand('devSwitcher.switchProject', () => orchestrator.switchProject()),
     vscode.commands.registerCommand('devSwitcher.pickChip', (chipId?: string) => orchestrator.pickChip(chipId)),
-    vscode.commands.registerCommand('devSwitcher.build', () => orchestrator.informActionDeferred('Build')),
-    vscode.commands.registerCommand('devSwitcher.run', () => orchestrator.informActionDeferred('Run')),
-    vscode.commands.registerCommand('devSwitcher.debug', () => orchestrator.informActionDeferred('Debug')),
+    vscode.commands.registerCommand('devSwitcher.build', () => orchestrator.build()),
+    vscode.commands.registerCommand('devSwitcher.run', () => orchestrator.run()),
+    vscode.commands.registerCommand('devSwitcher.debug', () => orchestrator.debug()),
   );
 
   const globs = [...new Set(ALL_ADAPTERS.flatMap((adapter) => adapter.manifestGlobs))];

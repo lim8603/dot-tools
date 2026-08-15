@@ -80,7 +80,7 @@ function makeCargoTask(
     `${action} ${project.name}`,
     'cargo',
     execution,
-    [], // problem matcher wired in MS-005
+    ['$devswitcher-rustc'], // owned matcher (package.json), resolves without the Rust extension
   );
   if (action === 'build') {
     task.group = vscode.TaskGroup.Build;
