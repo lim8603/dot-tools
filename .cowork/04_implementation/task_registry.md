@@ -47,9 +47,9 @@
 | TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | INT-001 | US-010·US-012 | AI | Done | 2026-08-15 | 완료 — buildConfigArgs·buildRustflags·tomlScalar·parseArgsLine + cargoAdapter 주입(compiler→`--config`·linker→RUSTFLAGS·env). main 병합(FF, 335f982). pre/postBuild(C-5) 후속 | 없음 | | M5 |
 | TASK-013 | SettingsPanel Webview 셸 | MS-006 | INT-001 | US-010 | AI | Done | 2026-08-15 | 완료 — F5 검증 통과(설정 페이지·탭·자동갱신). main 병합(FF) | TASK-012 | | M5 |
 | TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | INT-001 | US-010·US-012 | AI | Done | 2026-08-15 | 완료 — F5 검증 통과(옵션 편집→명령 미리보기·오버레이 빌드 주입·입력 UX). mocha 61. main 병합(FF) | TASK-013 | | M5 |
-| TASK-015 | 프로파일 export/import | MS-006 | INT-001 | 없음 | AI | In Progress | 2026-08-15 | 착수 — `ProfileExport`(PersistedState 정렬, C-4) + `profileExport.ts`(build/parse/merge) + export/import 커맨드. F12 §6.3. MS-006 마지막 Task | 없음 | `tasks/TASK-015.md` | M5. export=selections+invocation, activeProjectId 제외 |
+| TASK-015 | 프로파일 export/import | MS-006 | INT-001 | 없음 | AI | Done | 2026-08-15 | 완료 — **F5 통과**(export→값변경→import 라운드트립 복원). `profileExport.ts`(build/parse/merge) + `ProfileExport`(C-4) + export/import 커맨드. 파생: 옵션 example bare화+injectsAs/docUrl, preview env 표시. main 병합(FF, b7864cf) | 없음 | `tasks/TASK-015.md` | M5. **MS-006 Done** |
 
-> 현재 등록 Task: TASK-001~015. MS-006 코어(012·013·014) main 병합 완료. **TASK-015(export/import) 진행 중** — 완료 시 MS-006 Done. MS-007 이후 Task는 착수 시 상세화.
+> 현재 등록 Task: TASK-001~015 **전부 Done (MS-001~006 완료·main 병합)**. MS-007 이후 Task는 착수 시 상세화(C-2).
 
 - `담당`: `Human` / `AI` / `Role-*` / `(Role-* 인수자)`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done`

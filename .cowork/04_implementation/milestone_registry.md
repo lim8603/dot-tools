@@ -33,7 +33,7 @@ Milestone은 `Phase`와 다르다.
 | MS-003 | M2 CargoBridge + CargoAdapter | INT-001 | Build | Done | TASK-004, TASK-005, TASK-006 | | 메타데이터/빌드 JSON 파싱·인자 조립·features·resolveExecutable + 단위테스트(34). TASK-004·005·006 Done — build/run/resolveExecutable/chips/listProjects 실동작. main 병합(FF, 2026-08-15). **디버그 구성=M4, cargo createProjectTask=MS-008(F20)로 이월** |
 | MS-004 | M3 상태바·상태 저장·감시 | INT-001 | Build | Done | TASK-007, TASK-008, TASK-009 | | 칩 렌더링·QuickPick·StateStore·reconcile·ManifestWatcher. TASK-007·008·009 Done. **F5 end-to-end 검증 통과**, main 병합(FF, 2026-08-15). Rust 선택 UX 실사용 가능 |
 | MS-005 | M4 실행·디버그 | INT-001 | Build | Done | TASK-010, TASK-011 | | TaskRunner·problem matcher·디버그 플로우·키바인딩. TASK-010·011 Done. **F5 검증 통과**(Build/Run + Debug 중단점), main 병합(FF, 2026-08-15). Rust 빌드·실행·디버그 실사용 가능. F19·Doctor 이월 |
-| MS-006 | M5 설정 페이지 | INT-001 | Build | In Progress | TASK-012, TASK-013, TASK-014 | | 코어(012 주입·013 Webview 셸·014 호출구성 탭) **F5 검증 통과·미병합** `feature/ms-006-settings-page`. export/import(TASK-015 F12)·pre/postBuild 실행은 남음. **Cargo.toml 국소편집은 v2 이월** |
+| MS-006 | M5 설정 페이지 | INT-001 | Build | Done | TASK-012, TASK-013, TASK-014, TASK-015 | 2026-08-15 | 코어(012 주입·013 Webview 셸·014 호출구성 탭) + **015 export/import(F12)** 모두 **F5 통과·main 병합**. pre/postBuild 실행은 C-5로 MS-007 이월. **Cargo.toml 국소편집은 v2 이월** |
 | MS-007 | M6 품질·배포 | INT-001 | Build | Planned | 없음 | | Doctor·WSL 스모크·통합테스트·README·VSIX |
 | MS-008 | 시작 마법사 (F20) | INT-001 | Build | Planned | 없음 | | newProjectWizard UI + `devSwitcher.newProject` + **4개 어댑터 createProjectTask**. 의존: MS-002·MS-005 |
 
