@@ -28,6 +28,7 @@ export interface SettingsState {
   optionCatalog: OptionSpec[];
   invocation: InvocationConfig;
   commandPreview: string;
+  statusBar: { compact: boolean; selectedOnly: boolean };
 }
 
 /** Messages the webview sends to the extension (상세설계서 §10.3). */
@@ -38,7 +39,8 @@ type InMessage =
   | { type: 'setOption'; optionId: string; value: OptionValue }
   | { type: 'clearOption'; optionId: string }
   | { type: 'setRunArgs'; line: string }
-  | { type: 'setBuildEvent'; event: 'preBuild' | 'postBuild'; text: string };
+  | { type: 'setBuildEvent'; event: 'preBuild' | 'postBuild'; text: string }
+  | { type: 'setStatusBarPref'; key: 'compact' | 'selectedOnly'; value: boolean };
 
 /**
  * SettingsPanel — the WebviewPanel settings page (TASK-013, F21 / ADR-012 / 상세설계서 §10).
@@ -100,6 +102,12 @@ export class SettingsPanel {
     const activeId = this.store.activeProjectId;
     if (message.type === 'switchProject') {
       await this.store.setActiveProject(message.projectId);
+    } else if (message.type === 'setStatusBarPref') {
+      // Global display prefs — write to the VSCode config (the same setting the native
+      // Settings UI edits). onDidChangeConfiguration re-renders the status bar.
+      await vscode.workspace
+        .getConfiguration('devSwitcher')
+        .update(`statusBar.${message.key}`, message.value, vscode.ConfigurationTarget.Global);
     } else if (activeId !== undefined) {
       switch (message.type) {
         case 'setChipValue':
@@ -184,6 +192,7 @@ export class SettingsPanel {
         optionCatalog: [],
         invocation: {},
         commandPreview: '',
+        statusBar: this.statusBarPrefs(),
       };
     }
 
@@ -221,6 +230,16 @@ export class SettingsPanel {
       optionCatalog: adapter.optionCatalog,
       invocation,
       commandPreview: this.commandPreview(adapter, project, invocation),
+      statusBar: this.statusBarPrefs(),
+    };
+  }
+
+  /** Current global status-bar display prefs (the same VSCode config the native UI edits). */
+  private statusBarPrefs(): { compact: boolean; selectedOnly: boolean } {
+    const config = vscode.workspace.getConfiguration('devSwitcher');
+    return {
+      compact: config.get<boolean>('statusBar.compact', false),
+      selectedOnly: config.get<boolean>('statusBar.selectedOnly', false),
     };
   }
 

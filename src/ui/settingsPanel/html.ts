@@ -269,8 +269,17 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   }
 
   function renderGeneral() {
-    return '<h2>General</h2><p class="muted">Export / import a profile (F12) from the Command ' +
-      'Palette: <code>DevSwitcher: Export Profile</code> · <code>DevSwitcher: Import Profile</code>.</p>';
+    const sb = state.statusBar || {};
+    return '<h2>General</h2>' +
+      '<h3 class="cat">Status bar</h3>' +
+      '<label class="row"><input type="checkbox" id="sb-compact"' + (sb.compact ? ' checked' : '') +
+      ' /> Compact — icons only (hover / click for the value)</label>' +
+      '<label class="row"><input type="checkbox" id="sb-selectedonly"' + (sb.selectedOnly ? ' checked' : '') +
+      ' /> Selected chips only — hide unselected optional chips</label>' +
+      '<div class="muted">Also editable in VSCode Settings › DevSwitcher.</div>' +
+      '<h3 class="cat">Profile</h3>' +
+      '<p class="muted">Export / import a profile (F12) from the Command Palette: ' +
+      '<code>DevSwitcher: Export Profile</code> · <code>DevSwitcher: Import Profile</code>.</p>';
   }
 
   document.addEventListener('click', (e) => {
@@ -295,6 +304,10 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'setBuildEvent', event: 'preBuild', text: el.value });
     } else if (el.id === 'postbuild-input') {
       post({ type: 'setBuildEvent', event: 'postBuild', text: el.value });
+    } else if (el.id === 'sb-compact') {
+      post({ type: 'setStatusBarPref', key: 'compact', value: el.checked });
+    } else if (el.id === 'sb-selectedonly') {
+      post({ type: 'setStatusBarPref', key: 'selectedOnly', value: el.checked });
     } else if (el.dataset && el.dataset.action === 'set-option') {
       const id = el.dataset.optionId;
       const type = el.dataset.type;
