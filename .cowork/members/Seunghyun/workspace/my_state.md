@@ -22,7 +22,7 @@
 |---------|------|----------------|------|--------|--------|
 | TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | Done | 100% | 없음 |
 | TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | Review | 100% (검토 대기) | 없음 |
-| TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | Planned | 0% | TASK-002 |
+| TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | Review | 100% (검토 대기) | 없음 |
 
 ---
 
@@ -38,8 +38,8 @@
 
 ## 다음 시작점
 
-1. **TASK-002 검토 후 병합** (`src/core/types.ts`, tsc·eslint·esbuild 통과)
-2. TASK-003(어댑터 칩 + optionCatalog·configCategories 스텁, Python 리트머스) — types.ts 구현체로 인터페이스 검증
+1. **TASK-002+003 검토 후 병합** (`feature/task-002-core-types`: types.ts + 4개 어댑터 스텁 + TS2584 수정). 병합 시 MS-002 Done
+2. MS-003(M2 CargoBridge + CargoAdapter 실구현) — 상세 Task 분해(C-2)
 3. 설정 페이지/호출 구성 실구현은 MS-006(M5)
 
 ---

@@ -19,7 +19,7 @@
 | 현재 Phase | Build (MS-001 완료 — MS-002/TASK-002 착수) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
 | 활성 Milestone | MS-002 (M1 코어 타입·칩, In Progress) |
-| 활성 Task | TASK-002 (core/types.ts) → 다음 TASK-003 |
+| 활성 Task | TASK-002·003 (M1 타입·어댑터, Review) → 검토·병합 후 MS-003 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. TASK-001 완료·병합(MS-001 Done). **TASK-002(core/types.ts) 완료** — §2~§7 + PersistedState + DevSwitcherError, OQ-002 별도인자 확정. tsc·eslint·esbuild 통과, `feature/task-002-core-types`, 사용자 검토 후 병합. 다음 TASK-003.
+- Build 진행 중. TASK-001 완료·병합(MS-001 Done). **TASK-002(types.ts) + TASK-003(4개 어댑터 스텁) 완료** — OQ-002 별도인자 확정, Python 리트머스 포함 인터페이스 tsc 확정 검증 통과. `feature/task-002-core-types`(스택), 편집기 TS2584(console) 수정 포함. 사용자 검토 후 main 병합 → MS-002 Done 예정.
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -58,7 +58,7 @@
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
 | TASK-002 | core/types.ts 전체 타입 확정 | AI | Review | 2026-08-15 | types.ts 완료(tsc·eslint·esbuild 통과). 사용자 검토 후 main 병합 → TASK-003 |
-| TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Planned | 2026-08-15 | 칩·actions·canCreateProject·optionCatalog·configCategories 선언 (TASK-002 후) |
+| TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Review | 2026-08-15 | 4개 어댑터 선언 완료(tsc 인터페이스 확정 검증 통과, Python 리트머스). 사용자 검토 후 병합 |
 
 > TASK-001(스캐폴드 + F5)은 2026-08-15 Done — 상세는 session_2026-08-15_003.md.
 
@@ -70,8 +70,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-002 검토 후 main 병합** — `src/core/types.ts` (tsc·eslint·esbuild 통과)
-2. TASK-003(4개 어댑터 칩·optionCatalog·configCategories 스텁, Python 리트머스) — types.ts 구현체로 인터페이스 검증
+1. **TASK-002+003 검토 후 main 병합** (`feature/task-002-core-types`: types.ts + 4개 어댑터 스텁 + 편집기 TS2584 수정). 병합 시 MS-002 Done
+2. 다음 MS-003(M2 CargoBridge + CargoAdapter 실구현) — 상세 Task 분해 필요(C-2)
 
 ---
 
@@ -176,6 +176,8 @@
 | `interface_contract.md` | §7 호출 구성 계약(InvocationConfig·OptionSpec·optionCatalog) + §8 **언어별 호출 구성 능력 매트릭스** | 세션 #002 |
 | `src/core/types.ts` | 전체 타입 단일 정의 지점 신규(§2~§7 LanguageAdapter·InvocationConfig·OptionSpec·PersistedState·DevSwitcherError) | TASK-002 |
 | `interface_contract.md` | OQ-002 Resolved — config 별도 인자, Selection.runArgs 제거, runArgs 승격 | TASK-002 |
+| `src/adapters/*` | 4개 어댑터 선언 스텁(cargo/cmake/dotnet/python) + cargo optionCatalog + notImplemented + index(ALL_ADAPTERS). Python 리트머스. tsc 인터페이스 확정 검증 | TASK-003 |
+| `tsconfig.json`·`.vscode/settings.json` | 편집기 TS2584(console) 수정 — `types:[node,vscode]`, 워크스페이스 TS 고정 | 세션 #003 |
 | `data_model.md` | 설정 3계층 + PersistedState에 `(projectId×profile)` invocation 차원 도입 | 세션 #002 |
 | `functional_spec.md`·`requirement_spec.md` | F21·FR-014 추가, §8.7 파일편집 v2 이월, NFR-002a 셸 예외 | 세션 #002 |
 | `user_story_registry.md`·`milestone_registry.md`·`domain_model.md`·`coding_convention.md`·`deliverable_plan.md` | US-010 정정+US-012, MS-006 범위, INV-6, 카탈로그 반영, 명칭(다이얼로그→페이지) | 세션 #002 |
@@ -191,9 +193,9 @@
 |------|----|------|------|------|
 | Intent | INT-001 | 다언어 통합 상태바 UX VSCode 확장 | Approved | 2026-08-13 승인 |
 | Milestone | MS-001 | M0 셋업 | Done | 스캐폴드 + F5 검증 완료 |
-| Milestone | MS-002 | M1 코어 타입·칩 | In Progress | TASK-002 착수 |
+| Milestone | MS-002 | M1 코어 타입·칩 | In Progress | TASK-002·003 Review (검토·병합 시 Done) |
 | Milestone | MS-003~008 | M2~M6 + F20 마법사 | Planned | milestone_registry |
-| Task | TASK-002~003 | M1 착수분 | Planned | task_registry |
+| Task | TASK-002~003 | M1 (Review) | Review | task_registry |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
