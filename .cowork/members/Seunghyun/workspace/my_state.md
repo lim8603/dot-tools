@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter) — Review, 병합 대기 |
+| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시) — 착수 |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_004.md |
 
@@ -20,11 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-004 | CargoBridge 순수 코어 + 테스트 | MS-003 | Review | 100% (19 테스트) | 없음 |
-| TASK-005 | CargoBridge cargo CLI 연동 | MS-003 | Review | 100% (14 신규·실 cargo 스모크) | 없음 |
-| TASK-006 | CargoAdapter 실구현 | MS-003 | Review | 100% (M2 스코프, 34 테스트) | 없음 |
+| — | MS-004 미분해 | MS-004 | Planned | 0% | Task 분해 대기(C-2) |
 
-> TASK-001·002·003 Done (MS-001·002 완료·병합, 2026-08-15).
+> TASK-001~006 Done (MS-001·002·003 완료·main 병합, 2026-08-15). MS-003 상세: session #004.
 
 ---
 
@@ -41,8 +39,8 @@
 
 ## 다음 시작점
 
-1. **MS-003 검토·병합 판단** — `feature/task-004-cargobridge-pure`(TASK-004·005·006)를 main 병합할지 결정, 병합 후 브랜치 정리
-2. **MS-004(M3 상태바·저장·감시)** 착수 — AdapterRegistry·StatusBarController·QuickPick·StateStore·ManifestWatcher. 착수 시 Task 분해(C-2). **여기까지면 Rust 실사용 가능**
+1. **MS-004(M3 상태바·저장·감시) Task 분해**(C-2) → 착수. 구성요소: AdapterRegistry(스캔·매칭 ADR-006)·StatusBarController(칩 렌더 ADR-003)·QuickPick(pickChip §5.3)·StateStore(workspaceState·reconcile ADR-001)·ManifestWatcher(디바운스 F17). **여기까지면 Rust 실사용 가능**
+2. **C-1(ui_spec) 트리거 도래** — MS-004 UI 착수이므로 상태바 칩 레이아웃 화면설계 필요 여부 판단
 3. 이후 MS-005(실행·디버그: TaskRunner·problem matcher·createDebugConfig)·MS-006(설정 페이지/호출 구성)
 
 ---

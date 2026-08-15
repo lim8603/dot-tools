@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-003 완료 임박 — TASK-006 CargoAdapter 실구현 Review) |
+| 현재 Phase | Build (MS-003 Done·병합 완료 → MS-004 상태바 착수) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter, Review — 3개 Task 완료, 병합 대기) |
-| 활성 Task | TASK-004·005·006 모두 Review (34 테스트) → 검토·병합 후 MS-004 |
+| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시, 착수 — Task 분해 필요 C-2) |
+| 활성 Task | 없음 (MS-004 미분해 — 착수 시 TASK-007~ 분해) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. MS-001·002 완료·병합. **MS-003 Review** — TASK-004(순수코어)·005(cargo CLI I/O)·**006(CargoAdapter 실구현)** 모두 완료(Review): listProjects·chips·build/run Task·resolveExecutable 실동작. mocha 34 + 실 cargo 스모크. 브랜치 `feature/task-004-cargobridge-pure`(3개 Task 미병합). 디버그=M4·createProjectTask=MS-008 이월. 다음: 검토·병합 후 MS-004(상태바). cargo가 실행 경로 해석(DD-05).
+- Build 진행 중. **MS-001·002·003 완료·main 병합.** MS-003 = CargoBridge(순수코어+CLI I/O) + CargoAdapter(listProjects·chips·build/run·resolveExecutable), mocha 34 + 실 cargo 스모크. 디버그=M4·createProjectTask=MS-008 이월. **다음: MS-004(M3 상태바·저장·감시)** — AdapterRegistry·StatusBarController·QuickPick·StateStore·ManifestWatcher. 여기까지면 Rust 실사용 가능. cargo가 실행 경로 해석(DD-05).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,11 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-004 | CargoBridge 순수 코어 + 테스트 하네스 | AI | Review | 2026-08-15 | 완료 — 순수 함수 + mocha 19 테스트 통과 |
-| TASK-005 | CargoBridge cargo CLI 연동 | AI | Review | 2026-08-15 | 완료 — execCapture/CargoBridge(fetchMetadata+캐시·listInstalledTargets·checkToolchain), mocha 14 신규·실 cargo 스모크 OK. 검토 후 TASK-006 |
-| TASK-006 | CargoAdapter 실구현 | AI | Review | 2026-08-15 | 완료(M2) — listProjects·chips·build/run Task·resolveExecutable·invalidateCache 실동작. 디버그·createProjectTask는 M4/MS-008 이월. 검토 후 병합 |
+| 없음 | MS-004 미분해 | AI | - | 2026-08-15 | 착수 시 TASK-007~ 분해(AdapterRegistry·StatusBar·QuickPick·StateStore·ManifestWatcher) |
 
-> TASK-001·002·003 모두 2026-08-15 Done (MS-001·002 완료, main 병합) — 상세는 session_2026-08-15_003.md.
+> TASK-001~006 모두 2026-08-15 Done (MS-001·002·003 완료, main 병합). MS-003 상세는 session_2026-08-15_004.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -205,8 +203,10 @@
 | Intent | INT-001 | 다언어 통합 상태바 UX VSCode 확장 | Approved | 2026-08-13 승인 |
 | Milestone | MS-001 | M0 셋업 | Done | 스캐폴드 + F5 검증 완료 |
 | Milestone | MS-002 | M1 코어 타입·칩 | Done | 인터페이스 확정(tsc), main 병합 |
-| Milestone | MS-003~008 | M2~M6 + F20 마법사 | Planned | milestone_registry |
-| Task | 없음 | MS-003 미분해 | - | 착수 시 분해(C-2) |
+| Milestone | MS-003 | M2 CargoBridge/CargoAdapter | Done | main 병합(FF, 2026-08-15). 디버그·createProject 이월 |
+| Milestone | MS-004 | M3 상태바·저장·감시 | In Progress | 착수 — Task 분해 필요(C-2) |
+| Milestone | MS-005~008 | M4~M6 + F20 마법사 | Planned | milestone_registry |
+| Task | 없음 | MS-004 미분해 | - | 착수 시 분해(C-2) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
