@@ -6,6 +6,10 @@ import type { InvocationConfig, LanguageAdapter, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
 import { ensureExtension } from './ensureExtension';
+import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
+
+/** Default filename offered by the export/import dialogs (F12). */
+const DEFAULT_PROFILE_FILE = 'devswitcher.profile.json';
 
 /**
  * Orchestrator — active-context owner and command handler (상세설계서 §3.1).
@@ -152,6 +156,69 @@ export class Orchestrator {
       void vscode.window.showErrorMessage(`DevSwitcher: debug failed — ${message}`);
     } finally {
       await this.renderActive();
+    }
+  }
+
+  /**
+   * Export selections + invocation overlays to a `devswitcher.profile.json` (F12,
+   * 상세설계서 §6.3). projectIds are machine-independent, so the file shares across
+   * clones. activeProjectId is dropped by buildProfileExport.
+   */
+  async exportProfile(): Promise<void> {
+    const folder = vscode.workspace.workspaceFolders?.[0];
+    const defaultUri = folder ? vscode.Uri.joinPath(folder.uri, DEFAULT_PROFILE_FILE) : undefined;
+    const target = await vscode.window.showSaveDialog({
+      defaultUri,
+      filters: { 'DevSwitcher profile': ['json'] },
+      saveLabel: 'Export DevSwitcher profile',
+    });
+    if (!target) {
+      return; // cancelled
+    }
+    const payload = buildProfileExport(this.store.getState(), new Date().toISOString());
+    const text = JSON.stringify(payload, null, 2);
+    try {
+      await vscode.workspace.fs.writeFile(target, Buffer.from(text, 'utf8'));
+      void vscode.window.showInformationMessage(`DevSwitcher: exported profile to ${target.fsPath}.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: export failed — ${message}`);
+    }
+  }
+
+  /**
+   * Import a `devswitcher.profile.json` (F12, §6.3): read → parse/validate → merge
+   * (only projectIds present in the current scan) → persist → refresh (reconciles
+   * away values the manifest no longer offers). Foreign-clone projects are reported
+   * as skipped, not written.
+   */
+  async importProfile(): Promise<void> {
+    const folder = vscode.workspace.workspaceFolders?.[0];
+    const picked = await vscode.window.showOpenDialog({
+      defaultUri: folder?.uri,
+      canSelectMany: false,
+      filters: { 'DevSwitcher profile': ['json'] },
+      openLabel: 'Import DevSwitcher profile',
+    });
+    const source = picked?.[0];
+    if (!source) {
+      return; // cancelled
+    }
+    try {
+      const bytes = await vscode.workspace.fs.readFile(source);
+      const imported = parseProfileExport(Buffer.from(bytes).toString('utf8'));
+      const knownIds = this.registry.getProjects().map((p) => p.id);
+      const merge = mergeImport(this.store.getState(), imported, knownIds);
+      await this.store.importState(merge.next);
+      await this.refresh(); // reconcile imported values + re-render + view-sync
+      const summary =
+        merge.skipped.length > 0
+          ? `imported ${merge.applied.length} project(s); skipped ${merge.skipped.length} not in this workspace.`
+          : `imported ${merge.applied.length} project(s).`;
+      void vscode.window.showInformationMessage(`DevSwitcher: ${summary}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: import failed — ${message}`);
     }
   }
 

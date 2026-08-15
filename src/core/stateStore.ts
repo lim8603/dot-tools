@@ -61,6 +61,25 @@ export class StateStore {
     await this.persist();
   }
 
+  /** A deep copy of the full persisted state — the source for a profile export (F12). */
+  getState(): PersistedState {
+    return structuredClone(this.state);
+  }
+
+  /**
+   * Replace selections + invocation from a merged import (F12), keeping the current
+   * `activeProjectId` (the import never carries one). The caller reconciles afterward
+   * (orchestrator.refresh) to prune imported values the manifest no longer offers.
+   */
+  async importState(merged: PersistedState): Promise<void> {
+    this.state = {
+      activeProjectId: this.state.activeProjectId,
+      selections: merged.selections,
+      invocation: merged.invocation,
+    };
+    await this.persist();
+  }
+
   /**
    * Prune selection values missing from their chip's current items and resolve the
    * active project against the scan (상세설계서 §6.2). `validItems` maps

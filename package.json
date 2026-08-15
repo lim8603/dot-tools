@@ -50,6 +50,16 @@
         "command": "devSwitcher.openSettings",
         "title": "Open Settings",
         "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.exportProfile",
+        "title": "Export Profile",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.importProfile",
+        "title": "Import Profile",
+        "category": "DevSwitcher"
       }
     ],
     "problemMatchers": [

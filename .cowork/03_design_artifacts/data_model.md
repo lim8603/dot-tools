@@ -66,21 +66,31 @@ interface PersistedState {
 
 ### export 파일 `devswitcher.profile.json` (F12)
 
+> **C-4 정합화(2026-08-15, TASK-015).** export 포맷을 `PersistedState`와 그대로 정렬 —
+> 두 맵(`selections` + `invocation`)을 담고, 기계·세션 종속인 `activeProjectId`는 제외한다.
+> `runArgs`는 ADR-011 승격 위치(`invocation[projectId][profile].runArgs`)에 실린다.
+> 직렬화가 곧 저장 스키마라 라운드트립에 변환 코드가 필요 없다. 타입 SSOT: `src/core/types.ts`의 `ProfileExport`(§7 `InvocationConfig` 재사용).
+
 ```jsonc
 {
   "version": 1,
-  "exportedAt": "2026-08-13T12:00:00Z",
+  "exportedAt": "2026-08-15T12:00:00Z",
   "selections": {
     "cargo:crates/my-app/Cargo.toml": {
-      "values": { "profile": "release", "architecture": "x86_64-pc-windows-msvc",
-                  "features": ["gui", "metrics"], "target": "main" },
-      "runArgs": ["--config", "dev.toml"]
+      "profile": "release", "architecture": "x86_64-pc-windows-msvc",
+      "features": ["gui", "metrics"], "target": "main"
+    }
+  },
+  "invocation": {
+    "cargo:crates/my-app/Cargo.toml": {
+      "release": { "runArgs": ["--config", "dev.toml"] }
     }
   }
 }
 ```
 
 - projectId(`adapterId:상대경로`)는 기계 독립 — 팀/클론 간 그대로 공유 가능.
+- **Import**: 현재 스캔에 존재하는 projectId만 반영, 나머지는 결과 요약에 skip 표시(§6.3). 반영 후 reconcile로 유효하지 않은 칩 값 정리(E10). 파싱/버전/형태 오류 → `DevSwitcherError('PROFILE_IMPORT_INVALID')`.
 
 ---
 

@@ -205,10 +205,26 @@ export interface PersistedState {
   invocation: Record<string, Record<string, InvocationConfig>>;
 }
 
-// TODO(MS-006): ProfileExport (F12 export/import, devswitcher.profile.json).
-// Deferred until export/import is built — the data_model §2 export example still
-// shows the pre-ADR-011 runArgs-at-selection shape and must be reconciled with
-// the InvocationConfig promotion before the format is frozen.
+/** Schema version stamped into every exported profile file (F12). */
+export const PROFILE_EXPORT_VERSION = 1;
+
+/**
+ * The `devswitcher.profile.json` export/import payload (F12, 상세설계서 §6.3).
+ *
+ * Deliberately mirrors PersistedState's two maps so a round-trip needs no shape
+ * translation (C-4, resolved 2026-08-15). runArgs rides in its promoted home,
+ * invocation[projectId][profile].runArgs (ADR-011) — not at the selection level
+ * as the pre-ADR-011 design example showed. `activeProjectId` is intentionally
+ * excluded: it is machine/session-specific and never shared across clones.
+ */
+export interface ProfileExport {
+  version: number;
+  exportedAt: string; // ISO 8601 timestamp
+  /** projectId -> (chipId -> value); machine-independent projectIds (ADR-006). */
+  selections: Record<string, Record<string, ChipValue>>;
+  /** projectId -> profileName -> invocation overlay (ADR-011). */
+  invocation: Record<string, Record<string, InvocationConfig>>;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Errors — defined in ./errors (vscode-free) and re-exported here so existing
