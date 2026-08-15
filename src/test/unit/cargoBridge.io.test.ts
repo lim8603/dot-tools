@@ -98,6 +98,16 @@ describe('CargoBridge.fetchMetadata', () => {
     assert.equal(metadataCalls(calls).length, 2);
   });
 
+  it('peekMetadata returns the cached value synchronously, undefined before fetch', async () => {
+    const { exec } = fakeExec(metadataScript);
+    const bridge = new CargoBridge(exec);
+    assert.equal(bridge.peekMetadata(MANIFEST), undefined);
+    const fetched = await bridge.fetchMetadata(MANIFEST);
+    assert.equal(bridge.peekMetadata(MANIFEST), fetched);
+    bridge.invalidateCache(MANIFEST);
+    assert.equal(bridge.peekMetadata(MANIFEST), undefined);
+  });
+
   it('invalidateCache() with no argument clears every manifest', async () => {
     const { exec, calls } = fakeExec(metadataScript);
     const bridge = new CargoBridge(exec);
