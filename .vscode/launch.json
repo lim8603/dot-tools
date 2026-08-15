@@ -2,7 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      // Full host: other extensions (incl. CodeLLDB for debug) stay enabled. No
+      // "extensions disabled" banner. Use this for normal testing and debugging.
       "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "preLaunchTask": "npm: compile"
+    },
+    {
+      // Loads only the extension under test — quiet console, but CodeLLDB (debug) is
+      // also disabled and VS Code shows an "extensions disabled" banner.
+      "name": "Run Extension (clean console)",
       "type": "extensionHost",
       "request": "launch",
       "args": [
@@ -10,15 +22,6 @@
         "--disable-extensions",
         "${workspaceFolder}"
       ],
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "preLaunchTask": "npm: compile"
-    },
-    {
-      // Keeps other extensions enabled so CodeLLDB is available for the Debug flow.
-      "name": "Run Extension (with extensions)",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "npm: compile"
     }
