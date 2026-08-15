@@ -46,12 +46,18 @@ export class StatusBarController {
 
     for (const chip of adapter.chips) {
       const value = sel.values[chip.id];
+      // Unset chips show a value-like `unsetText` when the adapter provides one (e.g.
+      // 'default' for architecture = host target), else the '(Label)' prompt.
       const text =
-        value !== undefined ? (chip.format?.(value) ?? defaultChipFormat(value)) : `(${chip.label})`;
+        value !== undefined
+          ? (chip.format?.(value) ?? defaultChipFormat(value))
+          : (chip.unsetText ?? `(${chip.label})`);
       const tooltip =
         value !== undefined
           ? `${chip.label}: ${Array.isArray(value) ? value.join(', ') : value}`
-          : chip.label;
+          : chip.unsetText !== undefined
+            ? `${chip.label}: ${chip.unsetText}`
+            : chip.label;
       const item = this.upsert(chip.id, `$(${chip.icon}) ${text}`, tooltip, 'devSwitcher.pickChip', [chip.id], order++);
       item.backgroundColor =
         chip.required && value === undefined

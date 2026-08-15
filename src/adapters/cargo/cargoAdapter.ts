@@ -133,6 +133,7 @@ export const cargoAdapter: LanguageAdapter = {
       id: 'architecture',
       icon: 'chip',
       label: 'Architecture',
+      unsetText: 'default', // unselected = host default target (no --target)
       // F19 §13.4: installed targets show by default; the not-installed tail is marked
       // `secondary` so the QuickPick keeps it behind a toggle (secondaryToggle). Picking
       // a not-installed one runs `rustup target add` via onPick. Unselected = host

@@ -49,6 +49,12 @@ export interface ChipDescriptor {
   listItems(project: ProjectInfo): Promise<ChipItem[]>;
   /** Abbreviated rendering for the status bar. */
   format?(value: ChipValue): string;
+  /**
+   * Status-bar text when no value is stored, shown value-style instead of the
+   * '(Label)' prompt (e.g. 'default' for the optional architecture chip = host
+   * target). Leave unset for chips whose blank state should read as "pick me".
+   */
+  unsetText?: string;
   defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
   /**
    * Optional post-pick hook (F19 §13.4). Runs after the user picks a value, before it
