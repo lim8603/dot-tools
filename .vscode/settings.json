@@ -1,0 +1,8 @@
+{
+  // Use the workspace TypeScript (node_modules) so the editor matches the CLI (tsc).
+  // Without this the bundled editor TS can resolve @types/node's typesVersions
+  // layout differently and report a phantom "Cannot find name 'console'" (TS2584)
+  // even though `tsc --noEmit` passes.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
