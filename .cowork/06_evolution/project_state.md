@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-001 완료 — MS-002/TASK-002 착수) |
+| 현재 Phase | Build (MS-002 완료 — 다음 MS-003) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-002 (M1 코어 타입·칩, In Progress) |
-| 활성 Task | TASK-002·003 (M1 타입·어댑터, Review) → 검토·병합 후 MS-003 |
+| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter, Planned — Task 분해 필요) |
+| 활성 Task | 없음 (MS-002 Done) — MS-003 착수 시 분해(C-2) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. TASK-001 완료·병합(MS-001 Done). **TASK-002(types.ts) + TASK-003(4개 어댑터 스텁) 완료** — OQ-002 별도인자 확정, Python 리트머스 포함 인터페이스 tsc 확정 검증 통과. `feature/task-002-core-types`(스택), 편집기 TS2584(console) 수정 포함. 사용자 검토 후 main 병합 → MS-002 Done 예정.
+- Build 진행 중. **MS-001·002 완료·main 병합**. TASK-001(스캐폴드+F5), TASK-002(types.ts, OQ-002 별도인자), TASK-003(4개 어댑터 스텁, Python 리트머스 tsc 확정 검증) 모두 Done. 편집기 TS2584 수정 포함. 다음은 MS-003(M2 CargoBridge/CargoAdapter 실구현) — Task 분해 필요.
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,10 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-002 | core/types.ts 전체 타입 확정 | AI | Review | 2026-08-15 | types.ts 완료(tsc·eslint·esbuild 통과). 사용자 검토 후 main 병합 → TASK-003 |
-| TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Review | 2026-08-15 | 4개 어댑터 선언 완료(tsc 인터페이스 확정 검증 통과, Python 리트머스). 사용자 검토 후 병합 |
+| 없음 | MS-002 완료 — MS-003 Task 미분해 | - | - | 2026-08-15 | MS-003(M2 CargoBridge/CargoAdapter 실구현) 착수 시 상세 Task 분해(C-2) |
 
-> TASK-001(스캐폴드 + F5)은 2026-08-15 Done — 상세는 session_2026-08-15_003.md.
+> TASK-001·002·003 모두 2026-08-15 Done (MS-001·002 완료, main 병합) — 상세는 session_2026-08-15_003.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -70,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-002+003 검토 후 main 병합** (`feature/task-002-core-types`: types.ts + 4개 어댑터 스텁 + 편집기 TS2584 수정). 병합 시 MS-002 Done
-2. 다음 MS-003(M2 CargoBridge + CargoAdapter 실구현) — 상세 Task 분해 필요(C-2)
+1. **MS-003(M2 CargoBridge + CargoAdapter 실구현) 착수** — 상세 Task 분해(C-2). v1 실구현 대상(Rust 단독).
+2. 이후 순서: MS-004(상태바·저장·감시) → MS-005(실행·디버그)까지면 Rust 실사용 가능
 
 ---
 
@@ -193,9 +192,9 @@
 |------|----|------|------|------|
 | Intent | INT-001 | 다언어 통합 상태바 UX VSCode 확장 | Approved | 2026-08-13 승인 |
 | Milestone | MS-001 | M0 셋업 | Done | 스캐폴드 + F5 검증 완료 |
-| Milestone | MS-002 | M1 코어 타입·칩 | In Progress | TASK-002·003 Review (검토·병합 시 Done) |
+| Milestone | MS-002 | M1 코어 타입·칩 | Done | 인터페이스 확정(tsc), main 병합 |
 | Milestone | MS-003~008 | M2~M6 + F20 마법사 | Planned | milestone_registry |
-| Task | TASK-002~003 | M1 (Review) | Review | task_registry |
+| Task | 없음 | MS-003 미분해 | - | 착수 시 분해(C-2) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
