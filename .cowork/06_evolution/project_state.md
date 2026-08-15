@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-001~006 완료 — MS-007 진행 중, Task 분해 완료) |
+| 현재 Phase | Build (MS-007 진행 중 — Doctor 라인 016·017 병합, 018 착수) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — TASK-016~021 분해 완료) |
-| 활성 Task | TASK-016 (Doctor 진단 모델 — Planned, 다음 착수) |
+| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — 016·017 Done, 018~021 남음) |
+| 활성 Task | TASK-018 (rustup target 자동 설치 — In Progress) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-016 | Doctor 진단 모델 + 어댑터 진단 계약 | AI | Planned | 2026-08-15 | 착수 — `core/diagnostics.ts`(상태·3단계 판정 순수 코어) + 어댑터 checks 계약. §13.5. 다음 세션 첫 액션 |
+| TASK-018 | rustup target 자동 설치 (§13.4) | AI | In Progress | 2026-08-15 | 착수 — 아키텍처 칩이 설치+미설치 target 열거(`rustup target list`), 미설치 선택 시 `rustup target add` 확인·실행 |
 
-> MS-007 Task 분해 완료: TASK-016~021 (016 Doctor 모델 → 017 Doctor UI+E1칩 → 018 rustup target → 019 pre/postBuild → 020 통합테스트 → 021 README+VSIX). TASK-001~015 Done(MS-001~006). MS-006 상세는 session_2026-08-15_005.md.
+> MS-007: 016·017(Doctor) Done·main 병합. TASK-018~021 남음(018→019→020→021). TASK-001~015 Done(MS-001~006). MS-006 상세는 session_2026-08-15_005.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,7 +69,7 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-016 착수** (Doctor 진단 모델·순수 코어) → 017(Doctor UI+E1 칩) → 018(rustup target). MS-007 Doctor 라인부터.
+1. **TASK-018 진행** (rustup target 자동 설치 §13.4) — 아키텍처 칩 미설치 target 열거+`rustup target add`.
 2. 이후 019(pre/postBuild C-5)·020(통합테스트+체크리스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20 마법사)
 3. 이월: 프로파일 편집(v2, C-3)·extra rustflags/stringList 옵션(L-1)은 후속. C-2(분해)는 해소.
 
