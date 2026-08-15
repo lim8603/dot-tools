@@ -38,6 +38,7 @@
 | # | 패턴 | 적용 맥락 | 관련 Intent | 관련 Milestone | 결과 | 출처 |
 |---|------|----------|-------------|----------------|------|------|
 | 1 | 소유 대신 조립 — 중계는 캐노니컬 파일을 편집하지 않고 호출을 조립한다 | 설정 저장 모델이 SSOT(ADR-007)와 긴장할 때 | INT-001 | MS-006 | 파일 소유(편집) vs 호출 시점 주입을 분리 → SSOT 유지 + VS식 (프로젝트×구성) 속성 동시 달성. F16(runArgs)의 일반화 | ADR-011, 세션 #002 |
+| 2 | 순수 로직은 `import type`로만 vscode 타입 참조 → VSCode 호스트 없이 순수 Node에서 단위 테스트 | 파싱·인자 조립 등 VSCode 무의존 로직을 mocha로 빠르게 테스트할 때 | INT-001 | MS-003 | `import type`은 컴파일 시 제거되어 런타임에 `require('vscode')`를 끌지 않음 → 순수 함수만 뽑아 tsc→out→mocha로 즉시 검증(cargoBridge 19 테스트). VSCode API가 필요한 배선은 어댑터 계층으로 분리 | 세션 #003, TASK-004 |
 
 ---
 
@@ -45,7 +46,7 @@
 
 | # | 안티패턴 | 발생 맥락 | 관련 Intent | 관련 Milestone | 교훈 | 출처 |
 |---|---------|----------|-------------|----------------|------|------|
-| 1 | | | `INT-NNN` (해당 시) | `MS-NNN` (해당 시) | | 세션 로그 / ADR / 문서 |
+| 1 | 편집기 phantom 타입 오류(예: TS2584 `console` 미해석) — CLI `tsc`는 통과 | 편집기 내장 TypeScript가 `@types/node`의 `typesVersions` 레이아웃을 워크스페이스 TS와 다르게 해석 | INT-001 | MS-002 | TS 서버 재시작·완전 재시작으로도 안 풀리면 편집기/CLI의 TS 버전·타입 로딩 차이를 의심. 해결: `tsconfig`에 `types:["node",...]` 명시(자동수집 대신 강제 포함) + `.vscode/settings.json` `typescript.tsdk`로 워크스페이스 TS 고정. `lib`에 `dom` 추가는 Node 확장엔 오답 | 세션 #003, `fix(build) 387eb77` |
 
 ---
 

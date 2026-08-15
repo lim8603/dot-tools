@@ -34,13 +34,13 @@
 |------|------|------------|----------------|-----------|------|
 | #001 | 2026-08-13 | 온보딩 + 설계서 전체 반입(DEFINE·DESIGN·BUILD준비) + F20 신규 + Gate 1·3 통과 + 커밋 | MS-001 | 프로젝트 공통 | 완료 |
 | #002 | 2026-08-15 | VS2026식 프로젝트 속성 논의 → 호출 구성 오버레이(ADR-011)·설정 페이지·옵션 카탈로그(ADR-012)·언어별 능력 정리, F21/FR-014 신규 반영 | MS-006(설계) | 프로젝트 공통 | 완료 |
-| #003 | 2026-08-15 | TASK-001 F5·병합(MS-001 Done) → OQ-002 확정 → TASK-002 types.ts → 편집기 TS2584 수정 → TASK-003 4개 어댑터 스텁 → MS-002 병합(Done) | MS-001·MS-002 | TASK-001·002·003 | 완료 |
+| #003 | 2026-08-15 | TASK-001 F5·병합 → OQ-002 확정 → TASK-002 types.ts → TS2584 수정 → TASK-003 어댑터 스텁 → MS-002 병합 → 상세설계서 v1.2·imported_context 이동 → MS-003 착수·TASK-004(CargoBridge+mocha) | MS-001·002·003 | TASK-001~004 | 완료 |
 
 ---
 
 ## 다음 시작점
 
-1. **TASK-004(CargoBridge 순수 코어 + mocha 테스트)** 진행 중 → TASK-005(CLI) → TASK-006(CargoAdapter)
+1. `git checkout feature/task-004-cargobridge-pure` → **TASK-005(CargoBridge cargo CLI 연동)** 계속 (cargo 1.96 설치됨 → 실제 검증 가능) → TASK-006(CargoAdapter). 또는 TASK-004 먼저 병합
 2. 이후 MS-004(상태바·저장·감시) → MS-005(실행·디버그): 여기까지면 Rust 실사용 가능
 3. 설정 페이지/호출 구성 실구현은 MS-006(M5)
 
@@ -62,7 +62,7 @@
 - C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
 - C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영(편집/승격, 구 §8.7) — v2 착수 시
 - C-4: `ProfileExport`(F12) 타입 + data_model §2 export 예시 정합화(runArgs 승격 반영) — MS-006 착수 시
-- TASK-002 검토 후 `feature/task-002-core-types` main 병합
+- TASK-004 미병합: `feature/task-004-cargobridge-pure` — 다음 세션 TASK-005 계속 또는 병합
 
 ---
 
