@@ -37,9 +37,9 @@
 
 ## 다음 시작점
 
-1. TASK-001 스캐폴드 — `yo code`는 대화형이라 비대화형 방식(파일 직접 생성) 먼저 결정 후 src/ 구조 + package.json + F5 Hello World
-2. TASK-002(types.ts, interface_contract 기준) → TASK-003(4개 어댑터 칩 스텁)
-3. 세션 종료 후 미커밋 변경분(Gate 3·Build 전환) 커밋
+1. **F5로 TASK-001 Hello World 확인** (VSCode 열기 → F5 → `[Extension Development Host]`에서 `DevSwitcher: Hello World`) → 통과 시 `feature/task-001-scaffold` main 병합, TASK-001 Done
+2. TASK-002(core/types.ts — interface_contract §2~§7, InvocationConfig·OptionSpec 포함) → TASK-003(어댑터 칩 + optionCatalog·configCategories 스텁)
+3. 설정 페이지/호출 구성 실구현은 MS-006(M5)
 
 ---
 
