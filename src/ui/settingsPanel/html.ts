@@ -88,8 +88,6 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     <label for="project-select">Project</label>
     <select id="project-select"></select>
     <span class="muted" id="profile-label"></span>
-    <span style="flex:1"></span>
-    <button class="secondary" data-action="refresh">Refresh</button>
   </div>
   <div class="layout">
     <div class="tabs" id="tabs"></div>
@@ -198,9 +196,13 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     const attrs = 'data-action="set-option" data-option-id="' + esc(o.id) + '" data-type="' + esc(o.type) + '"';
     let editor;
     if (o.type === 'enum') {
-      editor = '<select ' + attrs + '><option value="">(default)</option>' +
+      // Show the effective value (stored, else the option's default) so picking the
+      // default value doesn't visibly "jump" to a separate (default) entry.
+      const effective = val !== undefined ? String(val)
+        : (o.defaultValue !== undefined ? String(o.defaultValue) : '');
+      editor = '<select ' + attrs + '>' +
         (o.allowedValues || []).map((v) =>
-          '<option value="' + esc(v) + '"' + (String(val) === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('') +
+          '<option value="' + esc(v) + '"' + (effective === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('') +
         '</select>';
     } else if (o.type === 'bool') {
       editor = '<input type="checkbox" ' + attrs + (val === true ? ' checked' : '') + ' />';
@@ -248,7 +250,6 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     const action = el.dataset.action;
     if (action === 'tab') { activeTab = el.dataset.tab; render(); }
     else if (action === 'switch-project') { post({ type: 'switchProject', projectId: el.dataset.projectId }); }
-    else if (action === 'refresh') { post({ type: 'ready' }); }
   });
 
   document.addEventListener('change', (e) => {
