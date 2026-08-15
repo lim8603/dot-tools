@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-007 (M6 품질·배포) — In Progress, 016~020 Done, **TASK-021만 남음** |
-| 마지막 갱신일 | 2026-08-15 |
-| 참조 세션 로그 | session_2026-08-15_005.md |
+| 활성 Milestone | **MS-007 Done (v0.1.0 릴리즈)** — 다음 활성 후보 MS-008(F20 마법사) |
+| 마지막 갱신일 | 2026-08-16 |
+| 참조 세션 로그 | session_2026-08-16_006.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-021 | README + VSIX 패키징 | MS-007 | Planned | 0% | 없음 (내일 착수) |
+| 없음 | (MS-008 F20 마법사 착수 시 분해) | MS-008 | - | - | 없음 |
 
-> TASK-001~020 Done (MS-001~006 + MS-007 016~020, main 병합). **TASK-021(README+VSIX)만 남음 → MS-007 Done → v0.1.** C-5 해소. 상세: `tasks/TASK-016~021.md`.
+> **TASK-001~021 전부 Done — MS-001~007 완료·main 병합. v0.1.0 vsix 산출.** 다음 활성 후보 = MS-008(F20 시작 마법사). 상세: `tasks/TASK-016~021.md`.
 
 ---
 
@@ -35,14 +35,15 @@
 | #003 | 2026-08-15 | TASK-001 F5·병합 → OQ-002 확정 → TASK-002 types.ts → TS2584 수정 → TASK-003 어댑터 스텁 → MS-002 병합 → 상세설계서 v1.2·imported_context 이동 → MS-003 착수·TASK-004(CargoBridge+mocha) | MS-001·002·003 | TASK-001~004 | 완료 |
 | #004 | 2026-08-15 | **MS-003·004·005 완료·병합 + MS-006 코어 F5 통과(미병합)**. TASK-005~014: CargoBridge I/O·CargoAdapter·상태바/저장/감시·실행/디버그·**설정 페이지(옵션 편집·명령 미리보기·오버레이 주입)**. mocha 61. CLAUDE/AGENTS 컨텍스트·ui_spec 작성 | MS-003~006 | TASK-005~014 | MS-006 병합만 남음 |
 | #005 | 2026-08-15 | **MS-006 코어 병합 + TASK-015(export/import F12) 완료 → MS-006 Done.** C-4 확정(ProfileExport=PersistedState 정렬). 파생: 옵션 example bare화+injectsAs/docUrl·preview env 표시. F5 라운드트립 통과. mocha 73 | MS-006 | TASK-015 | **MS-001~006 전부 완료·병합** |
+| #006 | 2026-08-16 | **TASK-021(README+VSIX) 완료 → MS-007 Done → v0.1.0 릴리즈.** publisher=lim8603·repo 설정·`.vscodeignore`·LICENSE·CHANGELOG·README + 상태바 목업 2종(실 codicon PNG) + `vsce package`(34.68KB)·설치 스모크. Gate 5 조건부 Pass | MS-007 | TASK-021 | **MS-001~007 전부 완료** |
 
 ---
 
 ## 다음 시작점
 
-1. **TASK-021 착수(내일)** — README + version 0.1.0·publisher·`.vscodeignore`·LICENSE + `vsce package`→vsix → **MS-007 Done → v0.1**
-2. 릴리즈 전 권장 수동검증: TC-11(WSL/F18)·TC-09(재시작)·TC-02/03 (`test_case.md §2`)
-3. 이후 MS-008(F20 마법사). 이월: 프로파일 편집 v2(C-3)·extra rustflags(L-1)·Run Group(C-6, v2)
+1. **MS-008(F20 시작 마법사) 착수** — Task 분해부터(newProjectWizard UI + `devSwitcher.newProject` + 4개 어댑터 createProjectTask). 의존 MS-002·MS-005 충족.
+2. 릴리즈 전 권장 수동검증(v0.1 잔여 리스크, 지시 시): TC-11(WSL/F18)·TC-09(재시작)·TC-02/03 (`test_case.md §2`)
+3. 이월: 프로파일 편집 v2(C-3)·Run Group(C-6, v2)·extra rustflags(L-1)
 
 ---
 

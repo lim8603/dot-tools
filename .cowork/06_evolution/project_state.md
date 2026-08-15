@@ -16,17 +16,17 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-007 진행 중 — 016~020 병합, TASK-021만 남음) |
+| 현재 Phase | Build (**MS-001~007 전부 Done — v0.1.0 vsix 산출**) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — 016~020 Done, **021(README+VSIX)만 남음**) |
-| 활성 Task | TASK-021 (README + VSIX 패키징 — Planned, **내일 착수**) |
+| 활성 Milestone | MS-008 (F20 시작 마법사, Planned — 다음 착수 후보. Task 분해 필요) |
+| 활성 Task | 없음 (MS-008 착수 시 Task 분해) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-15 |
+| 마지막 갱신일 | 2026-08-16 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-15_005.md |
+| 참조 세션 로그 | session_2026-08-16_006.md |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. **MS-001~006 전부 완료·main 병합.** MS-006 = 설정 페이지(옵션 카탈로그 편집·build/run+env 명령 미리보기·자동갱신) + InvocationConfig→cargo 주입(`--config`/RUSTFLAGS/env) + **프로파일 export/import(F12, TASK-015, b7864cf)**. mocha 73. **이제 상태바 전환·빌드·실행·디버그 + 호출 구성 편집 + 프로파일 export/import까지 실동작.** **다음: MS-007(품질·배포·통합테스트) 착수 — Task 분해 필요.** cargo가 실행 경로 해석(DD-05).
+- **MS-001~007 전부 완료 — v0.1.0 vsix(`devswitcher-tools-0.1.0.vsix`) 산출.** MS-007(M6)=Doctor·E1 칩·rustup target 자동설치·pre/postBuild·통합테스트 하네스 + **README·LICENSE·CHANGELOG·`.vscodeignore` + 상태바 목업 2종(실 codicon) + vsce 패키징·설치 스모크(TASK-021)**. mocha 92 + 통합 3. **상태바 전환·빌드·실행·디버그·설정 페이지·프로파일 export/import·Doctor 전부 실동작.** Gate 5 = README·VSIX 해소·설치 스모크 Pass로 v0.1 확정, 잔여 수동검증(TC-11 WSL 등)은 문서화된 리스크. **다음: MS-008(F20 시작 마법사) 착수 — Task 분해부터.**
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-021 | README + VSIX 패키징 | AI | Planned | 2026-08-15 | **내일 착수** — README(사용법·기능·단축키·요구사항·한계) + version 0.1.0·publisher·`.vscodeignore`·LICENSE + `vsce package`→`devswitcher-tools-0.1.0.vsix`. 완료 시 MS-007 Done → v0.1 |
+| 없음 | (MS-008 F20 마법사 착수 시 Task 분해) | AI | - | 2026-08-16 | MS-008 착수 지시 시 newProjectWizard UI + `devSwitcher.newProject` + 4개 어댑터 createProjectTask로 분해 |
 
-> MS-007: 016~020 Done·main 병합(Doctor·rustup target·pre/postBuild·통합테스트). **TASK-021만 남음**. TASK-001~015 Done(MS-001~006). 부가 v1 UX(compact·selectedOnly)도 병합.
+> **TASK-001~021 전부 Done — MS-001~007 완료·main 병합.** v0.1.0 vsix 산출. 다음 활성 후보 = MS-008(F20 시작 마법사). 릴리즈 전 권장 수동검증(TC-11 WSL·TC-09·TC-02/03)은 v0.1 잔여 리스크로 수용(지시 시 수행).
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,10 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-021 착수(내일)** (README + VSIX 패키징) — README + version 0.1.0·publisher·`.vscodeignore`·LICENSE + `vsce package`. 완료 시 **MS-007 Done → v0.1 산출물**.
-2. 릴리즈 전 권장 수동검증: **TC-11(WSL/F18)**·TC-09(재시작)·TC-02/03(workspace·멀티루트) — `test_case.md §2`.
-3. 이후 MS-008(F20 마법사). 미푸시분은 **오늘 push 완료**.
-3. 이월: 프로파일 편집(v2, C-3)·extra rustflags/stringList 옵션(L-1)은 후속. C-2(분해)는 해소.
+1. **MS-008(F20 시작 마법사) 착수** — Task 분해부터(newProjectWizard UI + `devSwitcher.newProject` + 4개 어댑터 createProjectTask). 의존: MS-002·MS-005(충족).
+2. 릴리즈 전 권장 수동검증(잔여 리스크): **TC-11(WSL/F18)**·TC-09(재시작)·TC-02/03(workspace·멀티루트) — `test_case.md §2`. 지시 시 수행.
+3. 이월: 프로파일 편집(v2, C-3)·Run Group(v2, C-6)·extra rustflags/stringList 옵션(L-1)은 후속.
 
 ---
 
@@ -119,7 +118,8 @@
 - **세션 #004 (계속)**: **MS-006 코어(설정 페이지) 구현·F5 검증 통과 — 미병합 `feature/ms-006-settings-page`.** 3분할: TASK-012(오버레이 주입 — `buildConfigArgs`/`tomlScalar`/`buildRustflags`/`parseArgsLine`, cargoAdapter가 compiler→`--config profile.<p>.<id>`·linker→RUSTFLAGS·env/outputDir 주입, execCapture에 env 추가로 resolveExecutable 동일 아티팩트)·TASK-013(`ui/settingsPanel/` WebviewPanel CSP·단방향 state·프로젝트/Features/프로파일RO 탭·`openSettings`+상태바 기어)·TASK-014(옵션 카탈로그 에디터·`core/invocationConfig.ts applyOption`(compiler/linker record·outputDir·env[label])·`core/argsLine.ts`(parseArgsLine 이동)·build/run 명령 미리보기(Task의 ProcessExecution 역읽기)). mocha 61. F5 피드백 반영: 명령 미리보기 2줄(runArgs 표시)·**자동갱신**(orchestrator `viewSync`→settingsPanel.refresh, Refresh 버튼 제거)·키바인딩 제거(충돌)·enum 기본값 튐 수정(실효값 표시)·입력창 넓힘/라벨 위 배치·**launch 기본을 확장 포함으로**(clean은 별도 구성). ui_spec.md 작성(C-1 해소). **다음: MS-006 병합 + TASK-015(export/import).**
 - **세션 #005**: **MS-006 코어 main FF 병합 완료**(335f982, `feature/ms-006-settings-page` 삭제). 병합 전 게이트 재확인 — check-types/eslint clean·mocha 61·esbuild 41.4kb OK. B-1 해소.
 - **세션 #005 (계속)**: **TASK-015(export/import F12) 완료 — F5 통과·main FF 병합(b7864cf), MS-006 Done.** `core/profileExport.ts`(vscode-free: build/parse(검증→`PROFILE_IMPORT_INVALID`)/merge(스캔 존재분만 반영·skip)) + `ProfileExport`(C-4: PersistedState 정렬, activeProjectId 제외) + StateStore getState/importState + orchestrator export/importProfile(save/open 다이얼로그+`workspace.fs`, import 후 refresh reconcile) + 커맨드 2종. **파생 개선(설정 페이지 UX)**: 옵션 `example`을 주입형태→**bare 값(placeholder)**로 교정하고 `injectsAs`(주입 힌트)·`docUrl`(공식문서 링크) 분리 — 사용자가 예제를 복붙해 이중 접두사 되던 문제 해결. Command preview에 **env 주입 표시**(`VAR=val` 접두사) 추가로 RUSTFLAGS/CARGO_TARGET_DIR/RUST_LOG 검증 가능. F5: export→값변경→import 라운드트립 복원 + preview env 정상 + docs 링크 정상 확인. mocha 73. **다음: MS-007(품질·배포) 착수 — Task 분해부터.**
-- **세션 #005 (계속) — MS-007 016~020 완료·병합**: TASK-016·017(Doctor — `core/diagnostics.ts` 순수판정 + `LanguageAdapter.collectDiagnostics` + QuickPick + **E1 툴체인 경고칩** + 디버그취소 Run Doctor)·TASK-018(rustup target 자동설치 — `listAllTargets`/`parseTargetList`/`addTarget` + `ChipDescriptor.onPick` 훅 + **미설치 target 토글 접기**(`secondary`/`secondaryToggle`))·TASK-019(pre/postBuild 실행 — `core/buildEvents.ts` ShellExecution Task, NFR-002a 셸예외, pre 실패→중단 + buildEvent 에디터, **C-5 해소**)·TASK-020(`@vscode/test-electron` 통합 하네스 3 passing + §15.2 체크리스트 + 05_verification 3종). **부가 v1 UX**: 상태바 `compact`(아이콘만)·`selectedOnly`(값 없는 optional 칩 숨김, `isBlank`로 features 'default'도) 설정 + 설정페이지 General 탭 토글. **버그 fix**: 설정페이지 백지(템플릿 리터럴 `\n`→`\\n`)·**taskDefinitions 등록**(작업형식 경고 제거)·옵션/RunArgs 필드 UX 통일(placeholder 제거·2줄). 아키텍처 미선택=`default`(`unsetText`)·`Host default` 복귀(`clearValueId`). mocha 92 + 통합 3. **ChipDescriptor 확장**: onPick·secondary·secondaryToggle·unsetText·clearValueId·isBlank. **다음(내일): TASK-021 README+VSIX → MS-007 Done → v0.1.**
+- **세션 #005 (계속) — MS-007 016~020 완료·병합**: TASK-016·017(Doctor — `core/diagnostics.ts` 순수판정 + `LanguageAdapter.collectDiagnostics` + QuickPick + **E1 툴체인 경고칩** + 디버그취소 Run Doctor)·TASK-018(rustup target 자동설치 — `listAllTargets`/`parseTargetList`/`addTarget` + `ChipDescriptor.onPick` 훅 + **미설치 target 토글 접기**(`secondary`/`secondaryToggle`))·TASK-019(pre/postBuild 실행 — `core/buildEvents.ts` ShellExecution Task, NFR-002a 셸예외, pre 실패→중단 + buildEvent 에디터, **C-5 해소**)·TASK-020(`@vscode/test-electron` 통합 하네스 3 passing + §15.2 체크리스트 + 05_verification 3종). **부가 v1 UX**: 상태바 `compact`(아이콘만)·`selectedOnly`(값 없는 optional 칩 숨김, `isBlank`로 features 'default'도) 설정 + 설정페이지 General 탭 토글. **버그 fix**: 설정페이지 백지(템플릿 리터럴 `\n`→`\\n`)·**taskDefinitions 등록**(작업형식 경고 제거)·옵션/RunArgs 필드 UX 통일(placeholder 제거·2줄). 아키텍처 미선택=`default`(`unsetText`)·`Host default` 복귀(`clearValueId`). mocha 92 + 통합 3. **ChipDescriptor 확장**: onPick·secondary·secondaryToggle·unsetText·clearValueId·isBlank.
+- **세션 #006 — TASK-021 완료·MS-007 Done·v0.1.0 릴리즈**: README.md(한국어: 소개·지원범위·요구사항·설치·상태바 칩표·명령·설정페이지·settings·한계) + package.json(version 0.1.0·publisher `lim8603`·repository `github.com/lim8603/dot-tools`·keywords) + `.vscodeignore`(dist+README+LICENSE+CHANGELOG+images/png만; 소스맵·CLAUDE/AGENTS·.claude·profile.json·workspace 제외) + LICENSE(MIT) + CHANGELOG(v0.1.0). **상태바 목업 2종**: 처음 손그림 SVG→PNG했으나 아이콘이 실물과 달라, **실제 VSCode codicon 폰트(simple-browser/media/codicon.css 내장 base64)로 HTML 렌더 후 Edge headless 스크린샷** → 실 codicon PNG(`images/status-bar.png`·`status-bar-compact.png`), 2x+LCD off로 색번짐 제거. `vsce package`→`devswitcher-tools-0.1.0.vsix`(9파일 34.68KB), 격리 프로필 설치 스모크 통과(`lim8603.devswitcher-tools@0.1.0`). Gate 5 조건부 Pass(D-12). **다음: MS-008(F20 시작 마법사) Task 분해·착수.** 잔여 수동검증(TC-11 WSL 등)은 지시 시.
 
 ---
 
@@ -164,6 +164,7 @@
 | D-09 | 설정 UI = WebviewPanel "설정 페이지"(명칭 정정) + 어댑터 선언 옵션 카탈로그 브라우저 | `ADR-012` | 2026-08-15 |
 | D-10 | OQ-002 확정 — InvocationConfig를 Task 생성 메서드에 별도 인자 `config`로 전달. Selection은 칩 선택만, runArgs는 InvocationConfig로 승격 | `interface_contract.md` §3·§4·§7·§11 | 2026-08-15 |
 | D-11 | C-4 확정 — export 포맷(`ProfileExport`)을 `PersistedState`와 정렬(2-맵 selections+invocation, activeProjectId 제외, runArgs는 ADR-011 승격 위치). import는 스캔 존재 projectId만 반영 | `data_model.md §2`, `src/core/types.ts`, TASK-015 | 2026-08-15 |
+| D-12 | v0.1.0 릴리즈 확정 — publisher=`lim8603`, `devswitcher-tools-0.1.0.vsix` 산출·설치 스모크 통과로 MS-007 Done. Gate 5 조건부 Pass(잔여 수동검증 TC-11 WSL 등은 문서화된 리스크로 수용) | `verification_evidence.md`, TASK-021 | 2026-08-16 |
 
 ---
 
@@ -224,8 +225,9 @@
 | Milestone | MS-004 | M3 상태바·저장·감시 | Done | F5 검증 통과, main 병합(2026-08-15) |
 | Milestone | MS-005 | M4 실행·디버그 | Done | F5 검증 통과(빌드·실행·중단점), main 병합(2026-08-15) |
 | Milestone | MS-006 | M5 설정 페이지·호출 구성 | Done | 코어(012·013·014) + export/import(015) F5 통과, main 병합(2026-08-15). pre/postBuild(C-5) 이월 |
-| Milestone | MS-007 | M6 품질·배포·통합테스트 | Planned | 다음 착수. Task 분해 필요(C-2) |
-| Milestone | MS-008 | F20 시작 마법사 | Planned | milestone_registry |
+| Milestone | MS-007 | M6 품질·배포·통합테스트 | Done | 016~021 전부 Done. **v0.1.0 vsix 산출**(2026-08-16). Gate 5 조건부 Pass |
+| Milestone | MS-008 | F20 시작 마법사 | Planned | 다음 활성 후보. Task 분해 필요 |
+| Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Done | 9파일 34.68KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.1.0`) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
