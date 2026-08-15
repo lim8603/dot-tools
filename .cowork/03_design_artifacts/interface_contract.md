@@ -66,9 +66,9 @@ export interface ProjectInfo {
 
 export interface Selection {
   projectId: string;
-  values: Record<string, ChipValue>;   // chipId → 선택 값
-  runArgs: string[];                    // 실행/디버그 시 프로그램 인자 (F16)
+  values: Record<string, ChipValue>;   // chipId → 선택 값 (profile 칩 포함)
 }
+// 실행 인자(runArgs)는 InvocationConfig.runArgs로 승격 — (프로젝트×구성)별 저장(ADR-011, §7). Selection은 칩 선택만 담는다(OQ-002).
 
 export interface ActionCapabilities {
   build: boolean;                       // '빌드' 개념 존재 여부. false면 빌드 버튼 미표시(Python)
@@ -96,10 +96,11 @@ export interface LanguageAdapter {
 
   listProjects(manifests: vscode.Uri[]): Promise<ProjectInfo[]>;              // 글롭 결과 기반(ADR-006)
 
-  createBuildTask(project: ProjectInfo, sel: Selection): vscode.Task;         // actions.build===false면 미호출(ADR-002)
-  createRunTask(project: ProjectInfo, sel: Selection): vscode.Task;           // runArgs 포함(F16)
-  createDebugConfig(project: ProjectInfo, sel: Selection): Promise<vscode.DebugConfiguration>;
-  resolveExecutable(project: ProjectInfo, sel: Selection): Promise<string>;   // 디버그 전 경로 해석(ADR-005)
+  // config = 활성 (프로젝트×구성) 호출 오버레이(§7). OQ-002 확정(2026-08-15): 별도 인자로 전달.
+  createBuildTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task;   // actions.build===false면 미호출(ADR-002)
+  createRunTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task;     // config.runArgs 주입(F16)
+  createDebugConfig(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.DebugConfiguration>;
+  resolveExecutable(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string>;   // 디버그 전 경로 해석(ADR-005)
 
   persistSetting(project: ProjectInfo, key: string, value: unknown): Promise<void>;  // 캐노니컬 파일 국소 편집(ADR-007)
   invalidateCache(project?: ProjectInfo): void;                              // 매니페스트 변경 시 캐시 무효화(F17)
@@ -203,7 +204,7 @@ export interface LanguageAdapter {
 **계약 규칙 (호출 구성)**
 - UI/오케스트레이터는 `InvocationConfig`·`OptionSpec[]`만 알고 언어를 모른다(INV-2, ADR-003 연장).
 - **주입 시점(configure/build/run)과 방식은 어댑터 내부 사항**이다 — 언어별 차이는 §8이 규정.
-- `createBuildTask`/`createRunTask`는 활성 `InvocationConfig`를 받아 언어별로 접어 넣는다(`sel` 확장 또는 별도 인자로 전달 — M1에서 시그니처 확정).
+- Task 생성 메서드는 활성 `InvocationConfig`를 **별도 인자 `config`로 받아** 언어별로 접어 넣는다(OQ-002 확정 2026-08-15: 별도 인자안). `Selection`은 칩 선택만 담고, 오버레이 해석·전달은 오케스트레이터 책임.
 - 구성(profile) 목록은 캐노니컬 파일(②)에서 읽어오며 확장이 지어내지 않는다.
 - 빌드 전후 명령은 사용자 자유 명령이라 `ShellExecution`을 허용한다(NFR-002의 문서화된 예외).
 - **v1은 주입만**. 오버레이를 캐노니컬 파일에 영구 반영(편집/승격)하는 기능은 v2(구 §8.7).
@@ -261,7 +262,7 @@ VS2026식 속성을 각 어댑터가 "파일 무편집 주입"으로 어디까�
 | ID | 항목 | 질문 | 상태 |
 |----|------|------|------|
 | OQ-001 | F20 생성 후 활성 전환 | 생성 직후 새 프로젝트를 자동 활성 프로젝트로 전환할지 | Open |
-| OQ-002 | `InvocationConfig` 전달 방식 | `Selection` 확장 vs 별도 인자 — M1에서 확정 | Open |
+| OQ-002 | `InvocationConfig` 전달 방식 | `Selection` 확장 vs 별도 인자 | **Resolved (2026-08-15)** — 별도 인자 `config`. Selection은 칩 선택만, runArgs는 InvocationConfig로 승격 |
 
 ---
 

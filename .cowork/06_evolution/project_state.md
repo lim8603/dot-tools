@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. **TASK-001 완료** — F5 Hello World 검증(명령 팔레트 등록 + 알림 확인) 후 `feature/task-001-scaffold` main 병합, MS-001(M0) Done. 다음은 MS-002 / TASK-002(core/types.ts).
+- Build 진행 중. TASK-001 완료·병합(MS-001 Done). **TASK-002(core/types.ts) 완료** — §2~§7 + PersistedState + DevSwitcherError, OQ-002 별도인자 확정. tsc·eslint·esbuild 통과, `feature/task-002-core-types`, 사용자 검토 후 병합. 다음 TASK-003.
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,7 +57,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-002 | core/types.ts 전체 타입 확정 | AI | In Progress | 2026-08-15 | interface_contract §2~§7 기준 types.ts 작성 (InvocationConfig·OptionSpec 포함) |
+| TASK-002 | core/types.ts 전체 타입 확정 | AI | Review | 2026-08-15 | types.ts 완료(tsc·eslint·esbuild 통과). 사용자 검토 후 main 병합 → TASK-003 |
 | TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Planned | 2026-08-15 | 칩·actions·canCreateProject·optionCatalog·configCategories 선언 (TASK-002 후) |
 
 > TASK-001(스캐폴드 + F5)은 2026-08-15 Done — 상세는 session_2026-08-15_003.md.
@@ -70,8 +70,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-002(core/types.ts)** 착수 — interface_contract §2~§7 기준, InvocationConfig·OptionSpec 포함
-2. TASK-003(4개 어댑터 칩·optionCatalog·configCategories 스텁, Python 리트머스)
+1. **TASK-002 검토 후 main 병합** — `src/core/types.ts` (tsc·eslint·esbuild 통과)
+2. TASK-003(4개 어댑터 칩·optionCatalog·configCategories 스텁, Python 리트머스) — types.ts 구현체로 인터페이스 검증
 
 ---
 
@@ -92,6 +92,7 @@
 | C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — 상태바 칩 레이아웃·**설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처·명령 미리보기, ADR-012)**·마법사 QuickPick | UI 구현(MS-004/006/008) 착수 시 | 세션 #001 Gate 3 |
 | C-2 | MS-002~008 상세 Task 분해 | 해당 Milestone 착수 시 | task_registry 경량 운영 |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
+| C-4 | `ProfileExport`(F12 export/import) 타입 확정 + `data_model.md` §2 export 예시를 ADR-011 후속(runArgs 승격)에 맞게 정합화 | export/import 구현(MS-006) 착수 시 | 세션 #003 TASK-002 |
 
 **저심각 · 기록 (지시 시에만)**
 
@@ -149,6 +150,7 @@
 | D-07 | Gate 3 통과 (domain_model 승인) → Build 전환 | `quality_gate.md`, `domain_model.md` | 2026-08-13 |
 | D-08 | 호출 구성 오버레이 도입 — 컴파일옵션·출력·링커·env·빌드전후를 파일 무편집으로 (프로젝트×구성)별 저장·주입. 캐노니컬 파일 편집은 v2 이월 | `ADR-011` | 2026-08-15 |
 | D-09 | 설정 UI = WebviewPanel "설정 페이지"(명칭 정정) + 어댑터 선언 옵션 카탈로그 브라우저 | `ADR-012` | 2026-08-15 |
+| D-10 | OQ-002 확정 — InvocationConfig를 Task 생성 메서드에 별도 인자 `config`로 전달. Selection은 칩 선택만, runArgs는 InvocationConfig로 승격 | `interface_contract.md` §3·§4·§7·§11 | 2026-08-15 |
 
 ---
 
@@ -172,6 +174,8 @@
 | `milestone_registry.md`·`task_registry.md` | MS-001~008(M0~M6+F20), TASK-001~003 | BUILD 준비 |
 | `adrs/ADR-011·012*.md` + `adr_registry.md` | 호출 구성 오버레이 + 설정 페이지·옵션 카탈로그 | 세션 #002 신규 |
 | `interface_contract.md` | §7 호출 구성 계약(InvocationConfig·OptionSpec·optionCatalog) + §8 **언어별 호출 구성 능력 매트릭스** | 세션 #002 |
+| `src/core/types.ts` | 전체 타입 단일 정의 지점 신규(§2~§7 LanguageAdapter·InvocationConfig·OptionSpec·PersistedState·DevSwitcherError) | TASK-002 |
+| `interface_contract.md` | OQ-002 Resolved — config 별도 인자, Selection.runArgs 제거, runArgs 승격 | TASK-002 |
 | `data_model.md` | 설정 3계층 + PersistedState에 `(projectId×profile)` invocation 차원 도입 | 세션 #002 |
 | `functional_spec.md`·`requirement_spec.md` | F21·FR-014 추가, §8.7 파일편집 v2 이월, NFR-002a 셸 예외 | 세션 #002 |
 | `user_story_registry.md`·`milestone_registry.md`·`domain_model.md`·`coding_convention.md`·`deliverable_plan.md` | US-010 정정+US-012, MS-006 범위, INV-6, 카탈로그 반영, 명칭(다이얼로그→페이지) | 세션 #002 |

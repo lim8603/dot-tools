@@ -34,7 +34,7 @@
 | Task ID | 제목 | 관련 Milestone | 관련 Intent | 관련 User Story | 담당 | 상태 | 마지막 갱신일 | 다음 액션 | 의존 | 문서 경로 | 비고 |
 |---------|------|----------------|-------------|-----------------|------|------|---------------|-----------|------|----------|------|
 | TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | INT-001 | 없음 | AI | Done | 2026-08-15 | 완료 — F5 Hello World 검증(명령 팔레트 등록 + 알림 표시). `feature/task-001-scaffold` → main 병합 | 없음 | | M0. 완료 |
-| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | INT-001 | 없음 | AI | Planned | 2026-08-13 | `interface_contract.md` 기준으로 types.ts 작성 (+ NewProjectTarget·createProject 계약) | TASK-001 | | M1. 단일 정의 지점 |
+| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | INT-001 | 없음 | AI | Review | 2026-08-15 | types.ts 작성 완료(§2~§7 + PersistedState + DevSwitcherError, OQ-002 별도인자 반영). tsc·eslint·esbuild 통과. 사용자 검토 후 main 병합 | TASK-001 | | M1. 단일 정의 지점. `feature/task-002-core-types` |
 | TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | INT-001 | US-003 | AI | Planned | 2026-08-15 | cargo/cmake/dotnet/python 어댑터에 chips·actions·manifestGlobs·canCreateProject·optionCatalog·configCategories 선언 (Python 리트머스, ASM-002) | TASK-002 | | M1. 인터페이스 확정 검증(F21 계약 포함) |
 
 > 현재 등록 Task: TASK-001~003 (M0~M1 착수분). M2 이후 Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
