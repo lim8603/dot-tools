@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-003 진행 — TASK-005 CargoBridge cargo CLI 연동) |
+| 현재 Phase | Build (MS-003 완료 임박 — TASK-006 CargoAdapter 실구현 Review) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter, In Progress) |
-| 활성 Task | TASK-004·005 (CargoBridge 순수코어+CLI I/O, Review — 33 테스트) → TASK-006 |
+| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter, Review — 3개 Task 완료, 병합 대기) |
+| 활성 Task | TASK-004·005·006 모두 Review (34 테스트) → 검토·병합 후 MS-004 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. MS-001·002 완료·병합. **MS-003 진행** — TASK-004(순수 코어)+**TASK-005(cargo CLI I/O)** 완료(Review), mocha 33 테스트 + 실 cargo 스모크. 브랜치 `feature/task-004-cargobridge-pure`(TASK-004·005 미병합). 다음 TASK-006(CargoAdapter 실구현). 설계서 §8 기준, cargo가 실행 경로 해석(DD-05).
+- Build 진행 중. MS-001·002 완료·병합. **MS-003 Review** — TASK-004(순수코어)·005(cargo CLI I/O)·**006(CargoAdapter 실구현)** 모두 완료(Review): listProjects·chips·build/run Task·resolveExecutable 실동작. mocha 34 + 실 cargo 스모크. 브랜치 `feature/task-004-cargobridge-pure`(3개 Task 미병합). 디버그=M4·createProjectTask=MS-008 이월. 다음: 검토·병합 후 MS-004(상태바). cargo가 실행 경로 해석(DD-05).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -59,7 +59,7 @@
 |---------|------|------|------|---------------|-----------|
 | TASK-004 | CargoBridge 순수 코어 + 테스트 하네스 | AI | Review | 2026-08-15 | 완료 — 순수 함수 + mocha 19 테스트 통과 |
 | TASK-005 | CargoBridge cargo CLI 연동 | AI | Review | 2026-08-15 | 완료 — execCapture/CargoBridge(fetchMetadata+캐시·listInstalledTargets·checkToolchain), mocha 14 신규·실 cargo 스모크 OK. 검토 후 TASK-006 |
-| TASK-006 | CargoAdapter 실구현 | AI | Planned | 2026-08-15 | 스텁 교체·build/run/debug·resolveExecutable·createProjectTask (TASK-005 후) |
+| TASK-006 | CargoAdapter 실구현 | AI | Review | 2026-08-15 | 완료(M2) — listProjects·chips·build/run Task·resolveExecutable·invalidateCache 실동작. 디버그·createProjectTask는 M4/MS-008 이월. 검토 후 병합 |
 
 > TASK-001·002·003 모두 2026-08-15 Done (MS-001·002 완료, main 병합) — 상세는 session_2026-08-15_003.md.
 
@@ -71,8 +71,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-006(CargoAdapter 실구현)** — 스텁 교체: chips.listItems·listProjects·build/run/debug Task·resolveExecutable(=execCapture(build json)+pickExecutable)·createProjectTask(cargo new). CargoBridge 인스턴스로 ProjectInfo→manifestPath 변환
-2. 이후 순서: MS-004(상태바·저장·감시) → MS-005(실행·디버그)까지면 Rust 실사용 가능
+1. **MS-003 검토·병합** — `feature/task-004-cargobridge-pure`(TASK-004·005·006)를 main 병합할지 결정. 병합 후 브랜치 정리.
+2. **MS-004(M3 상태바·상태 저장·감시)** 착수 — AdapterRegistry·StatusBarController(칩 렌더)·QuickPick(pickChip)·StateStore(workspaceState·reconcile)·ManifestWatcher. **여기까지면 Rust 실사용 가능**. 착수 시 Task 분해(C-2)
+3. 이후 MS-005(실행·디버그: TaskRunner·problem matcher·createDebugConfig)·MS-006(설정 페이지) 
 
 ---
 
@@ -110,7 +111,8 @@
 - 상세설계서 §16 로드맵 M0~M6이 사실상의 Milestone 후보. v1 실구현 대상은 CargoAdapter(Rust) 단독.
 - **세션 #002 신규(ADR-011·012)**: 설정은 3계층(①확장설정 ②캐노니컬 정의 ③호출 구성 오버레이). VS2026식 속성은 계층 ③으로 흡수 — 파일 무편집, `(프로젝트×구성)`별 저장, 빌드/실행 시 `--config`/env 주입. 설정 UI = WebviewPanel "설정 페이지" + 어댑터 선언 옵션 카탈로그. **언어별 능력은 `interface_contract.md` §8 매트릭스가 SSOT.** 캐노니컬 파일 편집은 v2. 구현은 MS-006(M5)에서.
 - **세션 #003**: MS-001·002 완료·main 병합(스캐폴드·types.ts·4개 어댑터 스텁, tsc 인터페이스 확정). OQ-002 확정 = `config` 별도 인자. 상세설계서 v1.2 최신화 후 `06_evolution/imported_context/`(영문명 Detailed/Concept-Design)로 이동 — 운영 SSOT는 .cowork, 상세설계서는 **회사 툴 재사용용 통합 스냅샷**. cargo 구현 기준 = 상세설계서 §8.
-- **세션 #004**: **TASK-005(cargo CLI I/O) 완료(Review)** — `cargoBridge.ts`에 I/O 계층 추가: `execCapture`+`defaultExec`(child_process.execFile, **셸無** NFR-002, DI로 테스트 가능) + `CargoBridge` 클래스(`fetchMetadata`+manifestPath 캐시·`listInstalledTargets`·`checkToolchain`·`invalidateCache`). 캐시는 시간만료 없음(watcher/명시적만, §8.1). **핵심 결정**: `DevSwitcherError`를 `core/errors.ts`(vscode-free)로 분리 → 브리지가 값으로 throw해도 mocha에서 `vscode` require 안 됨. `types.ts`는 재-export로 하위호환. mocha 14 신규(총 33)·tsc/eslint/esbuild OK·**실 cargo 1.96 스모크**(checkToolchain·metadata·targets·E2=CARGO_METADATA_FAILED). 미병합 브랜치 그대로. 다음 TASK-006.
+- **세션 #004**: **TASK-005(cargo CLI I/O) 완료(Review)** — `cargoBridge.ts`에 I/O 계층 추가: `execCapture`+`defaultExec`(child_process.execFile, **셸無** NFR-002, DI로 테스트 가능) + `CargoBridge` 클래스(`fetchMetadata`+manifestPath 캐시·`listInstalledTargets`·`checkToolchain`·`invalidateCache`). 캐시는 시간만료 없음(watcher/명시적만, §8.1). **핵심 결정**: `DevSwitcherError`를 `core/errors.ts`(vscode-free)로 분리 → 브리지가 값으로 throw해도 mocha에서 `vscode` require 안 됨. `types.ts`는 재-export로 하위호환. mocha 14 신규(총 33)·tsc/eslint/esbuild OK·**실 cargo 1.96 스모크**(checkToolchain·metadata·targets·E2=CARGO_METADATA_FAILED).
+- **세션 #004 (계속)**: **TASK-006(CargoAdapter 실구현) 완료(Review)** — `cargoAdapter.ts` 런타임 스텁을 실구현으로 교체(vscode-aware 얇은 배선). 모듈 싱글턴 `CargoBridge` 보유, `ProjectInfo→manifestPath/cwd` 변환 담당. listProjects(최단경로 우선·member 중복제거·`id=cargo:${상대경로}`)·chips 4종·createBuild/RunTask(`ProcessExecution`, 셸無, `config.env`+`CARGO_TARGET_DIR`)·resolveExecutable(build `--message-format=json`+`pickExecutable`, E6=`EXECUTABLE_NOT_FOUND`)·invalidateCache 위임. `CargoBridge.peekMetadata` 추가(동기 hasDefault 판정). **의도 이월**: createDebugConfig→M4, createProjectTask→MS-008, persistSetting→v2. problemMatcher/커스텀 profile/F19/compiler·linker 오버레이도 후속. **MS-003 3개 Task 모두 Review**. 34 테스트·tsc/eslint/esbuild OK. 미병합 브랜치 그대로. 다음: MS-003 병합 판단 → MS-004.
 
 ---
 
@@ -186,6 +188,8 @@
 | `src/core/errors.ts`(신규)·`src/core/types.ts` | `DevSwitcherError`를 vscode-free 모듈로 분리, types는 재-export(하위호환). 브리지가 순수 Node에서 throw 가능 | TASK-005 |
 | `src/adapters/cargo/cargoBridge.ts` | I/O 계층 추가 — `execCapture`/`defaultExec`(execFile, 셸無, DI) + `CargoBridge`(fetchMetadata+캐시·listInstalledTargets·checkToolchain·invalidateCache). vscode-free 유지 | TASK-005 |
 | `src/test/unit/cargoBridge.io.test.ts`(신규) | I/O 계층 14 테스트(가짜 exec + 실 node 바이너리 스모크) | TASK-005 |
+| `src/adapters/cargo/cargoAdapter.ts` | 런타임 스텁→실구현: listProjects(§8.2)·chips 4종(listItems/format/defaultValue)·createBuild/RunTask(ProcessExecution·env·CARGO_TARGET_DIR)·resolveExecutable(§8.5)·invalidateCache 위임. 디버그/createProject/persist는 스텁 유지(M4/MS-008/v2) | TASK-006 |
+| `src/adapters/cargo/cargoBridge.ts` | `peekMetadata`(동기 캐시 접근자) 추가 — 동기 Task 생성 시 hasDefault 판정용 | TASK-006 |
 | `functional_spec.md`·`requirement_spec.md` | F21·FR-014 추가, §8.7 파일편집 v2 이월, NFR-002a 셸 예외 | 세션 #002 |
 | `user_story_registry.md`·`milestone_registry.md`·`domain_model.md`·`coding_convention.md`·`deliverable_plan.md` | US-010 정정+US-012, MS-006 범위, INV-6, 카탈로그 반영, 명칭(다이얼로그→페이지) | 세션 #002 |
 
