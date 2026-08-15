@@ -245,9 +245,10 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       html += '<h3 class="cat">' + esc(cat) + '</h3>';
       if (cat === 'runArgs') {
         const args = state.invocation.runArgs || [];
-        html += '<div class="row"><input type="text" id="runargs-input" style="flex:1" ' +
-          'placeholder="--flag value" value="' + esc(args.join(' ')) + '" /></div>' +
-          '<div class="muted">argv: [' + args.map((t) => '<code>' + esc(t) + '</code>').join(', ') + ']</div>';
+        html += '<div class="row"><input type="text" id="runargs-input" value="' + esc(args.join(' ')) + '" /></div>' +
+          '<div class="muted">Arguments passed to your program, after <code>cargo run --</code> ' +
+          '(shell-quoted). &nbsp;e.g. <code>--verbose --input data.txt</code></div>' +
+          '<div class="muted meta">argv: [' + args.map((t) => '<code>' + esc(t) + '</code>').join(', ') + ']</div>';
       } else if (cat === 'buildEvent') {
         const pre = (state.invocation.preBuild || []).join('\\n');
         const post = (state.invocation.postBuild || []).join('\\n');
