@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-007 진행 중 — 016·017·018 병합, 019 착수) |
+| 현재 Phase | Build (MS-007 진행 중 — 016~019 병합, 020 착수) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — 016·017·018 Done, 019~021 남음) |
-| 활성 Task | TASK-019 (pre/postBuild 실행 배선 — In Progress) |
+| 활성 Milestone | MS-007 (M6 품질·배포, In Progress — 016~019 Done, 020·021 남음) |
+| 활성 Task | TASK-020 (통합 테스트 하네스 + 체크리스트 — In Progress) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-019 | pre/postBuild 실행 배선 + buildEvent 편집 (C-5) | AI | In Progress | 2026-08-15 | 착수 — preBuild/postBuild 빌드/실행 전후 실제 실행(현재 저장만) + 설정 페이지 buildEvent 에디터. NFR-002 셸 정책 확인 |
+| TASK-020 | 통합 테스트 하네스 + 수동 체크리스트 (§15.2) | AI | In Progress | 2026-08-15 | 착수 — `@vscode/test-electron` 셋업 + 자동화 스모크 + §15.2 13항목 수동 체크리스트(WSL/F18·Python 스텁 회귀) → test_case/verification_evidence |
 
-> MS-007: 016·017(Doctor)·018(rustup target) Done·main 병합. TASK-019~021 남음(019→020→021). TASK-001~015 Done(MS-001~006).
+> MS-007: 016·017(Doctor)·018(rustup target)·019(pre/postBuild) Done·main 병합. TASK-020·021 남음. TASK-001~015 Done(MS-001~006).
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-019 진행** (pre/postBuild 실행 배선, C-5) — preBuild/postBuild 전후 실행 + buildEvent 에디터.
-2. 이후 020(통합테스트+체크리스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20 마법사)
+1. **TASK-020 진행** (통합 테스트 하네스 + §15.2 체크리스트) — `@vscode/test-electron` 셋업 + 수동 체크리스트.
+2. 이후 021(README+VSIX) → MS-007 Done → MS-008(F20 마법사)
 3. 이월: 프로파일 편집(v2, C-3)·extra rustflags/stringList 옵션(L-1)은 후속. C-2(분해)는 해소.
 
 ---
@@ -93,7 +93,7 @@
 | C-2 | **MS-007 분해 완료(2026-08-15, 세션 #005) — TASK-016~021**. MS-008(F20) 분해만 남음(착수 시) | MS-008 착수 시 | task_registry 경량 운영 |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 | ~~C-4~~ | **해소(2026-08-15, 세션 #005, TASK-015)** — `ProfileExport` 확정(= PersistedState 정렬: selections+invocation, activeProjectId 제외, runArgs는 ADR-011 승격 위치) + `data_model.md §2` 예시 정합화 | (해소) | 세션 #003 → #005 |
-| C-5 | pre/postBuild 명령 실제 실행 배선(현재 InvocationConfig에 저장만·주입 안 함) + 설정 페이지 buildEvent 편집(탭에 "planned" 표시 중) | MS-007 | 세션 #004 TASK-012 |
+| ~~C-5~~ | **해소(2026-08-15, 세션 #005, TASK-019)** — preBuild/postBuild를 ShellExecution Task로 실제 실행(pre 실패→중단, post 성공 후) + 설정 페이지 buildEvent 에디터 | (해소) | 세션 #004 → #005 |
 
 **저심각 · 기록 (지시 시에만)**
 
