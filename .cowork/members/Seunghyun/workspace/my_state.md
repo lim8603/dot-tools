@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시) — 착수 |
+| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시) — Review, F5 검증 대기 |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_004.md |
 
@@ -20,11 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-007 | 데이터 계층 (AdapterRegistry + StateStore) | MS-004 | In Progress | 0% | 없음 |
-| TASK-008 | UI 계층 (StatusBar + QuickPick) | MS-004 | Planned | 0% | TASK-007 |
-| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | MS-004 | Planned | 0% | TASK-007·008 |
+| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | MS-004 | Review | 100% (코드) | F5 검증 대기(사용자) |
 
-> TASK-001~006 Done (MS-001·002·003 완료·main 병합, 2026-08-15). MS-003 상세: session #004.
+> TASK-007·008 Done. TASK-001~006 Done (MS-001·002·003 완료·main 병합, 2026-08-15). MS-003·004 상세: session #004.
 
 ---
 
@@ -35,15 +33,15 @@
 | #001 | 2026-08-13 | 온보딩 + 설계서 전체 반입(DEFINE·DESIGN·BUILD준비) + F20 신규 + Gate 1·3 통과 + 커밋 | MS-001 | 프로젝트 공통 | 완료 |
 | #002 | 2026-08-15 | VS2026식 프로젝트 속성 논의 → 호출 구성 오버레이(ADR-011)·설정 페이지·옵션 카탈로그(ADR-012)·언어별 능력 정리, F21/FR-014 신규 반영 | MS-006(설계) | 프로젝트 공통 | 완료 |
 | #003 | 2026-08-15 | TASK-001 F5·병합 → OQ-002 확정 → TASK-002 types.ts → TS2584 수정 → TASK-003 어댑터 스텁 → MS-002 병합 → 상세설계서 v1.2·imported_context 이동 → MS-003 착수·TASK-004(CargoBridge+mocha) | MS-001·002·003 | TASK-001~004 | 완료 |
-| #004 | 2026-08-15 | TASK-005(CargoBridge cargo CLI I/O)+TASK-006(CargoAdapter 실구현) — I/O 계층·DevSwitcherError 분리·실 cargo 스모크 / 어댑터 listProjects·chips·build/run·resolveExecutable. MS-003 3개 Task Review | MS-003 | TASK-005·006 | 완료 |
+| #004 | 2026-08-15 | TASK-005·006(MS-003 완료·병합) → **MS-004 분해·구현**: TASK-007(데이터)·008(UI)·009(배선·감시). 상태바·QuickPick·StateStore·reconcile·Watcher·activate + cargo 픽스처. mocha 44. F5 검증만 남음 | MS-003·004 | TASK-005~009 | 진행(F5 대기) |
 
 ---
 
 ## 다음 시작점
 
-1. **MS-004(M3 상태바·저장·감시) Task 분해**(C-2) → 착수. 구성요소: AdapterRegistry(스캔·매칭 ADR-006)·StatusBarController(칩 렌더 ADR-003)·QuickPick(pickChip §5.3)·StateStore(workspaceState·reconcile ADR-001)·ManifestWatcher(디바운스 F17). **여기까지면 Rust 실사용 가능**
-2. **C-1(ui_spec) 트리거 도래** — MS-004 UI 착수이므로 상태바 칩 레이아웃 화면설계 필요 여부 판단
-3. 이후 MS-005(실행·디버그: TaskRunner·problem matcher·createDebugConfig)·MS-006(설정 페이지/호출 구성)
+1. **MS-004 F5 검증**(사용자) — `feature/ms-004-statusbar`에서 F5 `Run Extension` → Extension Development Host(dot-tools)에서 상태바 `$(repo) hello` + 4칩 표시·QuickPick 선택·복원 확인. 통과 시 TASK-009·MS-004 Done → main 병합
+2. **MS-005(M4 실행·디버그)** — TaskRunner·problem matcher·createDebugConfig(CodeLLDB)·액션버튼 실행 연결. 착수 시 Task 분해
+3. 이후 MS-006(설정 페이지/호출 구성)·MS-007(품질·배포)·MS-008(F20 마법사)
 
 ---
 
@@ -63,7 +61,8 @@
 - C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
 - C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영(편집/승격, 구 §8.7) — v2 착수 시
 - C-4: `ProfileExport`(F12) 타입 + data_model §2 export 예시 정합화(runArgs 승격 반영) — MS-006 착수 시
-- TASK-004·005·006 미병합: `feature/task-004-cargobridge-pure` — MS-003 검토 후 main 병합 판단
+- MS-004 미병합: `feature/ms-004-statusbar`(TASK-007·008·009) — F5 검증 통과 시 main 병합
+- (완료) TASK-004·005·006 = MS-003, main FF 병합 완료
 
 ---
 

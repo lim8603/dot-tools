@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-003 Done·병합 완료 → MS-004 상태바 착수) |
+| 현재 Phase | Build (MS-004 코드 완료 — F5 검증 대기) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시, In Progress) |
-| 활성 Task | TASK-007 (데이터 계층 AdapterRegistry+StateStore, In Progress) → 008·009 |
+| 활성 Milestone | MS-004 (M3 상태바·저장·감시, Review — 코드 완료, F5 검증 대기) |
+| 활성 Task | TASK-009 (배선·감시, Review — F5 대기). 007·008 Done |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. **MS-001·002·003 완료·main 병합.** MS-003 = CargoBridge(순수코어+CLI I/O) + CargoAdapter(listProjects·chips·build/run·resolveExecutable), mocha 34 + 실 cargo 스모크. 디버그=M4·createProjectTask=MS-008 이월. **다음: MS-004(M3 상태바·저장·감시)** — AdapterRegistry·StatusBarController·QuickPick·StateStore·ManifestWatcher. 여기까지면 Rust 실사용 가능. cargo가 실행 경로 해석(DD-05).
+- Build 진행 중. MS-001·002·003 완료·main 병합. **MS-004(M3 상태바·저장·감시) 코드 완료 — F5 검증 대기.** AdapterRegistry·StateStore(+reconcile 순수코어)·StatusBarController·picks·Orchestrator·ManifestWatcher·activate 배선·contributes + cargo 픽스처. mocha 44. **다음: 사용자 F5 검증**(dot-tools 열고 상태바에 hello 프로젝트+칩 표시 확인) → 통과 시 MS-004 Done·병합. cargo가 실행 경로 해석(DD-05).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,11 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-007 | 데이터 계층 (AdapterRegistry + StateStore) | AI | In Progress | 2026-08-15 | reconcile 순수코어 + StateStore + AdapterRegistry. 브랜치 `feature/ms-004-statusbar` |
-| TASK-008 | UI 계층 (StatusBar + QuickPick) | AI | Planned | 2026-08-15 | 렌더·에러상태·경고칩·QuickPick (TASK-007 후) |
-| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | AI | Planned | 2026-08-15 | pickChip·switchProject·Watcher·activate·contributes + F5 (TASK-008 후) |
+| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | AI | Review | 2026-08-15 | 코드 완료 — **F5 검증 대기**(사용자). 통과 시 MS-004 Done. 브랜치 `feature/ms-004-statusbar` |
 
-> TASK-001~006 모두 2026-08-15 Done (MS-001·002·003 완료, main 병합). MS-003 상세는 session_2026-08-15_004.md.
+> TASK-007·008 Done (2026-08-15). TASK-001~006 Done (MS-001·002·003 완료, main 병합). MS-003·004 상세는 session_2026-08-15_004.md.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -71,9 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-003 검토·병합** — `feature/task-004-cargobridge-pure`(TASK-004·005·006)를 main 병합할지 결정. 병합 후 브랜치 정리.
-2. **MS-004(M3 상태바·상태 저장·감시)** 착수 — AdapterRegistry·StatusBarController(칩 렌더)·QuickPick(pickChip)·StateStore(workspaceState·reconcile)·ManifestWatcher. **여기까지면 Rust 실사용 가능**. 착수 시 Task 분해(C-2)
-3. 이후 MS-005(실행·디버그: TaskRunner·problem matcher·createDebugConfig)·MS-006(설정 페이지) 
+1. **MS-004 F5 검증**(사용자) — `feature/ms-004-statusbar` 체크아웃 → F5 `Run Extension` → Extension Development Host에서 dot-tools 열림 → 상태바에 `$(repo) hello` + Profile/Architecture/Features/Target 칩 표시 확인. 칩 클릭→QuickPick 선택→상태바 반영, 창 재열림 시 선택 복원. 통과 시 TASK-009·MS-004 Done → main 병합.
+2. **MS-005(M4 실행·디버그)** — TaskRunner(Task 실행·종료코드)·problem matcher·createDebugConfig(CodeLLDB)·빌드/실행/디버그 플로우. 액션 버튼 실행 연결. 착수 시 Task 분해.
+3. 이후 MS-006(설정 페이지/호출 구성)·MS-007(품질·배포)·MS-008(F20 마법사)
 
 ---
 
@@ -91,8 +89,8 @@
 
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
-| C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — 상태바 칩 레이아웃·**설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처·명령 미리보기, ADR-012)**·마법사 QuickPick | UI 구현(MS-004/006/008) 착수 시 | 세션 #001 Gate 3 |
-| C-2 | MS-004~008 상세 Task 분해 (MS-002·003 분해 완료) | 해당 Milestone 착수 시 | task_registry 경량 운영 |
+| C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — **설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처·명령 미리보기, ADR-012)**·마법사 QuickPick. (상태바 레이아웃은 설계 §5로 충분 — MS-004에서 평가·생략) | 설정 페이지 구현(MS-006) 착수 시 | 세션 #001 Gate 3, #004 재평가 |
+| C-2 | MS-005~008 상세 Task 분해 (MS-002·003·004 분해 완료) | 해당 Milestone 착수 시 | task_registry 경량 운영 |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 | C-4 | `ProfileExport`(F12 export/import) 타입 확정 + `data_model.md` §2 export 예시를 ADR-011 후속(runArgs 승격)에 맞게 정합화 | export/import 구현(MS-006) 착수 시 | 세션 #003 TASK-002 |
 
@@ -112,7 +110,8 @@
 - **세션 #002 신규(ADR-011·012)**: 설정은 3계층(①확장설정 ②캐노니컬 정의 ③호출 구성 오버레이). VS2026식 속성은 계층 ③으로 흡수 — 파일 무편집, `(프로젝트×구성)`별 저장, 빌드/실행 시 `--config`/env 주입. 설정 UI = WebviewPanel "설정 페이지" + 어댑터 선언 옵션 카탈로그. **언어별 능력은 `interface_contract.md` §8 매트릭스가 SSOT.** 캐노니컬 파일 편집은 v2. 구현은 MS-006(M5)에서.
 - **세션 #003**: MS-001·002 완료·main 병합(스캐폴드·types.ts·4개 어댑터 스텁, tsc 인터페이스 확정). OQ-002 확정 = `config` 별도 인자. 상세설계서 v1.2 최신화 후 `06_evolution/imported_context/`(영문명 Detailed/Concept-Design)로 이동 — 운영 SSOT는 .cowork, 상세설계서는 **회사 툴 재사용용 통합 스냅샷**. cargo 구현 기준 = 상세설계서 §8.
 - **세션 #004**: **TASK-005(cargo CLI I/O) 완료(Review)** — `cargoBridge.ts`에 I/O 계층 추가: `execCapture`+`defaultExec`(child_process.execFile, **셸無** NFR-002, DI로 테스트 가능) + `CargoBridge` 클래스(`fetchMetadata`+manifestPath 캐시·`listInstalledTargets`·`checkToolchain`·`invalidateCache`). 캐시는 시간만료 없음(watcher/명시적만, §8.1). **핵심 결정**: `DevSwitcherError`를 `core/errors.ts`(vscode-free)로 분리 → 브리지가 값으로 throw해도 mocha에서 `vscode` require 안 됨. `types.ts`는 재-export로 하위호환. mocha 14 신규(총 33)·tsc/eslint/esbuild OK·**실 cargo 1.96 스모크**(checkToolchain·metadata·targets·E2=CARGO_METADATA_FAILED).
-- **세션 #004 (계속)**: **TASK-006(CargoAdapter 실구현) 완료(Review)** — `cargoAdapter.ts` 런타임 스텁을 실구현으로 교체(vscode-aware 얇은 배선). 모듈 싱글턴 `CargoBridge` 보유, `ProjectInfo→manifestPath/cwd` 변환 담당. listProjects(최단경로 우선·member 중복제거·`id=cargo:${상대경로}`)·chips 4종·createBuild/RunTask(`ProcessExecution`, 셸無, `config.env`+`CARGO_TARGET_DIR`)·resolveExecutable(build `--message-format=json`+`pickExecutable`, E6=`EXECUTABLE_NOT_FOUND`)·invalidateCache 위임. `CargoBridge.peekMetadata` 추가(동기 hasDefault 판정). **의도 이월**: createDebugConfig→M4, createProjectTask→MS-008, persistSetting→v2. problemMatcher/커스텀 profile/F19/compiler·linker 오버레이도 후속. **MS-003 3개 Task 모두 Review**. 34 테스트·tsc/eslint/esbuild OK. 미병합 브랜치 그대로. 다음: MS-003 병합 판단 → MS-004.
+- **세션 #004 (계속)**: **TASK-006(CargoAdapter 실구현) 완료(Review)** — `cargoAdapter.ts` 런타임 스텁을 실구현으로 교체(vscode-aware 얇은 배선). 모듈 싱글턴 `CargoBridge` 보유, `ProjectInfo→manifestPath/cwd` 변환 담당. listProjects(최단경로 우선·member 중복제거·`id=cargo:${상대경로}`)·chips 4종·createBuild/RunTask(`ProcessExecution`, 셸無, `config.env`+`CARGO_TARGET_DIR`)·resolveExecutable(build `--message-format=json`+`pickExecutable`, E6=`EXECUTABLE_NOT_FOUND`)·invalidateCache 위임. `CargoBridge.peekMetadata` 추가(동기 hasDefault 판정). **의도 이월**: createDebugConfig→M4, createProjectTask→MS-008, persistSetting→v2. problemMatcher/커스텀 profile/F19/compiler·linker 오버레이도 후속. **MS-003 3개 Task 모두 Review**. 34 테스트·tsc/eslint/esbuild OK.
+- **세션 #004 (계속)**: **MS-003 main FF 병합**(d249de2, 브랜치 삭제). **MS-004(M3) 코드 완료** — 3분할 구현: TASK-007 데이터(AdapterRegistry 스캔·매칭 + StateStore workspaceState·reconcile, 순수코어 `stateReconcile.ts` mocha 8)·TASK-008 UI(StatusBarController 칩/버튼 렌더 어댑터무지 + picks QuickPick + `defaultChipFormat` mocha 2)·TASK-009 배선(Orchestrator pickChip/switchProject·applyDefaults·ManifestWatcher 500ms 디바운스·extension.ts activate·package.json 5커맨드+activationEvents·cargo 픽스처 `src/test/fixtures/cargo/hello`). mocha 44. 액션버튼 렌더만(실행=MS-005), 툴체인경고칩(E1)=MS-007, 30일GC/export=후속. 브랜치 `feature/ms-004-statusbar`(미병합). **F5 end-to-end 검증만 남음**(사용자). 통과 시 MS-004 Done·병합 → MS-005.
 
 ---
 
@@ -190,6 +189,11 @@
 | `src/test/unit/cargoBridge.io.test.ts`(신규) | I/O 계층 14 테스트(가짜 exec + 실 node 바이너리 스모크) | TASK-005 |
 | `src/adapters/cargo/cargoAdapter.ts` | 런타임 스텁→실구현: listProjects(§8.2)·chips 4종(listItems/format/defaultValue)·createBuild/RunTask(ProcessExecution·env·CARGO_TARGET_DIR)·resolveExecutable(§8.5)·invalidateCache 위임. 디버그/createProject/persist는 스텁 유지(M4/MS-008/v2) | TASK-006 |
 | `src/adapters/cargo/cargoBridge.ts` | `peekMetadata`(동기 캐시 접근자) 추가 — 동기 Task 생성 시 hasDefault 판정용 | TASK-006 |
+| `src/core/adapterRegistry.ts`·`stateStore.ts`·`stateReconcile.ts`(신규) | 스캔·매칭 + workspaceState 래퍼 + reconcile 순수코어 | TASK-007 |
+| `src/ui/statusBar.ts`·`statusBarFormat.ts`·`picks.ts`(신규) | 칩/버튼 렌더(어댑터무지) + QuickPick + defaultChipFormat | TASK-008 |
+| `src/core/orchestrator.ts`·`manifestWatcher.ts`(신규)·`extension.ts`·`package.json` | 배선·명령·감시·activate + contributes(5커맨드·activationEvents) | TASK-009 |
+| `src/test/fixtures/cargo/hello/*`(신규)·`.gitignore` | F5/통합용 cargo 픽스처 + target 제외 | TASK-009 |
+| `src/test/unit/stateReconcile.test.ts`·`statusBarFormat.test.ts`(신규) | 순수코어 mocha 10 (총 44) | TASK-007·008 |
 | `functional_spec.md`·`requirement_spec.md` | F21·FR-014 추가, §8.7 파일편집 v2 이월, NFR-002a 셸 예외 | 세션 #002 |
 | `user_story_registry.md`·`milestone_registry.md`·`domain_model.md`·`coding_convention.md`·`deliverable_plan.md` | US-010 정정+US-012, MS-006 범위, INV-6, 카탈로그 반영, 명칭(다이얼로그→페이지) | 세션 #002 |
 
@@ -206,9 +210,9 @@
 | Milestone | MS-001 | M0 셋업 | Done | 스캐폴드 + F5 검증 완료 |
 | Milestone | MS-002 | M1 코어 타입·칩 | Done | 인터페이스 확정(tsc), main 병합 |
 | Milestone | MS-003 | M2 CargoBridge/CargoAdapter | Done | main 병합(FF, 2026-08-15). 디버그·createProject 이월 |
-| Milestone | MS-004 | M3 상태바·저장·감시 | In Progress | 착수 — Task 분해 필요(C-2) |
+| Milestone | MS-004 | M3 상태바·저장·감시 | Review | 코드 완료(TASK-007·008 Done, 009 Review). F5 검증 대기 |
 | Milestone | MS-005~008 | M4~M6 + F20 마법사 | Planned | milestone_registry |
-| Task | 없음 | MS-004 미분해 | - | 착수 시 분해(C-2) |
+| Task | TASK-009 | 배선·감시 | Review | F5 검증 대기 |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
