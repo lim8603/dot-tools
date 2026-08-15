@@ -11,6 +11,9 @@ out/
 # ─── VSCode 확장 테스트 ───
 .vscode-test/
 
+# ─── Dev-only profile export artifacts (F12); real user projects commit their own ───
+/devswitcher.profile.json
+
 # ─── Rust test-fixture build output ───
 src/test/fixtures/**/target/
 src/test/fixtures/**/Cargo.lock

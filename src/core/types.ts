@@ -124,7 +124,17 @@ export interface OptionSpec {
   category: string; // known: 'compiler' | 'linker' | 'output' | 'env' | 'buildEvent' | 'runArgs'
   label: string;
   description: string; // teaching text for developers unfamiliar with the option
+  /** The bare value to enter in the field (e.g. 'lld') — shown as the input placeholder. */
   example: string;
+  /**
+   * Optional teaching hint showing how that value is injected, with `<value>` as a
+   * placeholder (e.g. 'RUSTFLAGS=-C linker=<value>'). Kept separate from `example`
+   * so users enter the bare value and never paste the injected form (which would
+   * double the prefix). Shown in the muted help line, not the field.
+   */
+  injectsAs?: string;
+  /** Optional link to the official docs for this option, shown in the help line. */
+  docUrl?: string;
   type: 'enum' | 'bool' | 'int' | 'string' | 'stringList';
   allowedValues?: string[]; // dropdown values when type is 'enum'
   defaultValue?: OptionValue;

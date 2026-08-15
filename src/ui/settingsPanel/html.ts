@@ -51,6 +51,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     background: var(--vscode-button-secondaryBackground);
   }
   button:hover { background: var(--vscode-button-hoverBackground); }
+  a { color: var(--vscode-textLink-foreground); text-decoration: none; }
+  a:hover { color: var(--vscode-textLink-activeForeground); text-decoration: underline; }
   .layout { display: flex; min-height: calc(100vh - 46px); }
   .tabs { width: 160px; border-right: 1px solid var(--vscode-panel-border); padding: 8px 0; }
   .tab {
@@ -213,15 +215,20 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     } else if (o.type === 'bool') {
       editor = '<input type="checkbox" ' + attrs + (val === true ? ' checked' : '') + ' />';
     } else if (o.type === 'int') {
-      editor = '<input type="number" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
+      editor = '<input type="number" ' + attrs + ' placeholder="' + esc(o.example || '') + '"' +
+        ' value="' + esc(val === undefined ? '' : val) + '" />';
     } else {
-      editor = '<input type="text" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
+      editor = '<input type="text" ' + attrs + ' placeholder="' + esc(o.example || '') + '"' +
+        ' value="' + esc(val === undefined ? '' : val) + '" />';
     }
+    // Help line: the description, then how the entered value is injected (teaching),
+    // with the bare example shown as the field placeholder above — never as text to paste.
     return '<div class="opt">' +
       '<div class="opt-label"><b>' + esc(o.label) + '</b></div>' +
       '<div class="row">' + editor + '</div>' +
       '<div class="muted">' + esc(o.description) +
-      (o.example ? ' &nbsp;<code>' + esc(o.example) + '</code>' : '') + '</div></div>';
+      (o.injectsAs ? ' &nbsp;injects: <code>' + esc(o.injectsAs) + '</code>' : '') +
+      (o.docUrl ? ' &nbsp;<a href="' + esc(o.docUrl) + '">docs ↗</a>' : '') + '</div></div>';
   }
 
   function renderInvocation() {
@@ -249,7 +256,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   }
 
   function renderGeneral() {
-    return '<h2>General</h2><p class="muted">Export / import (F12) arrives in TASK-015.</p>';
+    return '<h2>General</h2><p class="muted">Export / import a profile (F12) from the Command ' +
+      'Palette: <code>DevSwitcher: Export Profile</code> · <code>DevSwitcher: Import Profile</code>.</p>';
   }
 
   document.addEventListener('click', (e) => {

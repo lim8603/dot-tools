@@ -5,6 +5,11 @@ import { OptionSpec } from '../../core/types';
  * real injection wiring land in M2/M5. Injection maps to `cargo --config` /
  * RUSTFLAGS / env per interface_contract §8. Covers the option-style categories
  * (compiler/linker/output/env); runArgs and buildEvent use free-form editors.
+ *
+ * `example` is the bare value to enter in the field (shown as the placeholder);
+ * `injectsAs` teaches how that value is injected (`<value>` = what you enter).
+ * They are kept separate so users never paste the injected form (e.g.
+ * `RUSTFLAGS="-C linker=lld"`) into the field and double the prefix.
  */
 export const CARGO_OPTION_CATALOG: OptionSpec[] = [
   {
@@ -13,7 +18,9 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     label: 'Optimization level',
     description:
       'How much the compiler optimizes. Higher levels produce faster code but slower builds.',
-    example: 'cargo build --config profile.dev.opt-level=3',
+    example: '3',
+    injectsAs: 'cargo --config profile.<profile>.opt-level=<value>',
+    docUrl: 'https://doc.rust-lang.org/cargo/reference/profiles.html#opt-level',
     type: 'enum',
     allowedValues: ['0', '1', '2', '3', 's', 'z'],
     defaultValue: '0',
@@ -25,7 +32,9 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     label: 'Link-time optimization (LTO)',
     description:
       'Optimizes across crate boundaries at link time. Faster runtime, longer link times.',
-    example: 'cargo build --config profile.release.lto="thin"',
+    example: 'thin',
+    injectsAs: 'cargo --config profile.<profile>.lto="<value>"',
+    docUrl: 'https://doc.rust-lang.org/cargo/reference/profiles.html#lto',
     type: 'enum',
     allowedValues: ['false', 'thin', 'fat'],
     defaultValue: 'false',
@@ -37,7 +46,9 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     label: 'Codegen units',
     description:
       'Parallel code-generation units. Fewer units allow more optimization; more units build faster.',
-    example: 'cargo build --config profile.release.codegen-units=1',
+    example: '1',
+    injectsAs: 'cargo --config profile.<profile>.codegen-units=<value>',
+    docUrl: 'https://doc.rust-lang.org/cargo/reference/profiles.html#codegen-units',
     type: 'int',
     defaultValue: 16,
     injection: 'config',
@@ -46,8 +57,10 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     id: 'linker',
     category: 'linker',
     label: 'Linker program',
-    description: 'Overrides the linker for the active target (injected via RUSTFLAGS).',
-    example: 'RUSTFLAGS="-C linker=lld"',
+    description: 'Overrides the linker for the active target.',
+    example: 'lld',
+    injectsAs: 'RUSTFLAGS=-C linker=<value>',
+    docUrl: 'https://doc.rust-lang.org/rustc/codegen-options/index.html#linker',
     type: 'string',
     injection: 'flag',
   },
@@ -57,7 +70,9 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     label: 'Target directory',
     description:
       'Directory where build artifacts are written. Keeps separate output trees per configuration.',
-    example: 'CARGO_TARGET_DIR=target/release-custom',
+    example: 'target/release-custom',
+    injectsAs: 'CARGO_TARGET_DIR=<value>',
+    docUrl: 'https://doc.rust-lang.org/cargo/reference/config.html#buildtarget-dir',
     type: 'string',
     injection: 'env',
   },
@@ -66,7 +81,10 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     category: 'env',
     label: 'RUST_LOG',
     description: 'Log filter passed to the program via environment.',
-    example: 'RUST_LOG=debug',
+    example: 'debug',
+    injectsAs: 'RUST_LOG=<value>',
+    // RUST_LOG is an env_logger/tracing convention, not a Cargo/rustc setting.
+    docUrl: 'https://docs.rs/env_logger/latest/env_logger/#enabling-logging',
     type: 'string',
     injection: 'env',
   },
