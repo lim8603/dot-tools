@@ -9,6 +9,7 @@ import { pickDiagnostic } from '../ui/doctorPick';
 import { ensureExtension } from './ensureExtension';
 import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
 import { buildDiagnostics, worstStatus } from './diagnostics';
+import { createBuildEventTask, type BuildEventPhase } from './buildEvents';
 
 /** Default filename offered by the export/import dialogs (F12). */
 const DEFAULT_PROFILE_FILE = 'devswitcher.profile.json';
@@ -319,6 +320,10 @@ export class Orchestrator {
 
     this.statusBar.markActionBusy(action);
     try {
+      // Pre-build commands (F21/C-5) run first; a failure aborts the build.
+      if (!(await this.runBuildEvents(project, config.preBuild, 'pre'))) {
+        return;
+      }
       const result = await this.taskRunner.run(task, project.id);
       if (!result.succeeded) {
         const showProblems = 'Show Problems';
@@ -329,10 +334,35 @@ export class Orchestrator {
         if (choice === showProblems) {
           void vscode.commands.executeCommand('workbench.actions.view.problems');
         }
+        return;
       }
+      // Post-build commands run only after the build/run succeeds.
+      await this.runBuildEvents(project, config.postBuild, 'post');
     } finally {
       await this.renderActive(); // clear the busy spinner
     }
+  }
+
+  /**
+   * Run each pre/post-build command in order (F21/C-5), aborting on the first failure.
+   * Shares the project's run lock, so the commands and the main task stay serialized.
+   * Returns false when a command fails (the caller aborts the build).
+   */
+  private async runBuildEvents(
+    project: ProjectInfo,
+    commands: string[] | undefined,
+    phase: BuildEventPhase,
+  ): Promise<boolean> {
+    for (const commandLine of commands ?? []) {
+      const result = await this.taskRunner.run(createBuildEventTask(project, commandLine, phase), project.id);
+      if (!result.succeeded) {
+        void vscode.window.showErrorMessage(
+          `DevSwitcher: ${phase}-build command failed (exit ${result.exitCode ?? 'unknown'}): ${commandLine}`,
+        );
+        return false;
+      }
+    }
+    return true;
   }
 
   /** E4: prompt any required chip that is unset before running; false = cancelled. */

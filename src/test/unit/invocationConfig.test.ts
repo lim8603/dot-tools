@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { applyOption, setRunArgsLine } from '../../core/invocationConfig';
+import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
 import type { OptionSpec } from '../../core/types';
 
 function spec(partial: Partial<OptionSpec> & Pick<OptionSpec, 'id' | 'category'>): OptionSpec {
@@ -52,5 +52,23 @@ describe('setRunArgsLine', () => {
 
   it('clears runArgs on an empty line', () => {
     assert.equal(setRunArgsLine({ runArgs: ['x'] }, '   ').runArgs, undefined);
+  });
+});
+
+describe('setBuildEventLines', () => {
+  it('splits lines into commands, trimming and dropping blanks', () => {
+    const config = setBuildEventLines({}, 'preBuild', ' npm run gen \n\n  cargo fmt  \n');
+    assert.deepEqual(config.preBuild, ['npm run gen', 'cargo fmt']);
+  });
+
+  it('clears the field when the text is empty/whitespace', () => {
+    assert.equal(setBuildEventLines({ postBuild: ['x'] }, 'postBuild', '  \n ').postBuild, undefined);
+  });
+
+  it('edits pre/post independently and does not mutate the input', () => {
+    const original = { preBuild: ['a'] };
+    const next = setBuildEventLines(original, 'postBuild', 'b');
+    assert.deepEqual(original, { preBuild: ['a'] });
+    assert.deepEqual(next, { preBuild: ['a'], postBuild: ['b'] });
   });
 });

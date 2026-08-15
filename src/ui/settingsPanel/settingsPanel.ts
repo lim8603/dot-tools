@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
-import { applyOption, setRunArgsLine } from '../../core/invocationConfig';
+import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
 import type { ChipItem, ChipValue, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo } from '../../core/types';
 import { getSettingsHtml } from './html';
 
@@ -37,7 +37,8 @@ type InMessage =
   | { type: 'setChipValue'; chipId: string; value: ChipValue }
   | { type: 'setOption'; optionId: string; value: OptionValue }
   | { type: 'clearOption'; optionId: string }
-  | { type: 'setRunArgs'; line: string };
+  | { type: 'setRunArgs'; line: string }
+  | { type: 'setBuildEvent'; event: 'preBuild' | 'postBuild'; text: string };
 
 /**
  * SettingsPanel — the WebviewPanel settings page (TASK-013, F21 / ADR-012 / 상세설계서 §10).
@@ -120,6 +121,9 @@ export class SettingsPanel {
         }
         case 'setRunArgs':
           await this.editInvocation(activeId, (config) => setRunArgsLine(config, message.line));
+          break;
+        case 'setBuildEvent':
+          await this.editInvocation(activeId, (config) => setBuildEventLines(config, message.event, message.text));
           break;
       }
     }
@@ -231,6 +235,8 @@ export class SettingsPanel {
   private commandPreview(adapter: LanguageAdapter, project: ProjectInfo, config: InvocationConfig): string {
     const selection = this.store.getSelection(project.id);
     const lines: string[] = [];
+    // Pre/post-build commands (F21) wrap the build/run — shown so the whole sequence is visible.
+    (config.preBuild ?? []).forEach((command) => lines.push(`pre:    ${command}`));
     if (adapter.actions.build) {
       const build = this.previewOf(() => adapter.createBuildTask(project, selection, config));
       if (build) {
@@ -241,6 +247,7 @@ export class SettingsPanel {
     if (run) {
       lines.push(`run:    ${run}`);
     }
+    (config.postBuild ?? []).forEach((command) => lines.push(`post:   ${command}`));
     return lines.join('\n');
   }
 

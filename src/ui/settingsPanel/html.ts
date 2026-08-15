@@ -34,13 +34,14 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     padding: 10px 16px; border-bottom: 1px solid var(--vscode-panel-border);
   }
   .topbar label { opacity: .8; }
-  select, button, input[type="text"] {
+  select, button, input[type="text"], textarea {
     font-family: inherit; font-size: inherit;
     color: var(--vscode-input-foreground);
     background: var(--vscode-input-background);
     border: 1px solid var(--vscode-input-border, transparent);
     border-radius: 3px; padding: 3px 6px;
   }
+  textarea { flex: 1; resize: vertical; font-family: var(--vscode-editor-font-family, monospace); }
   button {
     color: var(--vscode-button-foreground);
     background: var(--vscode-button-background);
@@ -244,7 +245,13 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
           'placeholder="--flag value" value="' + esc(args.join(' ')) + '" /></div>' +
           '<div class="muted">argv: [' + args.map((t) => '<code>' + esc(t) + '</code>').join(', ') + ']</div>';
       } else if (cat === 'buildEvent') {
-        html += '<div class="muted">Pre/post-build commands — planned.</div>';
+        const pre = (state.invocation.preBuild || []).join('\\n');
+        const post = (state.invocation.postBuild || []).join('\\n');
+        html += '<div class="opt-label"><b>Pre-build</b> <span class="muted">one command per line · runs before build/run</span></div>' +
+          '<div class="row"><textarea id="prebuild-input" rows="2" placeholder="npm run codegen">' + esc(pre) + '</textarea></div>' +
+          '<div class="opt-label"><b>Post-build</b> <span class="muted">runs after a successful build/run</span></div>' +
+          '<div class="row"><textarea id="postbuild-input" rows="2" placeholder="cp target/release/app dist/">' + esc(post) + '</textarea></div>' +
+          '<div class="muted">Runs as your shell in the project directory (NFR-002a).</div>';
       } else {
         const opts = byCat[cat] || [];
         html += opts.length ? opts.map(renderOption).join('') : '<div class="muted">No options.</div>';
@@ -278,6 +285,10 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'setChipValue', chipId: 'features', value: checked });
     } else if (el.id === 'runargs-input') {
       post({ type: 'setRunArgs', line: el.value });
+    } else if (el.id === 'prebuild-input') {
+      post({ type: 'setBuildEvent', event: 'preBuild', text: el.value });
+    } else if (el.id === 'postbuild-input') {
+      post({ type: 'setBuildEvent', event: 'postBuild', text: el.value });
     } else if (el.dataset && el.dataset.action === 'set-option') {
       const id = el.dataset.optionId;
       const type = el.dataset.type;

@@ -61,6 +61,29 @@ export function setRunArgsLine(config: InvocationConfig, line: string): Invocati
   return next;
 }
 
+/**
+ * Set config.preBuild / config.postBuild from a multi-line editor (one command per
+ * line, F21). Blank lines are dropped and each command is kept verbatim (they run as
+ * the user's shell, NFR-002a). Empty input clears the field so the overlay stays lean.
+ */
+export function setBuildEventLines(
+  config: InvocationConfig,
+  event: 'preBuild' | 'postBuild',
+  text: string,
+): InvocationConfig {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const next = { ...config };
+  if (lines.length === 0) {
+    delete next[event];
+  } else {
+    next[event] = lines;
+  }
+  return next;
+}
+
 function setOrDelete(
   record: Record<string, OptionValue> | undefined,
   id: string,
