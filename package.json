@@ -79,6 +79,11 @@
           "type": "boolean",
           "default": false,
           "description": "Show status-bar chips as icons only (hover or click for the value). Useful on narrow windows."
+        },
+        "devSwitcher.statusBar.selectedOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show only chips that have a value; hide unselected optional chips (required chips stay visible). Default shows all chips."
         }
       }
     },

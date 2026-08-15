@@ -42,9 +42,9 @@ export function activate(context: vscode.ExtensionContext): void {
       const config = vscode.workspace.getConfiguration('devSwitcher');
       await config.update('statusBar.compact', !config.get<boolean>('statusBar.compact', false), vscode.ConfigurationTarget.Global);
     }),
-    // Re-render when the compact setting changes (toggle command or Settings UI).
+    // Re-render when a status-bar display setting changes (toggle command or Settings UI).
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('devSwitcher.statusBar.compact')) {
+      if (e.affectsConfiguration('devSwitcher.statusBar')) {
         void orchestrator.renderActive();
       }
     }),

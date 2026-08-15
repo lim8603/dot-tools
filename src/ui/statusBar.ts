@@ -33,7 +33,11 @@ export class StatusBarController {
     // Compact mode drops the value text, leaving icon-only chips (hover/click for the
     // value) — for narrow windows. VSCode gives no status-bar-width signal, so it is a
     // user toggle (devSwitcher.statusBar.compact), not automatic.
-    const compact = vscode.workspace.getConfiguration('devSwitcher').get<boolean>('statusBar.compact', false);
+    const dsConfig = vscode.workspace.getConfiguration('devSwitcher');
+    const compact = dsConfig.get<boolean>('statusBar.compact', false);
+    // selectedOnly hides optional chips that have no value (e.g. architecture 'default',
+    // empty features) for a leaner bar. Required chips stay so a needed pick isn't hidden.
+    const selectedOnly = dsConfig.get<boolean>('statusBar.selectedOnly', false);
 
     const projectItem = this.upsert(
       PROJECT_CHIP,
@@ -48,8 +52,13 @@ export class StatusBarController {
       : undefined;
     projectItem.show();
 
+    const shownChipIds: string[] = [];
     for (const chip of adapter.chips) {
       const value = sel.values[chip.id];
+      if (selectedOnly && value === undefined && !chip.required) {
+        continue; // hidden in selected-only mode (swept out below)
+      }
+      shownChipIds.push(chip.id);
       // Unset chips show a value-like `unsetText` when the adapter provides one (e.g.
       // 'default' for architecture = host target), else the '(Label)' prompt.
       const text =
@@ -84,7 +93,7 @@ export class StatusBarController {
       PROJECT_CHIP,
       SETTINGS_CHIP,
       TOOLCHAIN_CHIP,
-      ...adapter.chips.map((c) => c.id),
+      ...shownChipIds,
       ...ACTION_CHIPS,
     ]);
     for (const [id, item] of this.items) {
