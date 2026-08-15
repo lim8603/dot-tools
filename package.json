@@ -65,8 +65,23 @@
         "command": "devSwitcher.doctor",
         "title": "Doctor (environment diagnostics)",
         "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.toggleCompact",
+        "title": "Toggle Compact Status Bar",
+        "category": "DevSwitcher"
       }
     ],
+    "configuration": {
+      "title": "DevSwitcher",
+      "properties": {
+        "devSwitcher.statusBar.compact": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show status-bar chips as icons only (hover or click for the value). Useful on narrow windows."
+        }
+      }
+    },
     "problemMatchers": [
       {
         "name": "devswitcher-rustc",

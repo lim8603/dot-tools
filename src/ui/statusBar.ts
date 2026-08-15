@@ -30,10 +30,14 @@ export class StatusBarController {
   /** Draw the full status bar for the active project. */
   render(adapter: LanguageAdapter, project: ProjectInfo, sel: Selection, opts: RenderOptions = {}): void {
     let order = 0;
+    // Compact mode drops the value text, leaving icon-only chips (hover/click for the
+    // value) — for narrow windows. VSCode gives no status-bar-width signal, so it is a
+    // user toggle (devSwitcher.statusBar.compact), not automatic.
+    const compact = vscode.workspace.getConfiguration('devSwitcher').get<boolean>('statusBar.compact', false);
 
     const projectItem = this.upsert(
       PROJECT_CHIP,
-      `$(repo) ${project.name}`,
+      compact ? '$(repo)' : `$(repo) ${project.name}`,
       project.name,
       'devSwitcher.switchProject',
       undefined,
@@ -58,7 +62,8 @@ export class StatusBarController {
           : chip.unsetText !== undefined
             ? `${chip.label}: ${chip.unsetText}`
             : chip.label;
-      const item = this.upsert(chip.id, `$(${chip.icon}) ${text}`, tooltip, 'devSwitcher.pickChip', [chip.id], order++);
+      const label = compact ? `$(${chip.icon})` : `$(${chip.icon}) ${text}`;
+      const item = this.upsert(chip.id, label, tooltip, 'devSwitcher.pickChip', [chip.id], order++);
       item.backgroundColor =
         chip.required && value === undefined
           ? new vscode.ThemeColor('statusBarItem.warningBackground')
