@@ -77,13 +77,14 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   code { font-family: var(--vscode-editor-font-family); }
   h3.cat { margin: 18px 0 6px; font-size: .95em; text-transform: capitalize; opacity: .85;
     border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 3px; }
-  .opt { padding: 6px 0; }
+  .opt { padding: 8px 0; }
+  .opt-label { padding: 2px 0; }
   .opt .row { padding: 2px 0; flex-wrap: wrap; }
-  /* Grow free-text/number/args inputs to use the width; wrap under the label when narrow. */
+  /* Editor sits under its label and grows to use the width (like RunArgs). */
   .opt input[type="text"], .opt input[type="number"], #runargs-input {
-    flex: 1 1 320px; min-width: 320px; max-width: 820px;
+    flex: 1 1 100%; min-width: 320px; max-width: 820px;
   }
-  .opt .row > b { flex: 0 0 auto; }
+  .opt select { min-width: 160px; }
   .preview { background: var(--vscode-textCodeBlock-background); padding: 10px 12px;
     border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
 </style>
@@ -216,7 +217,9 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     } else {
       editor = '<input type="text" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
     }
-    return '<div class="opt"><div class="row"><b>' + esc(o.label) + '</b> ' + editor + '</div>' +
+    return '<div class="opt">' +
+      '<div class="opt-label"><b>' + esc(o.label) + '</b></div>' +
+      '<div class="row">' + editor + '</div>' +
       '<div class="muted">' + esc(o.description) +
       (o.example ? ' &nbsp;<code>' + esc(o.example) + '</code>' : '') + '</div></div>';
   }
