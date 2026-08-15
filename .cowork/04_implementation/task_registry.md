@@ -39,8 +39,11 @@
 | TASK-004 | CargoBridge 순수 코어 + 테스트 하네스 | MS-003 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — 순수 함수 + mocha 19 테스트. main 병합(FF) | 없음 | | M2. vscode·cargo 무의존 순수 함수 |
 | TASK-005 | CargoBridge cargo CLI 연동 | MS-003 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — execCapture/CargoBridge(fetchMetadata+캐시·listInstalledTargets·checkToolchain·invalidateCache). mocha 14 신규·실 cargo 스모크. main 병합(FF). DevSwitcherError→core/errors 분리 | TASK-004 | | M2. child_process I/O. vscode-free 유지 |
 | TASK-006 | CargoAdapter 실구현 | MS-003 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료(M2 스코프) — listProjects·chips·createBuild/RunTask·resolveExecutable·invalidateCache + peekMetadata. main 병합(FF). **이월**: createDebugConfig→M4(MS-005), createProjectTask→MS-008(F20), persistSetting→v2 | TASK-005 | | M2. cargo 실구현. 커스텀 profile·F19·compiler/linker 오버레이는 후속 |
+| TASK-007 | 데이터 계층 (AdapterRegistry + StateStore) | MS-004 | INT-001 | US-001·US-002 | AI | In Progress | 2026-08-15 | AdapterRegistry(스캔·매칭 ADR-006)·StateStore(workspaceState·setValue·reconcile ADR-001). reconcile 순수 코어(stateReconcile.ts)→mocha | 없음 | | M3. 30일 GC·export/import은 후속(MS-006) |
+| TASK-008 | UI 계층 (StatusBar + QuickPick) | MS-004 | INT-001 | US-003 | AI | Planned | 2026-08-15 | StatusBarController(칩/버튼 렌더·에러상태·툴체인 경고칩 §5)·picks(QuickPick §5.3). 액션 버튼은 렌더만(실행=MS-005) | TASK-007 | | M3 |
+| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | MS-004 | INT-001 | US-003 | AI | Planned | 2026-08-15 | Orchestrator(pickChip·switchProject)·ManifestWatcher(디바운스 F17)·extension.ts activate·package.json contributes + F5 스모크 | TASK-007·008 | | M3. 여기까지면 Rust 실사용 가능 |
 
-> 현재 등록 Task: TASK-001~006. M3 이후(MS-004~) Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
+> 현재 등록 Task: TASK-001~009. MS-005 이후 Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
 
 - `담당`: `Human` / `AI` / `Role-*` / `(Role-* 인수자)`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done`

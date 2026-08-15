@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-003 Done·병합 완료 → MS-004 상태바 착수) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시, 착수 — Task 분해 필요 C-2) |
-| 활성 Task | 없음 (MS-004 미분해 — 착수 시 TASK-007~ 분해) |
+| 활성 Milestone | MS-004 (M3 상태바·상태 저장·감시, In Progress) |
+| 활성 Task | TASK-007 (데이터 계층 AdapterRegistry+StateStore, In Progress) → 008·009 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,7 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | MS-004 미분해 | AI | - | 2026-08-15 | 착수 시 TASK-007~ 분해(AdapterRegistry·StatusBar·QuickPick·StateStore·ManifestWatcher) |
+| TASK-007 | 데이터 계층 (AdapterRegistry + StateStore) | AI | In Progress | 2026-08-15 | reconcile 순수코어 + StateStore + AdapterRegistry. 브랜치 `feature/ms-004-statusbar` |
+| TASK-008 | UI 계층 (StatusBar + QuickPick) | AI | Planned | 2026-08-15 | 렌더·에러상태·경고칩·QuickPick (TASK-007 후) |
+| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | AI | Planned | 2026-08-15 | pickChip·switchProject·Watcher·activate·contributes + F5 (TASK-008 후) |
 
 > TASK-001~006 모두 2026-08-15 Done (MS-001·002·003 완료, main 병합). MS-003 상세는 session_2026-08-15_004.md.
 

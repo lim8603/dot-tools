@@ -20,7 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| — | MS-004 미분해 | MS-004 | Planned | 0% | Task 분해 대기(C-2) |
+| TASK-007 | 데이터 계층 (AdapterRegistry + StateStore) | MS-004 | In Progress | 0% | 없음 |
+| TASK-008 | UI 계층 (StatusBar + QuickPick) | MS-004 | Planned | 0% | TASK-007 |
+| TASK-009 | 배선·감시 (Orchestrator + Watcher + activate) | MS-004 | Planned | 0% | TASK-007·008 |
 
 > TASK-001~006 Done (MS-001·002·003 완료·main 병합, 2026-08-15). MS-003 상세: session #004.
 
