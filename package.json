@@ -72,7 +72,10 @@
         "name": "devswitcher-rustc",
         "owner": "rust",
         "source": "rustc",
-        "fileLocation": ["autoDetect", "${workspaceFolder}"],
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
         "pattern": [
           {
             "regexp": "^(warning|error)(?:\\[(.+?)\\])?: (.+)$",
@@ -123,6 +126,7 @@
     "lint": "eslint src",
     "compile-tests": "tsc",
     "test:unit": "npm run compile-tests && mocha",
+    "test:integration": "npm run compile && npm run compile-tests && vscode-test",
     "pretest": "npm run compile && npm run check-types"
   },
   "devDependencies": {
@@ -131,6 +135,8 @@
     "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
     "esbuild": "^0.23.1",
     "eslint": "^9.11.0",
     "mocha": "^11.8.0",
