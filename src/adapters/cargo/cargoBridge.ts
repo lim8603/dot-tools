@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { dirname } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
-import type { ChipItem, ChipValue, InvocationConfig, Selection } from '../../core/types';
+import type { ChipItem, ChipValue, InvocationConfig, OptionValue, Selection } from '../../core/types';
 
 /**
  * CargoBridge — the cargo/rustup boundary layer.
@@ -105,6 +105,7 @@ export function assembleCargoArgs(
   sel: Selection,
   config: InvocationConfig,
   hasDefaultFeature: boolean,
+  overlayArgs: string[] = [],
 ): string[] {
   const profile = asString(sel.values.profile) ?? 'dev';
   const architecture = asString(sel.values.architecture);
@@ -112,7 +113,7 @@ export function assembleCargoArgs(
   const targetArgs = architecture ? ['--target', architecture] : [];
 
   if (action === 'build') {
-    return ['build', '-p', projectName, '--profile', profile, ...targetArgs, ...features];
+    return ['build', '-p', projectName, '--profile', profile, ...targetArgs, ...features, ...overlayArgs];
   }
 
   const bin = asString(sel.values.target);
@@ -126,8 +127,102 @@ export function assembleCargoArgs(
     ...(bin ? ['--bin', bin] : []),
     ...targetArgs,
     ...features,
+    ...overlayArgs, // cargo flags stay before `--`; program args follow
     ...(runArgs.length > 0 ? ['--', ...runArgs] : []),
   ];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invocation overlay injection (TASK-012, ADR-011 / 상세설계서 §10.4)
+// Turn the InvocationConfig overlay into cargo args + env. Pure and testable; the
+// adapter folds these into the build/run tasks.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Render an option value as a TOML scalar for `cargo --config key=value`. */
+export function tomlScalar(value: OptionValue): string {
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => JSON.stringify(item)).join(', ')}]`;
+  }
+  // Strings that are really bools/numbers stay bare (e.g. lto="false" vs "thin").
+  if (value === 'true' || value === 'false' || /^-?\d+(\.\d+)?$/.test(value)) {
+    return value;
+  }
+  return JSON.stringify(value); // TOML basic string (quoted, escaped)
+}
+
+/**
+ * Compiler-category options → `--config profile.<profile>.<id>=<value>` pairs
+ * (e.g. opt-level, lto, codegen-units). Flat list ready to append to the args.
+ */
+export function buildConfigArgs(compiler: Record<string, OptionValue>, profile: string): string[] {
+  const args: string[] = [];
+  for (const [id, value] of Object.entries(compiler)) {
+    args.push('--config', `profile.${profile}.${id}=${tomlScalar(value)}`);
+  }
+  return args;
+}
+
+/**
+ * Linker-category options → a RUSTFLAGS string (space-joined). Only `linker` is
+ * modelled today (`-C linker=<value>`); returns '' when nothing applies.
+ */
+export function buildRustflags(linker: Record<string, OptionValue>): string {
+  const flags: string[] = [];
+  const linkerValue = linker['linker'];
+  if (typeof linkerValue === 'string' && linkerValue.length > 0) {
+    flags.push(`-C linker=${linkerValue}`);
+  }
+  return flags.join(' ');
+}
+
+/**
+ * Tokenize a run-args input line by shell quoting rules (F16, §10.3), so the
+ * settings page can accept one string and preview the resulting argv. Handles
+ * single/double quotes and backslash escapes inside double quotes.
+ */
+export function parseArgsLine(line: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let started = false;
+  let quote: "'" | '"' | undefined;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quote === "'") {
+      if (ch === "'") {
+        quote = undefined;
+      } else {
+        current += ch;
+      }
+    } else if (quote === '"') {
+      if (ch === '"') {
+        quote = undefined;
+      } else if (ch === '\\' && (line[i + 1] === '"' || line[i + 1] === '\\')) {
+        current += line[++i];
+      } else {
+        current += ch;
+      }
+    } else if (ch === "'" || ch === '"') {
+      quote = ch;
+      started = true;
+    } else if (ch === ' ' || ch === '\t') {
+      if (started) {
+        tokens.push(current);
+        current = '';
+        started = false;
+      }
+    } else {
+      current += ch;
+      started = true;
+    }
+  }
+  if (started) {
+    tokens.push(current);
+  }
+  return tokens;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -335,7 +430,7 @@ export interface ExecResult {
 export type CargoExec = (
   command: string,
   args: string[],
-  options: { cwd?: string },
+  options: { cwd?: string; env?: Record<string, string> },
 ) => Promise<ExecResult>;
 
 /** Default CargoExec: `child_process.execFile` with no shell (NFR-002, array args). */
@@ -344,7 +439,14 @@ export const defaultExec: CargoExec = (command, args, options) =>
     execFile(
       command,
       args,
-      { cwd: options.cwd, encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES, windowsHide: true },
+      {
+        cwd: options.cwd,
+        // Merge overlay env over the inherited environment so PATH etc. survive.
+        env: options.env ? { ...process.env, ...options.env } : undefined,
+        encoding: 'utf8',
+        maxBuffer: MAX_OUTPUT_BYTES,
+        windowsHide: true,
+      },
       (error, stdout, stderr) => {
         // On a normal exit execFile reports the exit code as a numeric `error.code`
         // (0 → null error). A non-numeric code means the process never ran normally
@@ -371,8 +473,9 @@ export function execCapture(
   args: string[],
   cwd: string | undefined,
   exec: CargoExec = defaultExec,
+  env?: Record<string, string>,
 ): Promise<ExecResult> {
-  return exec(command, args, { cwd });
+  return exec(command, args, { cwd, env });
 }
 
 /** Result of checkToolchain — version strings when present; ok when cargo exists (E1). */

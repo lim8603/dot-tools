@@ -6,8 +6,10 @@ import { notImplemented } from '../notImplemented';
 import {
   abbreviateTriple,
   assembleCargoArgs,
+  buildConfigArgs,
   buildLldbConfig,
   buildProfileList,
+  buildRustflags,
   CargoBridge,
   defaultBinTarget,
   execCapture,
@@ -53,11 +55,20 @@ function hasDefaultFeature(project: ProjectInfo): boolean {
   return metadata ? parseFeatures(metadata, project.name).hasDefault : false;
 }
 
-/** Merge the invocation overlay's env + outputDir (CARGO_TARGET_DIR) for a Task. */
+/** The active profile name for the overlay (chip value, default dev). */
+function activeProfile(sel: Selection): string {
+  return typeof sel.values.profile === 'string' ? sel.values.profile : 'dev';
+}
+
+/** Merge the invocation overlay's env + outputDir + linker RUSTFLAGS for a Task. */
 function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
   const env: Record<string, string> = { ...(config.env ?? {}) };
   if (config.outputDir) {
     env.CARGO_TARGET_DIR = config.outputDir;
+  }
+  const rustflags = buildRustflags(config.linker ?? {});
+  if (rustflags) {
+    env.RUSTFLAGS = env.RUSTFLAGS ? `${env.RUSTFLAGS} ${rustflags}` : rustflags;
   }
   return Object.keys(env).length > 0 ? env : undefined;
 }
@@ -69,7 +80,8 @@ function makeCargoTask(
   sel: Selection,
   config: InvocationConfig,
 ): vscode.Task {
-  const args = assembleCargoArgs(action, project.name, sel, config, hasDefaultFeature(project));
+  const overlayArgs = buildConfigArgs(config.compiler ?? {}, activeProfile(sel));
+  const args = assembleCargoArgs(action, project.name, sel, config, hasDefaultFeature(project), overlayArgs);
   const execution = new vscode.ProcessExecution('cargo', args, {
     cwd: cwdOf(project),
     env: taskEnv(config),
@@ -219,11 +231,13 @@ export const cargoAdapter: LanguageAdapter = {
   async resolveExecutable(project, sel, config) {
     // Build with JSON messages and read the artifact path cargo reports (DD-05) —
     // no path guessing. §7.4 leaves the cache warm, so this is fast.
+    const overlayArgs = buildConfigArgs(config.compiler ?? {}, activeProfile(sel));
     const args = [
-      ...assembleCargoArgs('build', project.name, sel, config, hasDefaultFeature(project)),
+      ...assembleCargoArgs('build', project.name, sel, config, hasDefaultFeature(project), overlayArgs),
       '--message-format=json',
     ];
-    const result = await execCapture('cargo', args, cwdOf(project));
+    // Same env as the build task so a custom target dir / RUSTFLAGS resolves the same artifact.
+    const result = await execCapture('cargo', args, cwdOf(project), undefined, taskEnv(config));
     if (result.exitCode !== 0) {
       throw new DevSwitcherError(
         'CARGO_BUILD_FAILED',
