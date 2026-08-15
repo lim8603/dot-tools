@@ -20,8 +20,8 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | Planned | 0% | 없음 |
-| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | Planned | 0% | TASK-001 |
+| TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | Review | 90% (F5 수동확인 대기) | 없음 |
+| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | Planned | 0% | 없음 (TASK-001 스캐폴드 완료) |
 | TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | Planned | 0% | TASK-002 |
 
 ---

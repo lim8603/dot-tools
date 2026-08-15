@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (Gate 3 통과 — 코드 착수 대기) |
-| 활성 Intent | INT-001 (Approved, F20 추가 반영) |
-| 활성 Milestone | MS-001 (M0 셋업) |
-| 활성 Task | TASK-001 (스캐폴드) |
+| 현재 Phase | Build (코드 착수 — TASK-001 스캐폴드 완료) |
+| 활성 Intent | INT-001 (Approved, F20·F21 반영) |
+| 활성 Milestone | MS-001 (M0 셋업, In Progress) |
+| 활성 Task | TASK-001 (스캐폴드, Review — F5 수동확인 대기) → 다음 TASK-002 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- 설계서 전체 반입 완료 + Gate 1·3 통과 → **Build 진입**. 초기 반입분 커밋(1d54dc7). 다음은 TASK-001 스캐폴드(yo code 비대화형 방식 결정부터).
+- Build 진행 중. 세션 #002에서 F21(호출 구성 오버레이) 설계 반영 커밋(f4a38e8). **TASK-001 스캐폴드 완료**(`feature/task-001-scaffold`, TS·esbuild, tsc·esbuild·eslint 통과) — F5 수동 확인 후 main 병합 예정. 다음은 TASK-002(types.ts).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,7 +57,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-001 | 스캐폴드 + F5 Hello World | AI | Planned | 2026-08-13 | `yo code`로 devswitcher-tools(TS·esbuild) 스캐폴드 생성 |
+| TASK-001 | 스캐폴드 + F5 Hello World | AI | Review | 2026-08-15 | 스캐폴드 완료(파일 직접 생성). **F5로 Hello World 수동 확인** 후 Done |
 | TASK-002 | core/types.ts 전체 타입 확정 | AI | Planned | 2026-08-15 | interface_contract 기준 types.ts 작성 (InvocationConfig·OptionSpec 포함, TASK-001 후) |
 | TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Planned | 2026-08-15 | 칩·actions·canCreateProject·optionCatalog·configCategories 선언 (TASK-002 후) |
 
@@ -69,9 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. TASK-001 스캐폴드 착수 — `yo code`가 대화형이므로 **비대화형 방식(파일 직접 생성 또는 플래그) 먼저 결정** 후 src/ 구조 + package.json 생성 + F5 Hello World
-2. TASK-002(types.ts, interface_contract 기준) → TASK-003(4개 어댑터 칩 스텁, Python 리트머스)
-3. (이월) 세션 종료 후 미커밋 변경분(Gate 3·Build 전환) 커밋
+1. **F5로 TASK-001 Hello World 수동 확인** → 통과 시 `feature/task-001-scaffold`를 main 병합, TASK-001 Done 처리
+2. TASK-002(core/types.ts — interface_contract §2~§7 기준, InvocationConfig·OptionSpec 포함) → TASK-003(4개 어댑터 칩·optionCatalog·configCategories 스텁, Python 리트머스)
 
 ---
 
@@ -186,7 +185,7 @@
 | 유형 | ID | 제목 | 상태 | 비고 |
 |------|----|------|------|------|
 | Intent | INT-001 | 다언어 통합 상태바 UX VSCode 확장 | Approved | 2026-08-13 승인 |
-| Milestone | MS-001 | M0 셋업 | Planned | 활성. TASK-001 |
+| Milestone | MS-001 | M0 셋업 | In Progress | 스캐폴드 완료, F5 확인 대기 |
 | Milestone | MS-002~008 | M1~M6 + F20 마법사 | Planned | milestone_registry |
 | Task | TASK-001~003 | M0~M1 착수분 | Planned | task_registry |
 

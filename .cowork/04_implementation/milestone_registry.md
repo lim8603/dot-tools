@@ -28,7 +28,7 @@ Milestone은 `Phase`와 다르다.
 
 | Milestone ID | 제목 | 관련 Intent | 주 Phase | 상태 | 관련 Task | 문서 경로 | 비고 |
 |--------------|------|-------------|----------|------|-----------|----------|------|
-| MS-001 | M0 셋업 — 스캐폴드 + F5 Hello World | INT-001 | Build | Planned | TASK-001 | | `yo code`(TS·esbuild) |
+| MS-001 | M0 셋업 — 스캐폴드 + F5 Hello World | INT-001 | Build | In Progress | TASK-001 | | 스캐폴드 완료(파일 직접 생성, TS·esbuild). F5 수동 확인 대기 |
 | MS-002 | M1 코어 타입·칩 프레임워크 | INT-001 | Build | Planned | TASK-002, TASK-003 | | `types.ts` + 4개 어댑터 칩 스텁(Python 리트머스) + **F20 createProject 계약** |
 | MS-003 | M2 CargoBridge + CargoAdapter | INT-001 | Build | Planned | 없음 | | 메타데이터/빌드 JSON 파싱·인자 조립·features·resolveExecutable + 단위테스트. **+ cargo createProjectTask** |
 | MS-004 | M3 상태바·상태 저장·감시 | INT-001 | Build | Planned | 없음 | | 칩 렌더링·QuickPick·StateStore·reconcile·ManifestWatcher |
