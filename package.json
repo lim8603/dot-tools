@@ -15,13 +15,36 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "workspaceContains:**/Cargo.toml"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "devSwitcher.helloWorld",
-        "title": "DevSwitcher: Hello World"
+        "command": "devSwitcher.switchProject",
+        "title": "Switch Project",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.pickChip",
+        "title": "Pick Chip Value",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.build",
+        "title": "Build",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.run",
+        "title": "Run",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.debug",
+        "title": "Debug",
+        "category": "DevSwitcher"
       }
     ]
   },

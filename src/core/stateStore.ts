@@ -39,6 +39,11 @@ export class StateStore {
     return this.state.selections[projectId]?.[chipId];
   }
 
+  /** Project ids that already have a stored selection (targets for reconcile). */
+  getSelectedProjectIds(): string[] {
+    return Object.keys(this.state.selections);
+  }
+
   async setValue(projectId: string, chipId: string, value: ChipValue): Promise<void> {
     const values = (this.state.selections[projectId] ??= {});
     values[chipId] = value;
