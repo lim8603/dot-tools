@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-006 설정 페이지 In Progress — TASK-012) |
+| 현재 Phase | Build (MS-006 코어 코드 완료 — F5 검증 대기) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성, In Progress — 코어 우선) |
-| 활성 Task | TASK-012 (오버레이 주입, In Progress) → 013·014 (015 분리) |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성, In Progress — 코어 Review, F5 대기) |
+| 활성 Task | TASK-012·013·014 (Review — F5 검증 대기). TASK-015(export/import) 분리 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-012 | 호출 오버레이 주입 + 순수 코어 | AI | In Progress | 2026-08-15 | buildConfigArgs·buildRustflags·tomlScalar·parseArgsLine + cargoAdapter 주입. 브랜치 `feature/ms-006-settings-page` |
-| TASK-013 | SettingsPanel Webview 셸 | AI | Planned | 2026-08-15 | WebviewPanel·메시지·프로젝트/Features 탭 (TASK-012 후) |
-| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | AI | Planned | 2026-08-15 | 마스터-디테일·setInvocation·명령 미리보기 (TASK-013 후) |
+| TASK-012·013·014 | MS-006 코어 (주입·Webview·호출구성 탭) | AI | Review | 2026-08-15 | 코드 완료 — **F5 검증 대기**(설정 페이지 열기→옵션 편집→명령 미리보기·빌드 반영). 통과 시 Done·병합. 브랜치 `feature/ms-006-settings-page` |
 
 > TASK-001~011 Done (MS-001~005 완료, main 병합). TASK-015(export/import)은 분리. MS-003·004·005 상세는 session_2026-08-15_004.md.
 

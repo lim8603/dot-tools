@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | In Progress | 0% | 없음 |
-| TASK-013 | SettingsPanel Webview 셸 | MS-006 | Planned | 0% | TASK-012 |
-| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | Planned | 0% | TASK-013 |
+| TASK-012 | 호출 오버레이 주입 + 순수 코어 | MS-006 | Review | 100% (코드) | F5(TASK-014와 함께) |
+| TASK-013 | SettingsPanel Webview 셸 | MS-006 | Review | 100% (코드) | F5 검증 대기 |
+| TASK-014 | 호출 구성 탭 (옵션 카탈로그) | MS-006 | Review | 100% (코드) | F5 검증 대기 |
 
 > TASK-001~011 Done (MS-001~005 완료·main 병합, 2026-08-15). TASK-015(export/import) 분리. MS-003·004·005 상세: session #004.
 
