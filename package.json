@@ -88,6 +88,30 @@
           }
         ]
       }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "devSwitcher.cargo",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The DevSwitcher action this task runs (build or run)."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The DevSwitcher project id the task belongs to."
+          }
+        }
+      },
+      {
+        "type": "devswitcher-buildevent",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "description": "The build-event phase (pre or post)."
+          }
+        }
+      }
     ]
   },
   "scripts": {

@@ -248,10 +248,11 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
         const pre = (state.invocation.preBuild || []).join('\\n');
         const post = (state.invocation.postBuild || []).join('\\n');
         html += '<div class="opt-label"><b>Pre-build</b> <span class="muted">one command per line · runs before build/run</span></div>' +
-          '<div class="row"><textarea id="prebuild-input" rows="2" placeholder="npm run codegen">' + esc(pre) + '</textarea></div>' +
+          '<div class="row"><textarea id="prebuild-input" rows="2">' + esc(pre) + '</textarea></div>' +
           '<div class="opt-label"><b>Post-build</b> <span class="muted">runs after a successful build/run</span></div>' +
-          '<div class="row"><textarea id="postbuild-input" rows="2" placeholder="cp target/release/app dist/">' + esc(post) + '</textarea></div>' +
-          '<div class="muted">Runs as your shell in the project directory (NFR-002a).</div>';
+          '<div class="row"><textarea id="postbuild-input" rows="2">' + esc(post) + '</textarea></div>' +
+          '<div class="muted">Runs as your shell in the project directory (NFR-002a). ' +
+          'e.g. <code>cargo fmt</code> · <code>npm run codegen</code> · <code>cp target/release/app dist/</code></div>';
       } else {
         const opts = byCat[cat] || [];
         html += opts.length ? opts.map(renderOption).join('') : '<div class="muted">No options.</div>';
