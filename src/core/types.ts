@@ -211,19 +211,10 @@ export interface PersistedState {
 // the InvocationConfig promotion before the format is frozen.
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Errors
+// Errors — defined in ./errors (vscode-free) and re-exported here so existing
+// `import { DevSwitcherError } from '../core/types'` sites keep working. Boundary
+// layers (cargoBridge) import from ./errors directly to stay unit-testable in
+// plain Node — importing this file would pull in `vscode` at runtime.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Wraps extension errors with a machine-readable code. User-facing messages and
- * detailed Output-channel logs are kept separate (coding_convention).
- */
-export class DevSwitcherError extends Error {
-  readonly code: string;
-
-  constructor(code: string, message: string, cause?: unknown) {
-    super(message, cause !== undefined ? { cause } : undefined);
-    this.name = 'DevSwitcherError';
-    this.code = code;
-  }
-}
+export { DevSwitcherError } from './errors';

@@ -1,13 +1,21 @@
+import { execFile } from 'node:child_process';
+import { dirname } from 'node:path';
+import { DevSwitcherError } from '../../core/errors';
 import type { ChipItem, ChipValue, InvocationConfig, Selection } from '../../core/types';
 
 /**
- * CargoBridge — pure core (TASK-004).
+ * CargoBridge — the cargo/rustup boundary layer.
  *
- * Pure, side-effect-free logic for the cargo boundary: argument assembly and
- * JSON parsing (interface_contract §8, 상세설계서 §8.1/§8.3~§8.5). Deliberately
- * free of `vscode` and `child_process` so it can be unit-tested in plain Node.
- * The cargo CLI I/O layer (execCapture, fetchMetadata, caching) is added in
- * TASK-005; the adapter wiring is TASK-006.
+ * Two halves live here (interface_contract §8, 상세설계서 §8.1~§8.5):
+ *  - Pure functions (TASK-004): argument assembly and JSON parsing.
+ *  - The CLI I/O layer (TASK-005): execCapture + the CargoBridge class
+ *    (fetchMetadata with caching, listInstalledTargets, checkToolchain).
+ *
+ * The module stays `vscode`-free — I/O methods take plain `manifestPath` strings,
+ * not ProjectInfo, and DevSwitcherError comes from `core/errors` (also vscode-free)
+ * — so the whole file is unit-testable in plain Node (mocha). The child_process
+ * call is injected (CargoExec) so tests run without a real cargo/rustup toolchain.
+ * The adapter (TASK-006) translates ProjectInfo into these string arguments.
  *
  * All `../../core/types` imports are type-only and erased at compile time.
  */
@@ -261,4 +269,176 @@ export function buildProfileList(customProfiles: string[]): ChipItem[] {
     .filter((name) => name !== 'dev' && name !== 'release')
     .map((name) => ({ id: name, label: name, description: 'custom' }));
   return [...builtins, ...custom];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cargo/rustup CLI I/O boundary (TASK-005, 상세설계서 §8.1)
+//
+// The only part of the bridge that touches the process boundary. Still vscode-free
+// (callers pass a plain `cwd`/`manifestPath`, not a ProjectInfo) and exec-injected
+// (CargoExec) so tests run hermetically without a real toolchain.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** cargo/rustup JSON output can be large on big workspaces; lift the buffer cap. */
+const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
+
+/** Captured result of one CLI invocation. */
+export interface ExecResult {
+  stdout: string;
+  stderr: string;
+  /** Process exit code (0 on success). */
+  exitCode: number;
+}
+
+/**
+ * The injectable process-exec primitive. Resolves with the captured result for
+ * any normal exit — including a non-zero one — and rejects only when the process
+ * cannot be spawned at all (missing binary → ENOENT, signal, buffer overflow).
+ */
+export type CargoExec = (
+  command: string,
+  args: string[],
+  options: { cwd?: string },
+) => Promise<ExecResult>;
+
+/** Default CargoExec: `child_process.execFile` with no shell (NFR-002, array args). */
+export const defaultExec: CargoExec = (command, args, options) =>
+  new Promise((resolve, reject) => {
+    execFile(
+      command,
+      args,
+      { cwd: options.cwd, encoding: 'utf8', maxBuffer: MAX_OUTPUT_BYTES, windowsHide: true },
+      (error, stdout, stderr) => {
+        // On a normal exit execFile reports the exit code as a numeric `error.code`
+        // (0 → null error). A non-numeric code means the process never ran normally
+        // (ENOENT, killed by signal, maxBuffer exceeded) — a spawn failure, not an
+        // exit status the caller can interpret.
+        const code: unknown = error ? (error as { code?: unknown }).code : 0;
+        if (error && typeof code !== 'number') {
+          reject(new DevSwitcherError('CARGO_EXEC_FAILED', `Failed to run "${command}".`, error));
+          return;
+        }
+        resolve({ stdout, stderr, exitCode: typeof code === 'number' ? code : 0 });
+      },
+    );
+  });
+
+/**
+ * Capture the output of a single cargo/rustup invocation. Thin wrapper over the
+ * injected exec primitive; it does not interpret the exit code — callers decide
+ * what a non-zero exit means (a failed `cargo metadata` is an error; a missing
+ * binary during `checkToolchain` is not).
+ */
+export function execCapture(
+  command: string,
+  args: string[],
+  cwd: string | undefined,
+  exec: CargoExec = defaultExec,
+): Promise<ExecResult> {
+  return exec(command, args, { cwd });
+}
+
+/** Result of checkToolchain — version strings when present; ok when cargo exists (E1). */
+export interface ToolchainStatus {
+  cargo?: string;
+  rustup?: string;
+  ok: boolean;
+}
+
+/**
+ * Stateful cargo/rustup boundary: owns the metadata cache and the injected exec
+ * primitive. The adapter (TASK-006) holds one instance and translates ProjectInfo
+ * into the `manifestPath` strings these methods take.
+ */
+export class CargoBridge {
+  private readonly exec: CargoExec;
+
+  /**
+   * manifestPath -> parsed metadata. No time-based expiry — invalidation is driven
+   * entirely by ManifestWatcher (F17) and explicit refresh (상세설계서 §8.1), so a
+   * chip click resolves from cache instantly even on slow, large workspaces.
+   */
+  private readonly metadataCache = new Map<string, CargoMetadata>();
+
+  constructor(exec: CargoExec = defaultExec) {
+    this.exec = exec;
+  }
+
+  /**
+   * `cargo metadata` for a manifest, cached. On a cache miss it runs cargo and
+   * parses the JSON; a non-zero exit or unparseable output raises
+   * CARGO_METADATA_FAILED (E2 — the adapter keeps its last good cache and surfaces
+   * stderr to the Output channel).
+   */
+  async fetchMetadata(manifestPath: string): Promise<CargoMetadata> {
+    const cached = this.metadataCache.get(manifestPath);
+    if (cached) {
+      return cached;
+    }
+    const args = ['metadata', '--format-version=1', '--no-deps', '--manifest-path', manifestPath];
+    const result = await execCapture('cargo', args, dirname(manifestPath), this.exec);
+    if (result.exitCode !== 0) {
+      throw new DevSwitcherError(
+        'CARGO_METADATA_FAILED',
+        `cargo metadata failed for ${manifestPath} (exit ${result.exitCode}).`,
+        result.stderr,
+      );
+    }
+    let parsed: CargoMetadata;
+    try {
+      parsed = JSON.parse(result.stdout) as CargoMetadata;
+    } catch (err) {
+      throw new DevSwitcherError(
+        'CARGO_METADATA_FAILED',
+        `cargo metadata returned unparseable JSON for ${manifestPath}.`,
+        err,
+      );
+    }
+    this.metadataCache.set(manifestPath, parsed);
+    return parsed;
+  }
+
+  /** Installed target triples from `rustup target list --installed` (아키텍처 칩). */
+  async listInstalledTargets(): Promise<string[]> {
+    const result = await execCapture('rustup', ['target', 'list', '--installed'], undefined, this.exec);
+    if (result.exitCode !== 0) {
+      return [];
+    }
+    return result.stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
+
+  /**
+   * Whether the cargo/rustup toolchain is available (E1). Never throws — a missing
+   * binary yields `undefined` for that tool; `ok` reflects cargo, which is required.
+   */
+  async checkToolchain(): Promise<ToolchainStatus> {
+    const cargo = await this.probeVersion('cargo');
+    const rustup = await this.probeVersion('rustup');
+    return { cargo, rustup, ok: cargo !== undefined };
+  }
+
+  /** Drop cached metadata for one manifest, or all when omitted (F17 무효화). */
+  invalidateCache(manifestPath?: string): void {
+    if (manifestPath === undefined) {
+      this.metadataCache.clear();
+    } else {
+      this.metadataCache.delete(manifestPath);
+    }
+  }
+
+  /** `<tool> --version` → trimmed version string, or undefined when absent. */
+  private async probeVersion(command: string): Promise<string | undefined> {
+    try {
+      const result = await execCapture(command, ['--version'], undefined, this.exec);
+      if (result.exitCode !== 0) {
+        return undefined;
+      }
+      return result.stdout.trim() || undefined;
+    } catch {
+      return undefined; // spawn failure = not installed
+    }
+  }
 }
