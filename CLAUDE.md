@@ -125,12 +125,12 @@ TASK-003 이어서 하자.
 
 > 아래 항목은 프로젝트 시작 시 채워야 하며, 변경 시 Claude Code가 자동 업데이트한다.
 
-- **프로젝트:**
-- **기술 스택:**
-- **주 언어:**
-- **핵심 문서:**
-- **현재 Phase:**
-- **마일스톤:**
+- **프로젝트:** DevSwitcher Tools (`devswitcher-tools`) — Rust·C++·C#·Python을 하나의 상태바 UX로 전환·빌드·실행하는 VSCode 확장. 언어별 차이는 `LanguageAdapter` + `ChipDescriptor[]` 뒤로 숨긴다(ADR-003). v1 실구현 대상은 **Rust(Cargo)**, 나머지 3개는 어댑터 스텁(칩 선언만).
+- **기술 스택:** TypeScript · esbuild(번들) · VSCode Extension API · Node 18+ · mocha(vscode 무의존 순수 로직 단위 테스트). 상태 저장은 `workspaceState`(무DB, ADR-001), 실행은 Task API(ADR-002).
+- **주 언어:** TypeScript (대화 한국어 / 코드·커밋 영문)
+- **핵심 문서:** `.cowork/06_evolution/project_state.md`(공유 상태 인덱스) · `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md`(상세설계 SSOT) · `.cowork/03_design_artifacts/interface_contract.md` · `.cowork/04_implementation/coding_convention.md`
+- **현재 Phase:** Build
+- **마일스톤:** MS-001~004 완료(스캐폴드·코어 타입·CargoBridge/CargoAdapter·상태바/저장/감시). 다음 **MS-005**(실행·디버그) → MS-006(설정 페이지) → MS-007(품질·배포) → MS-008(F20 시작 마법사)
 
 ---
 
