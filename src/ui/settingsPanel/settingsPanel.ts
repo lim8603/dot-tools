@@ -223,8 +223,10 @@ export class SettingsPanel {
   /**
    * The build and run commands the current selection + overlay would produce, read
    * from each Task's ProcessExecution (adapter-agnostic). Two lines so compiler
-   * --config args (build) and run-args after `--` (run) are both visible. Empty lines
-   * are dropped; stub adapters that can't build a Task yield nothing.
+   * --config args (build) and run-args after `--` (run) are both visible; each line
+   * is prefixed with any injected env (RUSTFLAGS / CARGO_TARGET_DIR / RUST_LOG) as a
+   * shell-style VAR=val so env-only options aren't invisible. Empty lines are dropped;
+   * stub adapters that can't build a Task yield nothing.
    */
   private commandPreview(adapter: LanguageAdapter, project: ProjectInfo, config: InvocationConfig): string {
     const selection = this.store.getSelection(project.id);
@@ -246,7 +248,16 @@ export class SettingsPanel {
     try {
       const execution = make().execution;
       if (execution instanceof vscode.ProcessExecution) {
-        return [execution.process, ...execution.args.map((a) => (/\s/.test(a) ? `"${a}"` : a))].join(' ');
+        const quote = (s: string) => (/\s/.test(s) ? `"${s}"` : s);
+        // Overlay env (RUSTFLAGS / CARGO_TARGET_DIR / RUST_LOG …) is injected via the
+        // process environment, not argv, so show it as a shell-style VAR=val prefix —
+        // otherwise env-injected options are invisible in the preview.
+        const env = execution.options?.env ?? {};
+        const envPrefix = Object.entries(env)
+          .map(([k, v]) => `${k}=${quote(String(v))}`)
+          .join(' ');
+        const cmd = [execution.process, ...execution.args.map(quote)].join(' ');
+        return envPrefix ? `${envPrefix} ${cmd}` : cmd;
       }
     } catch {
       // stub adapter (notImplemented) or assembly error — no preview
