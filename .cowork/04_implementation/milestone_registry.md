@@ -30,7 +30,7 @@ Milestone은 `Phase`와 다르다.
 |--------------|------|-------------|----------|------|-----------|----------|------|
 | MS-001 | M0 셋업 — 스캐폴드 + F5 Hello World | INT-001 | Build | Done | TASK-001 | | 스캐폴드 + F5 Hello World 검증 완료(2026-08-15). main 병합 |
 | MS-002 | M1 코어 타입·칩 프레임워크 | INT-001 | Build | Done | TASK-002, TASK-003 | | `types.ts` + 4개 어댑터 칩 스텁(Python 리트머스) + F20 createProject 계약. 인터페이스 확정 검증(tsc) 완료, main 병합(2026-08-15) |
-| MS-003 | M2 CargoBridge + CargoAdapter | INT-001 | Build | Planned | 없음 | | 메타데이터/빌드 JSON 파싱·인자 조립·features·resolveExecutable + 단위테스트. **+ cargo createProjectTask** |
+| MS-003 | M2 CargoBridge + CargoAdapter | INT-001 | Build | In Progress | TASK-004, TASK-005, TASK-006 | | 메타데이터/빌드 JSON 파싱·인자 조립·features·resolveExecutable + 단위테스트. + cargo createProjectTask. TASK-004(순수코어)→005(CLI)→006(어댑터) |
 | MS-004 | M3 상태바·상태 저장·감시 | INT-001 | Build | Planned | 없음 | | 칩 렌더링·QuickPick·StateStore·reconcile·ManifestWatcher |
 | MS-005 | M4 실행·디버그 | INT-001 | Build | Planned | 없음 | | TaskRunner·problem matcher·디버그 플로우·키바인딩 |
 | MS-006 | M5 설정 페이지 | INT-001 | Build | Planned | 없음 | | Webview **페이지**(F21·ADR-012)·호출 구성 오버레이(ADR-011)·옵션 카탈로그·export/import. **Cargo.toml 국소편집은 v2 이월** |
