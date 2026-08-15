@@ -55,7 +55,12 @@ export class StatusBarController {
     const shownChipIds: string[] = [];
     for (const chip of adapter.chips) {
       const value = sel.values[chip.id];
-      if (selectedOnly && value === undefined && !chip.required) {
+      // A chip is "unselected" when it has no value, or its value reads as blank
+      // (empty array, or a chip-defined default like features holding only 'default').
+      const blank =
+        value === undefined ||
+        (chip.isBlank ? chip.isBlank(value) : Array.isArray(value) && value.length === 0);
+      if (selectedOnly && blank && !chip.required) {
         continue; // hidden in selected-only mode (swept out below)
       }
       shownChipIds.push(chip.id);

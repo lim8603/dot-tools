@@ -61,6 +61,12 @@ export interface ChipDescriptor {
    * back to default (e.g. the architecture chip's 'Host default' entry).
    */
   clearValueId?: string;
+  /**
+   * For `statusBar.selectedOnly`: does this (defined) value read as "no active
+   * selection"? A stored value can still be the default (e.g. features holding only
+   * 'default'), which should hide like an unset chip. Defaults to "empty array".
+   */
+  isBlank?(value: ChipValue): boolean;
   defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
   /**
    * Optional post-pick hook (F19 §13.4). Runs after the user picks a value, before it
