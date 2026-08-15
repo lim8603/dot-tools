@@ -37,7 +37,7 @@
 | TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | INT-001 | 없음 | AI | Done | 2026-08-15 | 완료 — types.ts(§2~§7 + PersistedState + DevSwitcherError, OQ-002 별도인자). main 병합 | TASK-001 | | M1. 단일 정의 지점 |
 | TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | INT-001 | US-003 | AI | Done | 2026-08-15 | 완료 — 4개 어댑터 선언(Python 리트머스), tsc 인터페이스 확정 검증 통과. main 병합 | TASK-002 | | M1 |
 | TASK-004 | CargoBridge 순수 코어 + 테스트 하네스 | MS-003 | INT-001 | US-003 | AI | Review | 2026-08-15 | 완료 — 순수 함수(arg·features·executable·metadata 파서) + mocha 19 테스트 통과, tsc·eslint·esbuild OK. 검토 후 병합(또는 TASK-005 계속) | 없음 | | M2. vscode·cargo 무의존 순수 함수 |
-| TASK-005 | CargoBridge cargo CLI 연동 | MS-003 | INT-001 | US-003 | AI | Planned | 2026-08-15 | execCapture·fetchMetadata(+캐시)·listInstalledTargets·checkToolchain·invalidateCache | TASK-004 | | M2. child_process I/O |
+| TASK-005 | CargoBridge cargo CLI 연동 | MS-003 | INT-001 | US-003 | AI | Review | 2026-08-15 | 완료 — execCapture/defaultExec(DI, 셸無) + CargoBridge(fetchMetadata+캐시·listInstalledTargets·checkToolchain·invalidateCache). mocha 14 신규(총 33)·실 cargo 스모크(E1/E2) OK. 검토 후 TASK-006 | TASK-004 | | M2. child_process I/O. vscode-free 유지(DevSwitcherError→core/errors 분리) |
 | TASK-006 | CargoAdapter 실구현 | MS-003 | INT-001 | US-003 | AI | Planned | 2026-08-15 | 스텁 교체: chips.listItems·listProjects·build/run/debug Task·resolveExecutable·createProjectTask(cargo new) | TASK-005 | | M2. cargo 실구현 (v1 타깃) |
 
 > 현재 등록 Task: TASK-001~006. M3 이후(MS-004~) Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
