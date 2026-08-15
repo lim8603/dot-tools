@@ -1,0 +1,14 @@
+[package]
+name = "hello"
+version = "0.1.0"
+edition = "2021"
+
+# Feature set so the Features chip has something to show (default preselected).
+[features]
+default = ["greeting"]
+greeting = []
+metrics = []
+
+[[bin]]
+name = "hello"
+path = "src/main.rs"

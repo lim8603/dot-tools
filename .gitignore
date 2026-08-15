@@ -11,6 +11,9 @@ out/
 # ─── VSCode 확장 테스트 ───
 .vscode-test/
 
+# ─── Rust test-fixture build output ───
+src/test/fixtures/**/target/
+
 # ─── Member personal session logs ───
 .cowork/members/*/workspace/session_logs/*.md
 !.cowork/members/*/workspace/session_logs/.gitkeep
