@@ -60,6 +60,11 @@
         "command": "devSwitcher.importProfile",
         "title": "Import Profile",
         "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.doctor",
+        "title": "Doctor (environment diagnostics)",
+        "category": "DevSwitcher"
       }
     ],
     "problemMatchers": [

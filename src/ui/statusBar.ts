@@ -4,6 +4,7 @@ import { defaultChipFormat } from './statusBarFormat';
 
 const PROJECT_CHIP = 'project';
 const SETTINGS_CHIP = 'settings';
+const TOOLCHAIN_CHIP = 'toolchain';
 const ACTION_CHIPS = ['build', 'debug', 'run'] as const;
 
 /** Options that colour special states on top of a normal render (F6 / §5.4). */
@@ -19,7 +20,9 @@ export interface RenderOptions {
  *
  * Items are reused across renders (chipId → StatusBarItem). Execution of the action
  * buttons is the orchestrator/TaskRunner's job (MS-005); this only draws them. The
- * cargo/rustup-missing warning chip (E1) is deferred with the Doctor flow (MS-007).
+ * cargo/rustup-missing warning chip (E1, §5.4) is managed independently of render()
+ * via setToolchainWarning — it must survive the no-active-project path (that is when
+ * a missing toolchain zeroed the scan), so render()/hideAll() leave it alone.
  */
 export class StatusBarController {
   private readonly items = new Map<string, vscode.StatusBarItem>();
@@ -64,13 +67,35 @@ export class StatusBarController {
     const gear = this.upsert(SETTINGS_CHIP, '$(gear)', 'DevSwitcher Settings', 'devSwitcher.openSettings', undefined, order++);
     gear.show();
 
-    // Hide any chip left over from a previously active adapter.
-    const visible = new Set<string>([PROJECT_CHIP, SETTINGS_CHIP, ...adapter.chips.map((c) => c.id), ...ACTION_CHIPS]);
+    // Hide any chip left over from a previously active adapter. The toolchain (E1)
+    // chip is owned by setToolchainWarning, so it is always exempt from this sweep.
+    const visible = new Set<string>([
+      PROJECT_CHIP,
+      SETTINGS_CHIP,
+      TOOLCHAIN_CHIP,
+      ...adapter.chips.map((c) => c.id),
+      ...ACTION_CHIPS,
+    ]);
     for (const [id, item] of this.items) {
       if (!visible.has(id)) {
         item.hide();
       }
     }
+  }
+
+  /**
+   * Show or hide the E1 toolchain-missing warning chip (§5.4). Independent of render()
+   * so it persists when a missing toolchain leaves no active project. Clicking it runs
+   * Doctor. `refreshDiagnostics` (orchestrator) drives it from worstStatus.
+   */
+  setToolchainWarning(show: boolean, tooltip = 'DevSwitcher: toolchain issue — click to run Doctor'): void {
+    if (!show) {
+      this.items.get(TOOLCHAIN_CHIP)?.hide();
+      return;
+    }
+    const item = this.upsert(TOOLCHAIN_CHIP, '$(warning) Toolchain', tooltip, 'devSwitcher.doctor', undefined, -1);
+    item.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    item.show();
   }
 
   /**
@@ -85,10 +110,13 @@ export class StatusBarController {
     }
   }
 
-  /** Hide the whole status bar (no projects, or extension idle — §5.4). */
+  /** Hide the project UI (no projects, or extension idle — §5.4). Keeps the E1
+   *  toolchain chip, whose visibility setToolchainWarning owns. */
   hideAll(): void {
-    for (const item of this.items.values()) {
-      item.hide();
+    for (const [id, item] of this.items) {
+      if (id !== TOOLCHAIN_CHIP) {
+        item.hide();
+      }
     }
   }
 

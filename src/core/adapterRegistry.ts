@@ -57,4 +57,23 @@ export class AdapterRegistry {
   adapterFor(project: ProjectInfo): LanguageAdapter | undefined {
     return this.byId.get(project.adapterId);
   }
+
+  /**
+   * Adapters whose manifest is present in the workspace — Doctor's check set (F19).
+   * Independent of scan() so it still reports (e.g.) a present Cargo.toml when
+   * `cargo metadata` failed and produced zero projects — that is exactly the E1 case.
+   */
+  async detectAdapters(): Promise<LanguageAdapter[]> {
+    const present: LanguageAdapter[] = [];
+    for (const adapter of this.adapters) {
+      for (const glob of adapter.manifestGlobs) {
+        const hits = await vscode.workspace.findFiles(glob, EXCLUDE_GLOB, 1);
+        if (hits.length > 0) {
+          present.push(adapter);
+          break;
+        }
+      }
+    }
+    return present;
+  }
 }

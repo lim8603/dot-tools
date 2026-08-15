@@ -2,11 +2,13 @@ import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { InvocationConfig, LanguageAdapter, ProjectInfo } from './types';
+import type { DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
+import { pickDiagnostic } from '../ui/doctorPick';
 import { ensureExtension } from './ensureExtension';
 import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
+import { buildDiagnostics, worstStatus } from './diagnostics';
 
 /** Default filename offered by the export/import dialogs (F12). */
 const DEFAULT_PROFILE_FILE = 'devswitcher.profile.json';
@@ -22,6 +24,9 @@ export class Orchestrator {
   /** Notified after any state change so open views (settings page) can re-sync. */
   private viewSync: () => void = () => {};
 
+  /** Latest Doctor diagnostics — computed on initialize and after each Doctor fix (F19). */
+  private diagnostics: DiagnosticItem[] = [];
+
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
@@ -34,9 +39,67 @@ export class Orchestrator {
     this.viewSync = callback;
   }
 
-  /** First activation: scan, reconcile stored state, render (상세설계서 §3.3). */
+  /** First activation: scan, reconcile stored state, render, then check the toolchain (E1). */
   async initialize(): Promise<void> {
     await this.refresh();
+    await this.refreshDiagnostics();
+  }
+
+  /**
+   * Run every present adapter's checks (F19, §13.5), classify them (core/diagnostics),
+   * and drive the E1 toolchain warning chip from the worst status. Uses detectAdapters
+   * (not scan) so a present Cargo.toml with a missing cargo still reports E1. Stub
+   * adapters contribute nothing (they return []).
+   */
+  async refreshDiagnostics(): Promise<void> {
+    const adapters = await this.registry.detectAdapters();
+    const probeLists = await Promise.all(adapters.map((a) => a.collectDiagnostics()));
+    this.diagnostics = buildDiagnostics(probeLists.flat());
+    this.statusBar.setToolchainWarning(worstStatus(this.diagnostics) === 'error');
+  }
+
+  /**
+   * Doctor (§13.5): show the diagnostics QuickPick and resolve the picked item. Entry
+   * points: command palette, E1 chip, on-demand install cancel. After a resolution we
+   * rescan + re-check so a freshly installed tool/extension clears its warning.
+   */
+  async doctor(): Promise<void> {
+    await this.refreshDiagnostics();
+    if (this.diagnostics.length === 0) {
+      void vscode.window.showInformationMessage('DevSwitcher: no environment checks for this workspace.');
+      return;
+    }
+    const picked = await pickDiagnostic(this.diagnostics);
+    if (!picked?.resolution) {
+      return; // cancelled, or an ok item with nothing to fix
+    }
+    await this.resolveDiagnostic(picked.resolution);
+    await this.refresh();
+    await this.refreshDiagnostics();
+  }
+
+  /** Carry out one diagnostic resolution (§13.2 automation tiers). */
+  private async resolveDiagnostic(resolution: DiagnosticResolution): Promise<void> {
+    switch (resolution.kind) {
+      case 'installExtension':
+        await ensureExtension(resolution.extensionId, `DevSwitcher: install ${resolution.extensionId}?`);
+        break;
+      case 'openUrl':
+        await vscode.env.openExternal(vscode.Uri.parse(resolution.url));
+        break;
+      case 'runCommand': {
+        const terminal = vscode.window.createTerminal('DevSwitcher Doctor');
+        terminal.show();
+        terminal.sendText([resolution.command, ...resolution.args].join(' '));
+        break;
+      }
+      case 'installTarget':
+        // Handled by the Architecture chip's install flow (TASK-018); point the user there.
+        void vscode.window.showInformationMessage(
+          `DevSwitcher: pick target ${resolution.triple} from the Architecture chip to install it.`,
+        );
+        break;
+    }
   }
 
   /** Rescan and re-render — invoked on activation and on every debounced manifest change. */
@@ -126,7 +189,14 @@ export class Orchestrator {
         `Debugging ${adapter.displayName} needs ${extensionId}. Install it?`,
       );
       if (!available) {
-        void vscode.window.showWarningMessage('DevSwitcher: debug cancelled — required extension is missing.');
+        const runDoctor = 'Run Doctor';
+        const choice = await vscode.window.showWarningMessage(
+          'DevSwitcher: debug cancelled — required extension is missing.',
+          runDoctor,
+        );
+        if (choice === runDoctor) {
+          void this.doctor();
+        }
         return;
       }
     }

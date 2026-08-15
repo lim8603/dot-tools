@@ -21,6 +21,11 @@ export function buildDiagnostics(probes: DiagnosticProbe[]): DiagnosticItem[] {
   return probes.map(toItem).sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status]);
 }
 
+/** Codicon id for a status — used by the Doctor QuickPick (`$(<icon>)`). */
+export function diagnosticIcon(status: DiagnosticStatus): string {
+  return { ok: 'check', warn: 'warning', error: 'error', info: 'info' }[status];
+}
+
 /** The worst status across items — for the E1 warning-chip decision (TASK-017). */
 export function worstStatus(items: DiagnosticItem[]): DiagnosticStatus {
   return items.reduce<DiagnosticStatus>(

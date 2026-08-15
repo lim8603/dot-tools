@@ -37,6 +37,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('devSwitcher.openSettings', () => settingsPanel.open()),
     vscode.commands.registerCommand('devSwitcher.exportProfile', () => orchestrator.exportProfile()),
     vscode.commands.registerCommand('devSwitcher.importProfile', () => orchestrator.importProfile()),
+    vscode.commands.registerCommand('devSwitcher.doctor', () => orchestrator.doctor()),
   );
 
   const globs = [...new Set(ALL_ADAPTERS.flatMap((adapter) => adapter.manifestGlobs))];

@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { buildDiagnostics, worstStatus } from '../../core/diagnostics';
+import { buildDiagnostics, diagnosticIcon, worstStatus } from '../../core/diagnostics';
 import type { DiagnosticProbe } from '../../core/types';
 
 function probe(partial: Partial<DiagnosticProbe> & Pick<DiagnosticProbe, 'id' | 'severity' | 'present'>): DiagnosticProbe {
@@ -74,5 +74,14 @@ describe('worstStatus', () => {
 
   it('is ok for an empty list', () => {
     assert.equal(worstStatus([]), 'ok');
+  });
+});
+
+describe('diagnosticIcon', () => {
+  it('maps each status to its codicon', () => {
+    assert.equal(diagnosticIcon('ok'), 'check');
+    assert.equal(diagnosticIcon('warn'), 'warning');
+    assert.equal(diagnosticIcon('error'), 'error');
+    assert.equal(diagnosticIcon('info'), 'info');
   });
 });
