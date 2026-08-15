@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-007 (M6 품질·배포) — In Progress, TASK-016~021 분해 완료 |
+| 활성 Milestone | MS-007 (M6 품질·배포) — In Progress, 016~020 Done, **TASK-021만 남음** |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_005.md |
 
@@ -20,10 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-020 | 통합 테스트 하네스 + 수동 체크리스트 (§15.2) | MS-007 | In Progress | 0% | 없음 |
-| TASK-021 | README + VSIX 패키징 | MS-007 | Planned | 0% | 020 후 |
+| TASK-021 | README + VSIX 패키징 | MS-007 | Planned | 0% | 없음 (내일 착수) |
 
-> TASK-001~015 Done (MS-001~006). **TASK-016~019 Done·main 병합**(Doctor+rustup target+pre/postBuild). C-5 해소. 상세: `tasks/TASK-016~021.md`.
+> TASK-001~020 Done (MS-001~006 + MS-007 016~020, main 병합). **TASK-021(README+VSIX)만 남음 → MS-007 Done → v0.1.** C-5 해소. 상세: `tasks/TASK-016~021.md`.
 
 ---
 
@@ -41,8 +40,9 @@
 
 ## 다음 시작점
 
-1. **TASK-016 착수** (Doctor 진단 모델·순수 코어) → 017(Doctor UI+E1 칩) → 018(rustup target)
-2. 이후 019(pre/postBuild C-5)·020(통합테스트·F18)·021(README+VSIX) → MS-007 Done → MS-008(F20). 이월: 프로파일 편집 v2(C-3)·extra rustflags(L-1)
+1. **TASK-021 착수(내일)** — README + version 0.1.0·publisher·`.vscodeignore`·LICENSE + `vsce package`→vsix → **MS-007 Done → v0.1**
+2. 릴리즈 전 권장 수동검증: TC-11(WSL/F18)·TC-09(재시작)·TC-02/03 (`test_case.md §2`)
+3. 이후 MS-008(F20 마법사). 이월: 프로파일 편집 v2(C-3)·extra rustflags(L-1)·Run Group(C-6, v2)
 
 ---
 
