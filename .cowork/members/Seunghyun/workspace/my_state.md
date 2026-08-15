@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | MS-005 (M4 실행·디버그) — Review, F5 검증 대기 |
+| 활성 Milestone | MS-006 (M5 설정 페이지·호출 구성) — 착수 예정 |
 | 마지막 갱신일 | 2026-08-15 |
 | 참조 세션 로그 | session_2026-08-15_004.md |
 
@@ -20,10 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-010 | 실행 (TaskRunner + Build/Run) | MS-005 | Review | 100% (코드) | F5 검증 대기 |
-| TASK-011 | 디버그 (createDebugConfig + CodeLLDB) | MS-005 | Review | 100% (코드) | F5 검증 대기(확장 포함) |
+| — | MS-006 미분해 | MS-006 | Planned | 0% | Task 분해 대기(C-1·C-4 트리거) |
 
-> TASK-001~009 Done (MS-001~004 완료·main 병합, 2026-08-15). MS-003·004 상세: session #004.
+> TASK-001~011 Done (MS-001~005 완료·main 병합, 2026-08-15). MS-003·004·005 상세: session #004.
 
 ---
 
@@ -40,9 +39,9 @@
 
 ## 다음 시작점
 
-1. **MS-005 F5 검증**(사용자) — 기본 `Run Extension`으로 Build/Run(픽스처 hello 빌드·실행), `Run Extension (with extensions)`로 Debug(CodeLLDB→중단점). 통과 시 TASK-010·011·MS-005 Done → main 병합
-2. 이후 MS-006(설정 페이지/호출 구성)·MS-007(품질·배포·통합테스트)·MS-008(F20 시작 마법사)
-3. 이월: F19(rustup target 자동설치)·Doctor(§13.5)
+1. **MS-006(M5 설정 페이지·호출 구성) Task 분해 → 착수** — WebviewPanel "설정 페이지"(ADR-012)·옵션 카탈로그 브라우저·InvocationConfig 오버레이 편집·export/import(F12). C-1(ui_spec)·C-4(ProfileExport 정합화) 트리거 도래
+2. 이후 MS-007(품질·배포·통합테스트)·MS-008(F20 시작 마법사)
+3. 이월: F19(rustup target 자동설치)·Doctor(§13.5)는 MS-007
 
 ---
 
@@ -62,8 +61,7 @@
 - C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
 - C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영(편집/승격, 구 §8.7) — v2 착수 시
 - C-4: `ProfileExport`(F12) 타입 + data_model §2 export 예시 정합화(runArgs 승격 반영) — MS-006 착수 시
-- MS-005 미병합: `feature/ms-005-run-debug`(TASK-010·011) — F5 검증 통과 시 main 병합
-- (완료) MS-003·MS-004 main FF 병합 완료 (TASK-004~009)
+- (완료) MS-003·004·005 모두 main FF 병합 완료 (TASK-004~011). 미병합 브랜치 없음
 
 ---
 
