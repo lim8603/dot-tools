@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-002 완료 — 다음 MS-003) |
+| 현재 Phase | Build (MS-003 진행 — TASK-004 CargoBridge 순수 코어) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter, Planned — Task 분해 필요) |
-| 활성 Task | 없음 (MS-002 Done) — MS-003 착수 시 분해(C-2) |
+| 활성 Milestone | MS-003 (M2 CargoBridge/CargoAdapter, In Progress) |
+| 활성 Task | TASK-004 (CargoBridge 순수 코어, Review — 19 테스트 통과) → TASK-005·006 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,7 +42,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- Build 진행 중. **MS-001·002 완료·main 병합**. TASK-001(스캐폴드+F5), TASK-002(types.ts, OQ-002 별도인자), TASK-003(4개 어댑터 스텁, Python 리트머스 tsc 확정 검증) 모두 Done. 편집기 TS2584 수정 포함. 다음은 MS-003(M2 CargoBridge/CargoAdapter 실구현) — Task 분해 필요.
+- Build 진행 중. MS-001·002 완료·병합. **MS-003 진행** — TASK-004(CargoBridge 순수 코어 + mocha 19 테스트) **완료(Review)**, `feature/task-004-cargobridge-pure`. 다음 TASK-005(cargo CLI 연동)→006(어댑터). 설계서 §8 기준, cargo가 실행 경로 해석(DD-05).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
@@ -57,7 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | MS-002 완료 — MS-003 Task 미분해 | - | - | 2026-08-15 | MS-003(M2 CargoBridge/CargoAdapter 실구현) 착수 시 상세 Task 분해(C-2) |
+| TASK-004 | CargoBridge 순수 코어 + 테스트 하네스 | AI | Review | 2026-08-15 | 완료 — 순수 함수 + mocha 19 테스트 통과. 검토 후 병합 또는 TASK-005 계속 |
+| TASK-005 | CargoBridge cargo CLI 연동 | AI | Planned | 2026-08-15 | execCapture·fetchMetadata(+캐시)·툴체인 확인 (TASK-004 후) |
+| TASK-006 | CargoAdapter 실구현 | AI | Planned | 2026-08-15 | 스텁 교체·build/run/debug·resolveExecutable·createProjectTask (TASK-005 후) |
 
 > TASK-001·002·003 모두 2026-08-15 Done (MS-001·002 완료, main 병합) — 상세는 session_2026-08-15_003.md.
 
@@ -69,7 +71,7 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-003(M2 CargoBridge + CargoAdapter 실구현) 착수** — 상세 Task 분해(C-2). v1 실구현 대상(Rust 단독).
+1. **TASK-004(CargoBridge 순수 코어 + mocha 테스트)** 진행 중 → TASK-005(CLI) → TASK-006(CargoAdapter)
 2. 이후 순서: MS-004(상태바·저장·감시) → MS-005(실행·디버그)까지면 Rust 실사용 가능
 
 ---
@@ -89,7 +91,7 @@
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
 | C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — 상태바 칩 레이아웃·**설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처·명령 미리보기, ADR-012)**·마법사 QuickPick | UI 구현(MS-004/006/008) 착수 시 | 세션 #001 Gate 3 |
-| C-2 | MS-002~008 상세 Task 분해 | 해당 Milestone 착수 시 | task_registry 경량 운영 |
+| C-2 | MS-004~008 상세 Task 분해 (MS-002·003 분해 완료) | 해당 Milestone 착수 시 | task_registry 경량 운영 |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 | C-4 | `ProfileExport`(F12 export/import) 타입 확정 + `data_model.md` §2 export 예시를 ADR-011 후속(runArgs 승격)에 맞게 정합화 | export/import 구현(MS-006) 착수 시 | 세션 #003 TASK-002 |
 

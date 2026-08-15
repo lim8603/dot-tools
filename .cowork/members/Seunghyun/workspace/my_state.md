@@ -20,11 +20,11 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | Done | 100% | 없음 |
-| TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | Done | 100% | 없음 |
-| TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | Done | 100% | 없음 |
+| TASK-004 | CargoBridge 순수 코어 + 테스트 | MS-003 | Review | 100% (19 테스트 통과) | 없음 |
+| TASK-005 | CargoBridge cargo CLI 연동 | MS-003 | Planned | 0% | TASK-004 |
+| TASK-006 | CargoAdapter 실구현 | MS-003 | Planned | 0% | TASK-005 |
 
-> MS-001·002 완료·병합(2026-08-15). 다음 담당 = MS-003 착수 시 분해.
+> TASK-001·002·003 Done (MS-001·002 완료·병합, 2026-08-15).
 
 ---
 
@@ -40,7 +40,7 @@
 
 ## 다음 시작점
 
-1. **MS-003(M2 CargoBridge + CargoAdapter 실구현) 착수** — 상세 Task 분해(C-2). v1 실구현 대상(Rust 단독)
+1. **TASK-004(CargoBridge 순수 코어 + mocha 테스트)** 진행 중 → TASK-005(CLI) → TASK-006(CargoAdapter)
 2. 이후 MS-004(상태바·저장·감시) → MS-005(실행·디버그): 여기까지면 Rust 실사용 가능
 3. 설정 페이지/호출 구성 실구현은 MS-006(M5)
 
