@@ -169,6 +169,43 @@ export function pickExecutable(jsonLines: string[], targetName: string | undefin
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Debug configuration (상세설계서 §8.6) — CodeLLDB launch config
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A CodeLLDB (`vadimcn.vscode-lldb`) launch config; structurally a DebugConfiguration. */
+export interface LldbLaunchConfig {
+  type: 'lldb';
+  request: 'launch';
+  name: string;
+  program: string;
+  args: string[];
+  cwd: string;
+  sourceLanguages: string[];
+}
+
+/**
+ * Assemble a CodeLLDB launch config from a resolved executable (상세설계서 §8.6).
+ * Pure so it is unit-testable; the adapter supplies `program` (from resolveExecutable)
+ * and `cwd`.
+ */
+export function buildLldbConfig(
+  targetName: string | undefined,
+  program: string,
+  args: string[],
+  cwd: string,
+): LldbLaunchConfig {
+  return {
+    type: 'lldb',
+    request: 'launch',
+    name: targetName ? `Debug ${targetName}` : 'Debug',
+    program,
+    args,
+    cwd,
+    sourceLanguages: ['rust'],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Display formatting (상세설계서 §5.2)
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ import { notImplemented } from '../notImplemented';
 import {
   abbreviateTriple,
   assembleCargoArgs,
+  buildLldbConfig,
   buildProfileList,
   CargoBridge,
   defaultBinTarget,
@@ -208,7 +209,12 @@ export const cargoAdapter: LanguageAdapter = {
     return makeCargoTask('run', project, sel, config);
   },
 
-  createDebugConfig: (_project, _sel, _config) => notImplemented('CargoAdapter.createDebugConfig', 'M4'),
+  async createDebugConfig(project, sel, config) {
+    // §7.4 runs the build first, so this resolve reads paths from the warm cache (§8.6).
+    const program = await this.resolveExecutable(project, sel, config);
+    const target = typeof sel.values.target === 'string' ? sel.values.target : undefined;
+    return buildLldbConfig(target, program, config.runArgs ?? [], cwdOf(project));
+  },
 
   async resolveExecutable(project, sel, config) {
     // Build with JSON messages and read the artifact path cargo reports (DD-05) —

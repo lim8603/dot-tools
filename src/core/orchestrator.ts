@@ -5,6 +5,7 @@ import type { TaskRunner } from './taskRunner';
 import type { InvocationConfig, LanguageAdapter, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
+import { ensureExtension } from './ensureExtension';
 
 /**
  * Orchestrator — active-context owner and command handler (상세설계서 §3.1).
@@ -90,9 +91,60 @@ export class Orchestrator {
     }
   }
 
-  /** Debug flow (§7.4) lands in TASK-011. */
+  /**
+   * Debug flow (상세설계서 §7.4): required chips → ensure CodeLLDB → build (abort on
+   * failure) → resolve executable + config → start debugging.
+   */
   async debug(): Promise<void> {
-    await vscode.window.showInformationMessage('DevSwitcher: Debug runs in a later milestone (MS-005 / TASK-011).');
+    const context = this.activeContext();
+    if (!context) {
+      return;
+    }
+    const { project, adapter } = context;
+    if (this.taskRunner.isRunning(project.id)) {
+      void vscode.window.showInformationMessage(`DevSwitcher: a task is already running for ${project.name}.`);
+      return;
+    }
+    if (!(await this.ensureRequiredChips(project, adapter))) {
+      return;
+    }
+    for (const extensionId of adapter.requiredExtensions) {
+      const available = await ensureExtension(
+        extensionId,
+        `Debugging ${adapter.displayName} needs ${extensionId}. Install it?`,
+      );
+      if (!available) {
+        void vscode.window.showWarningMessage('DevSwitcher: debug cancelled — required extension is missing.');
+        return;
+      }
+    }
+
+    const selection = this.store.getSelection(project.id);
+    const config = this.activeConfig(project);
+    this.statusBar.markActionBusy('debug');
+    try {
+      if (adapter.actions.build) {
+        const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
+        if (!build.succeeded) {
+          const showProblems = 'Show Problems';
+          const choice = await vscode.window.showErrorMessage(
+            `DevSwitcher: build failed (exit ${build.exitCode ?? 'unknown'}); cannot start debugging.`,
+            showProblems,
+          );
+          if (choice === showProblems) {
+            void vscode.commands.executeCommand('workbench.actions.view.problems');
+          }
+          return;
+        }
+      }
+      const debugConfig = await adapter.createDebugConfig(project, selection, config);
+      await vscode.debug.startDebugging(project.workspaceFolder, debugConfig);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: debug failed — ${message}`);
+    } finally {
+      await this.renderActive();
+    }
   }
 
   /** Build/run flow (상세설계서 §7.3): validate required chips → run → surface failure. */

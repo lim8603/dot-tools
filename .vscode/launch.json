@@ -12,6 +12,15 @@
       ],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "npm: compile"
+    },
+    {
+      // Keeps other extensions enabled so CodeLLDB is available for the Debug flow.
+      "name": "Run Extension (with extensions)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "preLaunchTask": "npm: compile"
     }
   ]
 }
