@@ -39,7 +39,7 @@ flowchart TD
     TASK["TaskRunner<br/>Task 실행·종료 코드 (ADR-002)"]
     SB["StatusBarController<br/>칩 순회 렌더 (ADR-003), QuickPick, 에러(F6)"]
     WATCH["ManifestWatcher<br/>디바운스 재스캔 (F17)"]
-    PANEL["SettingsPanel (Webview)<br/>+ FileFacade 국소편집 (F4)"]
+    PANEL["SettingsPanel (Webview 페이지)<br/>옵션 카탈로그 브라우저 + 호출 구성 오버레이 (F21)"]
     AD["LanguageAdapter<br/>Cargo(구현) / CMake·Dotnet·Python(스텁)"]
 
     EXT --> REG & STORE & ORCH & SB & WATCH & PANEL
@@ -65,8 +65,14 @@ flowchart TD
 ### Value: `ChipDescriptor` (어댑터가 선언하는 칩)
 - id·icon·label·multiSelect·required·listItems·format·defaultValue.
 
+### Value: `InvocationConfig` (호출 구성 오버레이, 계층 ③)
+- `(projectId × profile)`별 compiler·linker·outputDir·env·runArgs·preBuild·postBuild. 파일 미편집, 호출 시 주입 (ADR-011). 타입은 `interface_contract.md` §7.
+
+### Value: `OptionSpec` (옵션 카탈로그 항목)
+- 어댑터가 선언하는 옵션 메타데이터(설명·예제·타입·허용값·주입방식). 설정 페이지가 렌더 (ADR-012).
+
 ### 참조: 값의 원천(캐노니컬 파일)
-- 프로파일/아키텍처/타깃의 실제 정의는 `Cargo.toml` 등 캐노니컬 파일에만 존재. 확장은 포인터만 소유.
+- 프로파일/아키텍처/타깃의 실제 정의(계층 ②)는 `Cargo.toml` 등 캐노니컬 파일에만 존재. 확장은 포인터 + 선택 + 호출 오버레이만 소유.
 
 ---
 
@@ -90,6 +96,7 @@ flowchart TD
 - **INV-3 (단일 갱신 경로)**: 매니페스트 변경·persistSetting 쓰기 모두 ManifestWatcher 경로로 수렴 (F17).
 - **INV-4 (한 창 = 한 환경)**: 한 VSCode 창은 하나의 실행 환경에만 연결 (§12.4).
 - **INV-5 (프로젝트별 선택 독립)**: 프로젝트 전환 시 각자의 마지막 선택 복원.
+- **INV-6 (호출 구성 = 파일 무편집)**: 호출 구성 오버레이(계층 ③)는 `(프로젝트 × 구성)`별로 workspaceState에 저장하고 빌드/실행 호출 시 주입만 한다 — v1은 캐노니컬 파일을 편집하지 않는다 (ADR-011).
 
 ---
 

@@ -24,9 +24,9 @@
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-13 |
+| 마지막 갱신일 | 2026-08-15 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-13_001.md |
+| 참조 세션 로그 | session_2026-08-15_002.md |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -58,8 +58,8 @@
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
 | TASK-001 | 스캐폴드 + F5 Hello World | AI | Planned | 2026-08-13 | `yo code`로 devswitcher-tools(TS·esbuild) 스캐폴드 생성 |
-| TASK-002 | core/types.ts 전체 타입 확정 | AI | Planned | 2026-08-13 | interface_contract 기준 types.ts 작성 (TASK-001 후) |
-| TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Planned | 2026-08-13 | 칩·actions·canCreateProject 선언 (TASK-002 후) |
+| TASK-002 | core/types.ts 전체 타입 확정 | AI | Planned | 2026-08-15 | interface_contract 기준 types.ts 작성 (InvocationConfig·OptionSpec 포함, TASK-001 후) |
+| TASK-003 | 4개 어댑터 칩 선언 스텁 | AI | Planned | 2026-08-15 | 칩·actions·canCreateProject·optionCatalog·configCategories 선언 (TASK-002 후) |
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -89,8 +89,9 @@
 
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
-| C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — 상태바 칩 레이아웃·설정 다이얼로그·마법사 QuickPick | UI 구현(MS-004/006/008) 착수 시 | 세션 #001 Gate 3 |
+| C-1 | `ui_spec.md`(화면설계서, 권장) 작성 — 상태바 칩 레이아웃·**설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처·명령 미리보기, ADR-012)**·마법사 QuickPick | UI 구현(MS-004/006/008) 착수 시 | 세션 #001 Gate 3 |
 | C-2 | MS-002~008 상세 Task 분해 | 해당 Milestone 착수 시 | task_registry 경량 운영 |
+| C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 
 **저심각 · 기록 (지시 시에만)**
 
@@ -103,9 +104,9 @@
 ## AI 핸드오프 메모
 > 다음 세션이 바로 이어받는 데 필요한 핵심만 2~5줄로 남긴다.
 
-- DevSwitcher Tools = 다언어(Rust·C++·C#·Python) 통합 상태바 UX VSCode 확장. 핵심 설계는 `LanguageAdapter` + `ChipDescriptor[]`(DD-03), SSOT 파사드(DD-07), workspaceState 저장(DD-01), Task API 실행(DD-02), cargo가 실행 경로 해석(DD-05).
+- DevSwitcher Tools = 다언어(Rust·C++·C#·Python) 통합 상태바 UX VSCode 확장. 핵심 설계는 `LanguageAdapter` + `ChipDescriptor[]`(ADR-003), SSOT 파사드(ADR-007), workspaceState 저장(ADR-001), Task API 실행(ADR-002), cargo가 실행 경로 해석(ADR-005).
 - 상세설계서 §16 로드맵 M0~M6이 사실상의 Milestone 후보. v1 실구현 대상은 CargoAdapter(Rust) 단독.
-- 설계서는 `docs/`에 있고 cowork 기준 문서로는 아직 미반입.
+- **세션 #002 신규(ADR-011·012)**: 설정은 3계층(①확장설정 ②캐노니컬 정의 ③호출 구성 오버레이). VS2026식 속성은 계층 ③으로 흡수 — 파일 무편집, `(프로젝트×구성)`별 저장, 빌드/실행 시 `--config`/env 주입. 설정 UI = WebviewPanel "설정 페이지" + 어댑터 선언 옵션 카탈로그. **언어별 능력은 `interface_contract.md` §8 매트릭스가 SSOT.** 캐노니컬 파일 편집은 v2. 구현은 MS-006(M5)에서.
 
 ---
 
@@ -146,6 +147,8 @@
 | D-05 | 신규: 프로젝트 시작 마법사(F20) 도입 — 전 언어·수동 호출·기본 템플릿·네이티브 위임 | `ADR-010` | 2026-08-13 |
 | D-06 | 설계서 DD-01~09를 ADR-001~009로 승격 | `adr_registry.md` | 2026-08-13 |
 | D-07 | Gate 3 통과 (domain_model 승인) → Build 전환 | `quality_gate.md`, `domain_model.md` | 2026-08-13 |
+| D-08 | 호출 구성 오버레이 도입 — 컴파일옵션·출력·링커·env·빌드전후를 파일 무편집으로 (프로젝트×구성)별 저장·주입. 캐노니컬 파일 편집은 v2 이월 | `ADR-011` | 2026-08-15 |
+| D-09 | 설정 UI = WebviewPanel "설정 페이지"(명칭 정정) + 어댑터 선언 옵션 카탈로그 브라우저 | `ADR-012` | 2026-08-15 |
 
 ---
 
@@ -167,8 +170,13 @@
 | `interface_contract.md`·`domain_model.md`·`data_model.md`·`tech_stack.md` | DESIGN 본문 반입 (F20 프로젝트 생성 계약 포함) | DESIGN 반입 |
 | `coding_convention.md` | 폴더 구조 확정 + TS/VSCode 컨벤션 | BUILD 준비 |
 | `milestone_registry.md`·`task_registry.md` | MS-001~008(M0~M6+F20), TASK-001~003 | BUILD 준비 |
+| `adrs/ADR-011·012*.md` + `adr_registry.md` | 호출 구성 오버레이 + 설정 페이지·옵션 카탈로그 | 세션 #002 신규 |
+| `interface_contract.md` | §7 호출 구성 계약(InvocationConfig·OptionSpec·optionCatalog) + §8 **언어별 호출 구성 능력 매트릭스** | 세션 #002 |
+| `data_model.md` | 설정 3계층 + PersistedState에 `(projectId×profile)` invocation 차원 도입 | 세션 #002 |
+| `functional_spec.md`·`requirement_spec.md` | F21·FR-014 추가, §8.7 파일편집 v2 이월, NFR-002a 셸 예외 | 세션 #002 |
+| `user_story_registry.md`·`milestone_registry.md`·`domain_model.md`·`coding_convention.md`·`deliverable_plan.md` | US-010 정정+US-012, MS-006 범위, INV-6, 카탈로그 반영, 명칭(다이얼로그→페이지) | 세션 #002 |
 
-> 상세 변경 이력은 세션 로그 session_2026-08-13_001 참조.
+> 상세 변경 이력은 세션 로그 session_2026-08-13_001, session_2026-08-15_002 참조.
 
 ---
 

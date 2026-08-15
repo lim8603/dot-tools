@@ -29,7 +29,7 @@
 | 항목 | 내용 |
 |------|------|
 | 프로젝트 유형 | 기타 — VSCode 확장(플러그인), TypeScript |
-| UI 존재 여부 | 있음 — 상태바 칩/버튼 + Webview 설정 다이얼로그 |
+| UI 존재 여부 | 있음 — 상태바 칩/버튼 + Webview 설정 페이지(ADR-012) |
 | DB 사용 여부 | 없음 — workspaceState(Memento) + 각 언어 캐노니컬 파일(SSOT) |
 | 외부 배포 여부 | 내부 도구(개인용 VSIX) → 추후 Open VSX/Marketplace 공개 검토 |
 | 팀 규모 | 1인 |
@@ -49,7 +49,7 @@
 | 1 | 요구사항 명세서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `requirement_spec.md` | 완료 | FR-001~013, NFR, 제약/의존 반입 |
 | 2 | 도메인 정의서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `domain_glossary.md` | 완료 | LanguageAdapter·ChipDescriptor·SSOT·시작마법사 등 |
 | 3 | 기능 명세서 | 필수 | 2026-08-13 | 2026-08-13 / Human | | `functional_spec.md` | 완료 | F1~F20 — 구현 기준. 핵심 |
-| 4 | 화면설계서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `ui_spec.md` | 수집중 | 상태바 UX + Webview 설정 다이얼로그(간략 버전) |
+| 4 | 화면설계서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `ui_spec.md` | 수집중 | 상태바 UX + Webview 설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처, ADR-012) |
 | 5 | WBS | 필수 | 2026-08-13 | 2026-08-13 / Human | | `milestone_registry.md` + `task_registry.md` | 수집중 | 로드맵 M0~M6 — 구현 추적 핵심 |
 | 6 | 시스템 아키텍처 설계서 | 필수 | 2026-08-13 | 2026-08-13 / Human | | `domain_model.md` + `tech_stack.md` + ADR | 완료 | 어댑터 계층 구조가 프로젝트 핵심 |
 | 7 | API 명세서 | 필수 | 2026-08-13 | 2026-08-13 / Human | | `interface_contract.md` | 완료 | `LanguageAdapter` 인터페이스 = 설계의 핵심 |

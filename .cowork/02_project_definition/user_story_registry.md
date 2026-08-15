@@ -34,8 +34,9 @@
 | US-007 | 선택 상태를 파일로 내보내고 다른 클론/동료와 공유한다 | INT-001 | 없음 | Should | Draft | | F12 |
 | US-008 | WSL/컨테이너/SSH 원격에서도 로컬과 동일하게 동작한다 | INT-001 | 없음 | Must | Draft | | F18 |
 | US-009 | 툴체인/확장이 없으면 Doctor가 진단하고 필요한 것을 설치해준다 | INT-001 | 없음 | Must | Draft | | F19·F14 |
-| US-010 | 설정 다이얼로그(Webview)에서 프로파일·실행 인자·features를 GUI로 편집하고 export/import 한다 | INT-001 | 없음 | Should | Draft | | F4·F16·F12·§10 |
+| US-010 | 설정 페이지(Webview)에서 프로파일·실행 인자·features·호출 구성을 GUI로 편집하고 export/import 한다 | INT-001 | MS-006 | Should | Draft | | F4·F16·F12·F21·§10 |
 | US-011 | 빈 폴더에서 명령으로 언어를 골라 새 프로젝트를 시작한다(매니페스트 자동 생성) | INT-001 | 없음 | Must | Draft | | F20·ADR-010 |
+| US-012 | 컴파일러 옵션을 잘 몰라도 설명·예제와 함께 목록에서 골라 (프로젝트×구성)별로 빌드 옵션을 설정하고 적용 명령을 미리 확인한다 | INT-001 | MS-006 | Should | Draft | | F21·ADR-011·012 |
 
 - `우선순위`: `Must` / `Should` / `Could` / `Won't`
 - `상태`: `Draft` / `Approved` / `Implemented` / `Deferred`

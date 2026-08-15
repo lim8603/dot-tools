@@ -158,7 +158,85 @@ export interface LanguageAdapter {
 
 ---
 
-## 7. 제약 사항
+## 7. 호출 구성 오버레이 계약 (ADR-011) 【신규】
+
+호출 구성(계층 ③)은 캐노니컬 파일을 편집하지 않고 `(projectId × profile)` 단위로 저장되며, 어댑터가 빌드/실행 Task 조립 시 **언어별 메커니즘으로 주입**한다. 값의 정의(계층 ②)는 여전히 캐노니컬 파일에만 있고, 확장은 호출 시점 덮어쓰기만 소유한다(ADR-007 보완).
+
+```ts
+export type OptionValue = string | number | boolean | string[];
+
+/** 한 (프로젝트 × 구성)에 적용되는 호출 구성 오버레이. 파일 미편집, 호출 시 주입. */
+export interface InvocationConfig {
+  compiler?: Record<string, OptionValue>;   // 카탈로그 옵션 id → 값 (opt-level 등)
+  linker?: Record<string, OptionValue>;
+  outputDir?: string;                        // 출력 위치 (CARGO_TARGET_DIR 등)
+  env?: Record<string, string>;              // 환경변수 (PYTHONPATH 등)
+  runArgs?: string[];                        // 실행 인자 (F16 승격)
+  preBuild?: string[];                       // 빌드/실행 전 명령 (BAT식, ShellExecution)
+  postBuild?: string[];                      // 빌드/실행 후 명령
+}
+
+/** 설정 페이지가 렌더하는 옵션 카탈로그 항목 (ADR-012). 어댑터가 선언 → UI는 이것만 안다. */
+export interface OptionSpec {
+  id: string;                 // 'opt-level'
+  category: string;           // 'compiler' | 'linker' | 'output' | 'env' | 'buildEvent' | 'runArgs'
+  label: string;
+  description: string;        // 설명 (옵션 잘 모르는 개발자용 교육 텍스트)
+  example: string;            // 예제
+  type: 'enum' | 'bool' | 'int' | 'string' | 'stringList';
+  allowedValues?: string[];   // enum일 때 드롭다운 값
+  defaultValue?: OptionValue;
+  injection: 'config' | 'env' | 'flag' | 'preTask' | 'postTask';  // 주입 방식
+}
+
+export interface LanguageAdapter {
+  // ... §4·§5 기존 멤버 ...
+
+  /** ADR-012 — 이 어댑터가 설정 페이지에 선언하는 옵션 카탈로그. UI는 이것만 렌더(언어 무지). */
+  readonly optionCatalog: OptionSpec[];
+
+  /** ADR-012 — 지원하는 설정 페이지 카테고리(가변). Python은 compiler/linker/output 없음(리트머스). */
+  readonly configCategories: string[];
+}
+```
+
+**계약 규칙 (호출 구성)**
+- UI/오케스트레이터는 `InvocationConfig`·`OptionSpec[]`만 알고 언어를 모른다(INV-2, ADR-003 연장).
+- **주입 시점(configure/build/run)과 방식은 어댑터 내부 사항**이다 — 언어별 차이는 §8이 규정.
+- `createBuildTask`/`createRunTask`는 활성 `InvocationConfig`를 받아 언어별로 접어 넣는다(`sel` 확장 또는 별도 인자로 전달 — M1에서 시그니처 확정).
+- 구성(profile) 목록은 캐노니컬 파일(②)에서 읽어오며 확장이 지어내지 않는다.
+- 빌드 전후 명령은 사용자 자유 명령이라 `ShellExecution`을 허용한다(NFR-002의 문서화된 예외).
+- **v1은 주입만**. 오버레이를 캐노니컬 파일에 영구 반영(편집/승격)하는 기능은 v2(구 §8.7).
+
+---
+
+## 8. 언어별 호출 구성 능력 (Invocation Config by Language) 【신규】
+
+VS2026식 속성을 각 어댑터가 "파일 무편집 주입"으로 어디까지 흡수할 수 있는지의 SSOT 표. `정의`=캐노니컬 파일에 있어 v1 읽기전용(편집은 v2), `—`=언어상 해당 없음.
+
+| 카테고리 | Rust (cargo) | C++ (cmake) | C# (dotnet) | Python |
+|---|---|---|---|---|
+| **구성 축(=profile)** | dev/release/커스텀 `--profile` | `CMAKE_BUILD_TYPE` / `--config` | `-c Debug/Release` + 커스텀 | — (대신 environment 축, F11) |
+| **컴파일러 옵션** | `--config profile.*` / `RUSTFLAGS` | `-D CMAKE_CXX_FLAGS[_<CFG>]` | `-p:Optimize/LangVersion/DefineConstants` | 해석형 — `-O`/`PYTHONOPTIMIZE` 소수 |
+| **링커** | `--config target.*.linker` / `RUSTFLAGS -C linker=` | `-D CMAKE_EXE_LINKER_FLAGS` | 게시 옵션(`-p:PublishTrimmed/Aot`) | — |
+| **출력 위치** | `CARGO_TARGET_DIR` / `--config build.target-dir` | `-B <dir>` / `-D *_OUTPUT_DIRECTORY` | `-o` / `-p:OutputPath` | — |
+| **출력 이름** | `[[bin]].name` (정의 → v2) | 타깃 속성 (정의 → v2) | `-p:AssemblyName` (주입 가능) | — |
+| **환경변수** | Task env | Task env | Task env | Task env (PYTHONPATH 등 핵심) |
+| **인클루드/검색 경로** | — (모듈 시스템) | `target_include_directories`(정의) / `-D` 일부 주입 | — (참조/패키지 모델) | `PYTHONPATH` (env 주입) |
+| **빌드 전/후 이벤트** | pre/post Task | pre/post Task | `-p:Pre/PostBuildEvent` 또는 pre/post Task | (빌드 없음) 실행 전/후 훅 |
+| **실행 인자** | `-- <args>` (F16) | 실행 오케스트레이션 | `run -- <args>` | `main.py <args>` |
+| **주입 시점** | 빌드 시점 | **configure + build 분리** ⚠ | 빌드 시점(`-p:`) | 실행 시점 |
+| **v1 실데이터** | ✅ 실구현 | 스텁(카탈로그 v2) | 스텁(카탈로그 v2) | 스텁(리트머스) |
+
+**핵심 관찰**
+- **Python이 리트머스**: `actions.build=false` → 설정 페이지에서 컴파일러/링커/출력 카테고리가 사라지고 환경변수·검색경로(PYTHONPATH)·실행 인자만 남는다. `configCategories`가 선언대로 바뀌면 설정 페이지 프레임워크가 검증된 것(칩 리트머스의 설정 페이지판, INV-2).
+- **인클루드 폴더는 C++에서만 살아난다**(다른 언어는 개념 부재 또는 env 대체). CMake는 실구현이 v2라 v1 범위 밖.
+- **cmake는 configure/build 2단계**라 주입 지점이 cargo(빌드 단일 시점)와 다르다 → 어댑터가 이 차이를 흡수한다.
+- **출력 이름은 dotnet만 주입 가능**(`-p:AssemblyName`), cargo/cmake는 정의라 v1 읽기전용.
+
+---
+
+## 9. 제약 사항
 
 | 항목 | 값 |
 |------|-----|
@@ -169,25 +247,28 @@ export interface LanguageAdapter {
 
 ---
 
-## 8. 가정 (Assumptions)
+## 10. 가정 (Assumptions)
 
 | ID | 가정 | 영향 |
 |----|------|------|
 | ASM-001 | M1에서 4개 어댑터 칩 선언을 스텁으로 전부 작성해 이 인터페이스를 확정한다(Python 리트머스) | 인터페이스 변경 리스크(RSK-005) 완화 |
+| ASM-002 | M1 인터페이스 확정 시 `InvocationConfig`·`OptionSpec`·`optionCatalog`·`configCategories`도 4개 어댑터에 스텁 선언한다 | 호출 구성 계약 선확정, 후속 변경 리스크 완화 |
 
 ---
 
-## 9. 미확정 사항 (Open Questions)
+## 11. 미확정 사항 (Open Questions)
 
 | ID | 항목 | 질문 | 상태 |
 |----|------|------|------|
 | OQ-001 | F20 생성 후 활성 전환 | 생성 직후 새 프로젝트를 자동 활성 프로젝트로 전환할지 | Open |
+| OQ-002 | `InvocationConfig` 전달 방식 | `Selection` 확장 vs 별도 인자 — M1에서 확정 | Open |
 
 ---
 
-## 10. 관련 근거 / 출처
+## 12. 관련 근거 / 출처
 
 | ID | 근거 | 출처 | 비고 |
 |----|------|------|------|
 | SRC-001 | LanguageAdapter/ChipDescriptor 타입 | 상세설계서 §4 | 원문 |
-| SRC-002 | F20 프로젝트 생성 계약 | ADR-010 | 세션 신규 |
+| SRC-002 | F20 프로젝트 생성 계약 | ADR-010 | 세션 #001 |
+| SRC-003 | 호출 구성 오버레이·옵션 카탈로그·언어별 능력 | ADR-011, ADR-012 | 세션 #002 |

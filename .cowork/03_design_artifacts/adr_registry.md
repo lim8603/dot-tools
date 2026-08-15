@@ -35,8 +35,10 @@
 | ADR-008 | 원격 환경 지원 (extensionKind: workspace) | Accepted | 2026-08-13 | INT-001 | 없음 | `adrs/ADR-008_원격_환경_지원.md` | DD-08 승격 |
 | ADR-009 | 의존성 온디맨드 3단계 (extensionDependencies 미사용) | Accepted | 2026-08-13 | INT-001 | 없음 | `adrs/ADR-009_의존성_온디맨드_3단계.md` | DD-09 승격 |
 | ADR-010 | 프로젝트 시작 마법사 도입 (스위처 + 이니셜라이저) | Accepted | 2026-08-13 | INT-001 | 없음 | `adrs/ADR-010_프로젝트_시작_마법사_도입.md` | 세션 #001 신규. F20·FR-013·US-011 |
+| ADR-011 | 호출 구성 오버레이 (파일 무편집, --config/env 주입, 편집 v2 이월) | Accepted | 2026-08-15 | INT-001 | MS-006 | `adrs/ADR-011_호출_구성_오버레이.md` | 세션 #002 신규. F21·FR-014. ADR-007 보완 |
+| ADR-012 | 설정 페이지(WebviewPanel) + 선언적 옵션 카탈로그 | Accepted | 2026-08-15 | INT-001 | MS-006 | `adrs/ADR-012_설정_페이지_옵션_카탈로그.md` | 세션 #002 신규. 명칭 정정(다이얼로그→페이지). ADR-003 연장 |
 
-> ADR-001~009 = 상세설계서 §2 DD-01~09 승격(제목에 DD 번호 병기). ADR-010 = 세션 중 신규 결정.
+> ADR-001~009 = 상세설계서 §2 DD-01~09 승격(제목에 DD 번호 병기). ADR-010 = 세션 #001 신규. ADR-011·012 = 세션 #002 신규(호출 구성 오버레이·설정 페이지).
 
 - `상태`: `Proposed` / `Accepted` / `Deprecated` / `Superseded`
 - `날짜`: `YYYY-MM-DD`

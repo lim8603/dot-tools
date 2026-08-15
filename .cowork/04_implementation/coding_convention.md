@@ -136,9 +136,9 @@ devswitcher-tools/
 │  │  ├─ statusBar.ts           # 칩/버튼 렌더 (어댑터 무지, ADR-003)
 │  │  ├─ picks.ts               # QuickPick 헬퍼
 │  │  ├─ newProjectWizard.ts    # ★F20 시작 마법사 플로우
-│  │  └─ settingsPanel/         # Webview (HTML/메시지 프로토콜)
+│  │  └─ settingsPanel/         # Webview 페이지 (옵션 카탈로그 브라우저 + 호출 구성, F21/ADR-012)
 │  ├─ adapters/
-│  │  ├─ cargo/ { cargoAdapter, cargoBridge, cargoToml }   # v1 구현
+│  │  ├─ cargo/ { cargoAdapter, cargoBridge, cargoToml, optionCatalog }   # v1 구현. cargoToml(파일편집)=v2
 │  │  ├─ cmake/cmakeAdapter.ts      # 스텁 (+ createProjectTask ★F20)
 │  │  ├─ dotnet/dotnetAdapter.ts    # 스텁 (+ createProjectTask ★F20)
 │  │  └─ python/pythonAdapter.ts    # 스텁 (칩 선언 + createProjectTask ★F20)
@@ -163,7 +163,7 @@ devswitcher-tools/
 | 프로세스 실행 | `ProcessExecution`(배열 인자) + Task API. 셸 문자열 지양(NFR-002) |
 | 산출물 경로 | 조합 금지 — cargo가 알려주는 값 사용(ADR-005) |
 | 에러 처리 | `DevSwitcherError(code, message, cause?)`로 래핑. 사용자 메시지 ↔ Output 채널 상세 로그 분리 |
-| 어댑터 추가 | `chips[]` + `listItems` + Task 생성 + `createProjectTask`만 구현. UI/오케스트레이터 무변경(ADR-003) |
+| 어댑터 추가 | `chips[]` + `listItems` + Task 생성 + `createProjectTask` + `optionCatalog`/`configCategories`(F21)만 구현. UI/오케스트레이터·설정 페이지 무변경(ADR-003·012) |
 | Webview | CSP `default-src 'none'`, 외부 리소스 금지. 상태는 확장에서 재요청(단방향) |
 
 > 1인 프로젝트: 브랜치는 `main` + `feature/*` 단순 구조. `.cowork/` 문서 커밋은 `docs(cowork):`, 소스는 `feat/fix/refactor:`로 분리.

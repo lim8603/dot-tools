@@ -35,7 +35,7 @@
 |---------|------|----------------|-------------|-----------------|------|------|---------------|-----------|------|----------|------|
 | TASK-001 | 스캐폴드 + F5 Hello World | MS-001 | INT-001 | 없음 | AI | Planned | 2026-08-13 | `yo code`로 devswitcher-tools(TS·esbuild) 스캐폴드 생성 후 F5 Hello World 확인 | 없음 | | M0 |
 | TASK-002 | core/types.ts 전체 타입 확정 | MS-002 | INT-001 | 없음 | AI | Planned | 2026-08-13 | `interface_contract.md` 기준으로 types.ts 작성 (+ NewProjectTarget·createProject 계약) | TASK-001 | | M1. 단일 정의 지점 |
-| TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | INT-001 | US-003 | AI | Planned | 2026-08-13 | cargo/cmake/dotnet/python 어댑터에 chips·actions·manifestGlobs·canCreateProject 선언 (Python 리트머스) | TASK-002 | | M1. 인터페이스 확정 검증 |
+| TASK-003 | 4개 어댑터 칩 선언 스텁 | MS-002 | INT-001 | US-003 | AI | Planned | 2026-08-15 | cargo/cmake/dotnet/python 어댑터에 chips·actions·manifestGlobs·canCreateProject·optionCatalog·configCategories 선언 (Python 리트머스, ASM-002) | TASK-002 | | M1. 인터페이스 확정 검증(F21 계약 포함) |
 
 > 현재 등록 Task: TASK-001~003 (M0~M1 착수분). M2 이후 Task는 해당 Milestone 착수 시 상세화한다(경량 운영).
 

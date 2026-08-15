@@ -33,7 +33,7 @@ Milestone은 `Phase`와 다르다.
 | MS-003 | M2 CargoBridge + CargoAdapter | INT-001 | Build | Planned | 없음 | | 메타데이터/빌드 JSON 파싱·인자 조립·features·resolveExecutable + 단위테스트. **+ cargo createProjectTask** |
 | MS-004 | M3 상태바·상태 저장·감시 | INT-001 | Build | Planned | 없음 | | 칩 렌더링·QuickPick·StateStore·reconcile·ManifestWatcher |
 | MS-005 | M4 실행·디버그 | INT-001 | Build | Planned | 없음 | | TaskRunner·problem matcher·디버그 플로우·키바인딩 |
-| MS-006 | M5 설정 패널 | INT-001 | Build | Planned | 없음 | | Webview·runArgs 편집·Cargo.toml 국소편집·export/import |
+| MS-006 | M5 설정 페이지 | INT-001 | Build | Planned | 없음 | | Webview **페이지**(F21·ADR-012)·호출 구성 오버레이(ADR-011)·옵션 카탈로그·export/import. **Cargo.toml 국소편집은 v2 이월** |
 | MS-007 | M6 품질·배포 | INT-001 | Build | Planned | 없음 | | Doctor·WSL 스모크·통합테스트·README·VSIX |
 | MS-008 | 시작 마법사 (F20) | INT-001 | Build | Planned | 없음 | | newProjectWizard UI + `devSwitcher.newProject` + **4개 어댑터 createProjectTask**. 의존: MS-002·MS-005 |
 
