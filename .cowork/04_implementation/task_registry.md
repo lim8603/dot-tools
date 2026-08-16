@@ -54,8 +54,11 @@
 | TASK-019 | pre/postBuild 실행 배선 + buildEvent 편집 | MS-007 | INT-001 | US-010 | AI | Done | 2026-08-15 | 완료 — **F5 통과**(pre 실패→중단·post 성공 후·buildEvent 에디터·preview pre/post). taskDefinitions 등록·필드 UX 통일(placeholder 제거)·아키텍처 default 복귀. main 병합(FF, d88a493). **C-5 해소** | 없음 | `tasks/TASK-019.md` | M6. C-5 |
 | TASK-020 | 통합 테스트 하네스 + 수동 체크리스트 | MS-007 | INT-001 | 없음 | AI | Done | 2026-08-15 | 완료 — `@vscode/test-electron` 하네스(3 passing: 활성화·10커맨드·설정오픈) + §15.2 13항목 체크리스트(7 Pass·2 Partial·4 Not Run) + test_strategy/verification_evidence. main 병합(FF, e3e0a41). **부가 v1 UX**: 상태바 compact 토글·selectedOnly 설정·General 탭 토글(isBlank) | TASK-016~019 | `tasks/TASK-020.md` | M6. F18 흡수 |
 | TASK-021 | README + VSIX 패키징 | MS-007 | INT-001 | 없음 | AI | Done | 2026-08-16 | 완료 — README.md(소개·지원범위·요구사항·설치·상태바 칩표·명령·설정페이지·settings·한계) + package.json(version 0.1.0·publisher `lim8603`·repository/keywords) + `.vscodeignore`·LICENSE(MIT)·CHANGELOG v0.1.0 + 상태바 목업 2종(실 codicon PNG) + `vsce package`→`devswitcher-tools-0.1.0.vsix`(9파일 34.68KB) + 격리 프로필 설치 스모크 통과. **MS-007 Done → v0.1** | TASK-016~020 | `tasks/TASK-021.md` | M6. 배포 산출물 |
+| TASK-022 | 마법사 코어 + Cargo createProjectTask | MS-008 | INT-001 | US-011 | AI | Review | 2026-08-16 | **코드 완료·F5 대기** — `core/projectName.ts`(순수·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`)+registry `adapter()`/`creatableAdapters()`+`orchestrator.newProject()`(생성→refresh→자동 활성전환 OQ-001, 실패 시 Run Doctor)+command/taskDefinition 등록. check-types·lint·**unit 96**·esbuild OK. F5: New Project→Rust→이름→생성·자동전환 | 없음 | `tasks/TASK-022.md` | F20 |
+| TASK-023 | 3개 어댑터 createProjectTask (dotnet/cmake/python) | MS-008 | INT-001 | US-011 | AI | Planned | 2026-08-16 | Dotnet(`dotnet new console`)·CMake(CMakeLists.txt+main.cpp)·Python(pyproject.toml) createProjectTask — cmake/python은 **ShellExecution 파일작성**(D-13). 네이티브 도구 부재→Doctor(F19) 연결 | TASK-022 | `tasks/TASK-023.md` | F20. 전 언어 실동작 |
+| TASK-024 | F20 통합 테스트 + 검증 반영 | MS-008 | INT-001 | 없음 | AI | Planned | 2026-08-16 | 4언어 통합 테스트 + §15.2 체크리스트 갱신 + verification_evidence 반영 + CHANGELOG(v0.2) | TASK-022·023 | `tasks/TASK-024.md` | F20 마감 |
 
-> 현재 등록 Task: TASK-001~021. **TASK-001~021 전부 Done — MS-001~007 완료.** 다음: MS-008(F20 마법사) 착수 시 Task 분해.
+> 현재 등록 Task: TASK-001~024. **TASK-001~021 Done(MS-001~007, v0.1.0).** **MS-008(TASK-022~024) Planned — 022→023→024 순, 022부터 착수.**
 
 - `담당`: `Human` / `AI` / `Role-*` / `(Role-* 인수자)`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done`

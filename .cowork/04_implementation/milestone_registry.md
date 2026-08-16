@@ -35,7 +35,7 @@ Milestone은 `Phase`와 다르다.
 | MS-005 | M4 실행·디버그 | INT-001 | Build | Done | TASK-010, TASK-011 | | TaskRunner·problem matcher·디버그 플로우·키바인딩. TASK-010·011 Done. **F5 검증 통과**(Build/Run + Debug 중단점), main 병합(FF, 2026-08-15). Rust 빌드·실행·디버그 실사용 가능. F19·Doctor 이월 |
 | MS-006 | M5 설정 페이지 | INT-001 | Build | Done | TASK-012, TASK-013, TASK-014, TASK-015 | 2026-08-15 | 코어(012 주입·013 Webview 셸·014 호출구성 탭) + **015 export/import(F12)** 모두 **F5 통과·main 병합**. pre/postBuild 실행은 C-5로 MS-007 이월. **Cargo.toml 국소편집은 v2 이월** |
 | MS-007 | M6 품질·배포 | INT-001 | Build | Done | TASK-016~021 | 2026-08-16 | 016 Doctor 모델·017 Doctor UI+E1칩·018 rustup target·019 pre/postBuild(C-5)·020 통합테스트+체크리스트(F18)·021 README+VSIX 전부 Done·병합. **v0.1.0 vsix 산출**(`devswitcher-tools-0.1.0.vsix`). Gate 5 = README·VSIX 해소, 잔여 수동검증(TC-11 WSL·TC-09·TC-02/03)은 문서화된 잔여 리스크로 v0.1 확정 |
-| MS-008 | 시작 마법사 (F20) | INT-001 | Build | Planned | 없음 | | newProjectWizard UI + `devSwitcher.newProject` + **4개 어댑터 createProjectTask**. 의존: MS-002·MS-005 |
+| MS-008 | 시작 마법사 (F20) | INT-001 | Build | In Progress | TASK-022~024 | 2026-08-16 | Task 분해(2026-08-16): 022 마법사 코어+Cargo·023 dotnet/cmake/python·024 통합테스트. OQ-001=자동 활성전환, CMake/Python=ShellExecution 파일작성(D-13). 022부터 착수. 의존 MS-002·MS-005 충족 |
 
 > 현재 등록 Milestone: MS-001~MS-008 (상세설계서 §16 로드맵 M0~M6 + F20 마법사)
 

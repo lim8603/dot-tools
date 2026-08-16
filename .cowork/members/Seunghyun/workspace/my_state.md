@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-007 Done (v0.1.0 릴리즈)** — 다음 활성 후보 MS-008(F20 마법사) |
+| 활성 Milestone | **MS-008 (F20 시작 마법사) In Progress** — TASK-022 코드완료·F5 대기 |
 | 마지막 갱신일 | 2026-08-16 |
 | 참조 세션 로그 | session_2026-08-16_006.md |
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| 없음 | (MS-008 F20 마법사 착수 시 분해) | MS-008 | - | - | 없음 |
+| TASK-022 | 마법사 코어 + Cargo createProjectTask | MS-008 | Review | 코드완료 | F5 대기 |
 
-> **TASK-001~021 전부 Done — MS-001~007 완료·main 병합. v0.1.0 vsix 산출.** 다음 활성 후보 = MS-008(F20 시작 마법사). 상세: `tasks/TASK-016~021.md`.
+> **TASK-001~021 Done(MS-001~007·v0.1.0).** MS-008: 022 코드완료·**F5 대기**(New Project→Rust→cargo new→자동전환), 023(dotnet/cmake/python)·024(통합) 남음. 상세: `tasks/TASK-022~024.md`.
 
 ---
 
