@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-030 | PythonBridge + listProjects + chips | MS-011 | In Progress | 착수 | 없음 |
+| TASK-031 | Python 실행 + PYTHONPATH env 주입 | MS-011 | Planned | 다음 재개점 | 없음 |
 
-> **TASK-001~029 Done. MS-010 C# F5 통과·main FF 병합.** C# 스위처·build/run·coreclr 디버그·Doctor 실동작(RID 경로 fix). 세션 #007: 로드맵(MS-009~013)+C-3 폐기+MS-009+MS-010 완주. 다음: **MS-011 Python(리트머스)** TASK-030부터.
+> **TASK-001~029 Done. MS-010 C# 병합. MS-011 진행: TASK-030(감지+칩) Review·커밋**(실 python 3.12 스모크 통과). 다음 세션: `feature/ms-011-python-adapter`에서 **TASK-031**(실행)부터 → TASK-032(debugpy·리트머스) → MS-011 F5.
 
 ---
 
@@ -36,13 +36,14 @@
 | #004 | 2026-08-15 | **MS-003·004·005 완료·병합 + MS-006 코어 F5 통과(미병합)**. TASK-005~014: CargoBridge I/O·CargoAdapter·상태바/저장/감시·실행/디버그·**설정 페이지(옵션 편집·명령 미리보기·오버레이 주입)**. mocha 61. CLAUDE/AGENTS 컨텍스트·ui_spec 작성 | MS-003~006 | TASK-005~014 | MS-006 병합만 남음 |
 | #005 | 2026-08-15 | **MS-006 코어 병합 + TASK-015(export/import F12) 완료 → MS-006 Done.** C-4 확정(ProfileExport=PersistedState 정렬). 파생: 옵션 example bare화+injectsAs/docUrl·preview env 표시. F5 라운드트립 통과. mocha 73 | MS-006 | TASK-015 | **MS-001~006 전부 완료·병합** |
 | #006 | 2026-08-16 | **대형 세션 — v0.1.0 릴리즈 + MS-008(F20 마법사) 완주 + 수동검증 + v0.2.0 릴리즈.** ① TASK-021→MS-007 Done→v0.1.0(publisher lim8603·codicon PNG 목업·vsce·설치스모크) ② MS-008 TASK-022~024(마법사 4언어 생성, 계약 `createProject: task\|files`, workspace.fs D-13)→Done ③ 수동검증 TC-02/03/09 Pass·TC-11 Deferred ④ 검증 중 버그 2건 수정(features 칩 e7b462b·untrusted 무한스피너 eb8983a) ⑤ **v0.2.0 릴리즈**(main push). unit 99+통합 3 | MS-007·008 | TASK-021~024 | **MS-001~008 전부 완료·v0.2.0** |
+| #007 | 2026-08-16 | **초대형 세션 — INT-001 완주 로드맵 착수.** ① 로드맵 확정(MS-009~013)+**C-3 폐기**(D-15/ADR-013) ② **MS-009**(L-1 자유 rustflags·persistSetting 계약 제거)→Done·병합 ③ **MS-010 C#**(TASK-027~029: `msbuild -getProperty` 감지·`-p:` 주입·coreclr 디버그·Doctor, **디버그 RID 경로 fix**)→Done·병합·F5 ④ **MS-011 Python** TASK-030(감지+environment/target 칩)Review ⑤ KB #8 승격. unit 128, cargo/dotnet10/py3.12 스모크 | MS-009·010·011 | TASK-025~030 | **MS-009·010 완료·병합 / MS-011 진행(TASK-031부터)** |
 
 ---
 
 ## 다음 시작점
 
-1. **MS-011 Python 착수**(C-7 2/3, 리트머스) — TASK-030 PythonBridge(인터프리터/venv 탐지·pyproject.toml)+environment/target 칩. `actions.build=false` UX 검증.
-2. 이어서 MS-012 CMake. 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).
+1. **TASK-031**(Python 실행) — `python <script> [args]` + PYTHONPATH env 주입 + resolveExecutable=스크립트 경로. `feature/ms-011-python-adapter`에서 이어감. environment 미선택 시 `python` 폴백.
+2. 이어서 TASK-032(debugpy+진단·리트머스 검증) → MS-011 F5 → Done → MS-012 CMake(TASK-034 resolveExecutable=KB #8).
 3. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---

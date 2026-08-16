@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
-| 활성 Milestone | MS-011 Python 어댑터 실구현 (리트머스, 착수 예정 — MS-010 F5 통과·main FF 병합 완료) |
-| 활성 Task | TASK-030 PythonBridge + listProjects + chips (착수) |
+| 활성 Milestone | MS-011 Python 어댑터 실구현 (리트머스, 진행 중 — MS-010 병합 완료) |
+| 활성 Task | TASK-030 Review(감지+칩, 실 python 스모크 통과) → 다음 TASK-031(실행+PYTHONPATH) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-030 | PythonBridge + listProjects + chips | AI | In Progress | 2026-08-16 | MS-011 착수 — 인터프리터/venv 탐지·pyproject.toml 스캔·environment/target 칩. Python 리트머스(actions.build=false) |
+| TASK-031 | Python 실행 + PYTHONPATH env 주입 | AI | Planned | 2026-08-16 | 다음 재개점 — `python <script> [args]` Task 조립 + env(PYTHONPATH 등) 주입 + resolveExecutable=스크립트 경로. environment 미선택 시 `python` 폴백 |
 
-> **TASK-001~029 Done. MS-010(C#) F5 통과·main FF 병합.** C# 프로젝트 스위처 등장·build/run/coreclr 디버그·Doctor 실동작(디버그 RID 경로 fix 포함). 다음: **MS-011 Python(C-7 2/3)** = TASK-030~032 → MS-012 CMake → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
+> **TASK-001~029 Done. MS-010(C#) F5 통과·병합. MS-011 진행: TASK-030(감지+칩) Review·커밋.** 다음: **TASK-031**(Python 실행) → TASK-032(debugpy+진단·리트머스) → MS-011 F5 → MS-012 CMake → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-011 Python 착수**(C-7 2/3, 리트머스) — TASK-030 PythonBridge(인터프리터/venv 탐지·pyproject.toml 스캔)+environment/target 칩. `actions.build=false` UX 검증 핵심.
-2. 이어서 MS-012 CMake. **C-7 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).**
+1. **TASK-031**(Python 실행) — `python <script> [args]` + PYTHONPATH env 주입 + resolveExecutable=스크립트 경로. `feature/ms-011-python-adapter` 브랜치에서 이어감. environment 미선택 시 `python` 폴백.
+2. 이어서 TASK-032(debugpy+진단·리트머스 검증) → MS-011 F5 → Done → MS-012 CMake(TASK-034 resolveExecutable=KB #8 원칙).
 3. **C-6**: MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
