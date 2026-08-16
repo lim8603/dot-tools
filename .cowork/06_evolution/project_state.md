@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
-| 활성 Milestone | 없음 (MS-009 Done) — 다음 MS-010 C#(C-7) 착수 지시 대기 |
-| 활성 Task | 없음 (TASK-025·026 Done) — 다음 TASK-027(DotnetBridge) |
+| 활성 Milestone | MS-010 C# (Dotnet) 어댑터 실구현 (In Progress — 착수·도구검증 완료, MS-009 main FF 병합) |
+| 활성 Task | TASK-027 Review(코드완료·F5 대기, 실 dotnet 스모크 통과) → 다음 TASK-028(build/run/resolveExecutable) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
