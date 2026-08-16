@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
-| 활성 Milestone | MS-011 Python 어댑터 실구현 (리트머스, 진행 중 — MS-010 병합 완료) |
-| 활성 Task | MS-011 F5 대기 — TASK-030·031·032 전부 Review(감지·실행·디버그·진단 코드 완료) |
+| 활성 Milestone | MS-012 C++(CMake) 어댑터 실구현 (진행 중 — MS-011 main 병합 완료) |
+| 활성 Task | TASK-033 (ADR-014 채택·Doctor 슬라이스 완료) — listProjects+chips 남음 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,13 +42,13 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **MS-001~008 Done · v0.2.0 릴리즈 완료.** 이후 **INT-001 완주 로드맵(MS-009~013) 착수** — Intent 이름이 "다언어"인데 스위치·빌드·실행·디버그 실동작이 Rust뿐이므로 C-7(다언어 어댑터 실구현)+C-6(Run Group)까지 완료해야 INT-001 완료로 판단. **C-3(캐노니컬 파일 편집)은 폐기**(D-15 — "파일 무편집" 영구 불변식). **현재: MS-009/TASK-025(L-1 자유 플래그) 구현 착수.**
+- **MS-001~011 Done** (MS-009·010·011 main FF 병합·origin push 완료). INT-001 완주 로드맵 = C-7(다언어 실구현)+C-6(Run Group). **현재: MS-012 CMake(C-7 3/3) 진행** — ADR-014(자체 `cmake` CLI 구동) 채택, TASK-033 Doctor 슬라이스 완료(cmake 미설치→Doctor ❌+E1 실검증 통과). **C-3 폐기**(D-15).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- **완료**: MS-009(정리) Done — L-1 자유 플래그(TASK-025, F5 통과) + persistSetting 계약 제거(TASK-026).
-- **다음**: C-7 언어별 3 MS(**MS-010 C#** → MS-011 Python → MS-012 CMake) → C-6 Run Group(MS-013). 릴리즈는 언어별 증분(v1.1→1.2→1.3→2.0). MS-010 착수 = TASK-027 DotnetBridge부터.
+- **완료**: MS-010 C#·MS-011 Python 실구현·main 병합·push. MS-011 F5(Doctor 제외) 통과. 설정 웹뷰 a11y 수정(`ff2ee13`).
+- **다음**: MS-012 CMake(C-7 3/3) — ADR-014 자체 cmake CLI. TASK-033 계속(listProjects+chips+File API) → 034(configure/build 주입+resolveExecutable) → 035(디버그+통합). 이후 C-6 Run Group(MS-013).
 
 ---
 
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| (MS-011 F5) | Python 어댑터 end-to-end 수동 검증 | Human | 부분 통과 | 2026-08-16 | **통과**: 감지·리트머스(빌드버튼 미표시·configCategories 축소)·env/target 칩·Run(PYTHONPATH)·debugpy 중단점. **잔여**: Doctor(Python 인터프리터/Python 확장) + 재-F5 [A] Environment dedup(`python` 하나) [B] New Project 폴더 선택창 [C] Rescan Projects 명령 → 통과 시 MS-011 Done → v1.2 → TASK-031·032 커밋(지시 시) → MS-012 CMake |
+| TASK-033 | CMakeBridge + listProjects + chips | AI | In Progress | 2026-08-16 | **재개점** — Doctor 슬라이스(cmakeBridge.checkToolchain·collectDiagnostics) 완료. **남음**: `listProjects`(`**/CMakeLists.txt`, 이름=`project()`/폴더명) + chips(profile=CMAKE_BUILD_TYPE 정적 Debug/Release/RelWithDebInfo/MinSizeRel · target=**CMake File API** codemodel-v2). cmake 4.4.2+VS18(2026) 설치됨 → 실 configure/File API 스모크 가능(제 셸은 full-path 호출). 브랜치 `feature/ms-012-cmake-adapter` |
 
-> **TASK-001~032 Done/Review. MS-010(C#) 병합. MS-011 코드 완료(TASK-030·031·032 Review) — F5 게이트 대기.** 다음: **MS-011 F5** → Done → MS-012 CMake(033~035) → MS-013 Run Group(036~040). C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
+> **TASK-001~032 Done. MS-010·011 병합·push. MS-012 진행: TASK-033 Doctor 슬라이스 완료(커밋).** 다음: TASK-033 계속(listProjects+chips) → 034(configure/build+resolveExecutable) → 035(디버그+통합) → MS-012 F5 → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-011 재-F5**(Human 게이트) — 잔여: **Doctor**(Python 인터프리터/Python 확장) + **[A] Environment 칩 dedup**(`python` 하나만) + **[B] New Project 폴더 선택창**(하위 폴더 생성) + **[C] Rescan Projects 명령**(폴더 이동 후 경로 갱신). (감지·리트머스·칩·Run·debugpy는 통과). 통과 시 MS-011 Done → v1.2.
-2. F5 통과 후 TASK-030·031·032 커밋(feat+docs, 지시 시) → **MS-012 CMake**(TASK-033 착수 시 CMake Tools 연동 ADR·TASK-034 resolveExecutable=KB #8 원칙).
+1. **⚠️ 새 세션 첫 확인 — cmake ✅ 재검증**: cmake 4.4.2 설치됐으나 이전 F5의 VS Code는 설치 전 PATH를 물어 Doctor가 cmake ❌ 캐시. **VS Code 완전 재시작**(단순 Reload 아님) 후 F5 → Doctor에 **cmake 4.4.2 ✅** + E1 칩 사라짐 확인. (세션 내 값 캐시면 `DevSwitcher: Rescan Projects`로 재프로브 — 단 PATH는 프로세스 재시작으로만 갱신.)
+2. **TASK-033 계속**(MS-012, 브랜치 `feature/ms-012-cmake-adapter`) — `listProjects`(`**/CMakeLists.txt`) + chips(profile=CMAKE_BUILD_TYPE 정적·target=CMake File API codemodel). 실 cmake로 configure→File API reply JSON 구조 확인하며 구현. → TASK-034(configure/build `-D` 주입+resolveExecutable) → TASK-035(디버그+디버거 확장 확정+통합).
 3. **C-6**: MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
@@ -110,16 +110,7 @@
 
 - DevSwitcher Tools = 다언어(Rust·C++·C#·Python) 통합 상태바 UX VSCode 확장. 핵심 설계는 `LanguageAdapter` + `ChipDescriptor[]`(ADR-003), SSOT 파사드(ADR-007), workspaceState 저장(ADR-001), Task API 실행(ADR-002), cargo가 실행 경로 해석(ADR-005).
 - 상세설계서 §16 로드맵 M0~M6이 사실상의 Milestone 후보. v1 실구현 대상은 CargoAdapter(Rust) 단독.
-- **세션 #002 신규(ADR-011·012)**: 설정은 3계층(①확장설정 ②캐노니컬 정의 ③호출 구성 오버레이). VS2026식 속성은 계층 ③으로 흡수 — 파일 무편집, `(프로젝트×구성)`별 저장, 빌드/실행 시 `--config`/env 주입. 설정 UI = WebviewPanel "설정 페이지" + 어댑터 선언 옵션 카탈로그. **언어별 능력은 `interface_contract.md` §8 매트릭스가 SSOT.** 캐노니컬 파일 편집은 v2. 구현은 MS-006(M5)에서.
-- **세션 #003**: MS-001·002 완료·main 병합(스캐폴드·types.ts·4개 어댑터 스텁, tsc 인터페이스 확정). OQ-002 확정 = `config` 별도 인자. 상세설계서 v1.2 최신화 후 `06_evolution/imported_context/`(영문명 Detailed/Concept-Design)로 이동 — 운영 SSOT는 .cowork, 상세설계서는 **회사 툴 재사용용 통합 스냅샷**. cargo 구현 기준 = 상세설계서 §8.
-- **세션 #004**: **TASK-005(cargo CLI I/O) 완료(Review)** — `cargoBridge.ts`에 I/O 계층 추가: `execCapture`+`defaultExec`(child_process.execFile, **셸無** NFR-002, DI로 테스트 가능) + `CargoBridge` 클래스(`fetchMetadata`+manifestPath 캐시·`listInstalledTargets`·`checkToolchain`·`invalidateCache`). 캐시는 시간만료 없음(watcher/명시적만, §8.1). **핵심 결정**: `DevSwitcherError`를 `core/errors.ts`(vscode-free)로 분리 → 브리지가 값으로 throw해도 mocha에서 `vscode` require 안 됨. `types.ts`는 재-export로 하위호환. mocha 14 신규(총 33)·tsc/eslint/esbuild OK·**실 cargo 1.96 스모크**(checkToolchain·metadata·targets·E2=CARGO_METADATA_FAILED).
-- **세션 #004 (계속)**: **TASK-006(CargoAdapter 실구현) 완료(Review)** — `cargoAdapter.ts` 런타임 스텁을 실구현으로 교체(vscode-aware 얇은 배선). 모듈 싱글턴 `CargoBridge` 보유, `ProjectInfo→manifestPath/cwd` 변환 담당. listProjects(최단경로 우선·member 중복제거·`id=cargo:${상대경로}`)·chips 4종·createBuild/RunTask(`ProcessExecution`, 셸無, `config.env`+`CARGO_TARGET_DIR`)·resolveExecutable(build `--message-format=json`+`pickExecutable`, E6=`EXECUTABLE_NOT_FOUND`)·invalidateCache 위임. `CargoBridge.peekMetadata` 추가(동기 hasDefault 판정). **의도 이월**: createDebugConfig→M4, createProjectTask→MS-008, persistSetting→v2. problemMatcher/커스텀 profile/F19/compiler·linker 오버레이도 후속. **MS-003 3개 Task 모두 Review**. 34 테스트·tsc/eslint/esbuild OK.
-- **세션 #004 (계속)**: **MS-003 main FF 병합**(d249de2, 브랜치 삭제). **MS-004(M3) 코드 완료** — 3분할 구현: TASK-007 데이터(AdapterRegistry 스캔·매칭 + StateStore workspaceState·reconcile, 순수코어 `stateReconcile.ts` mocha 8)·TASK-008 UI(StatusBarController 칩/버튼 렌더 어댑터무지 + picks QuickPick + `defaultChipFormat` mocha 2)·TASK-009 배선(Orchestrator pickChip/switchProject·applyDefaults·ManifestWatcher 500ms 디바운스·extension.ts activate·package.json 5커맨드+activationEvents·cargo 픽스처 `src/test/fixtures/cargo/hello`). mocha 44. 액션버튼 렌더만(실행=MS-005), 툴체인경고칩(E1)=MS-007, 30일GC/export=후속. **F5 end-to-end 검증 통과**. **MS-004 Done → main FF 병합.** CLAUDE.md·AGENTS.md 프로젝트 컨텍스트 작성.
-- **세션 #004 (계속)**: **MS-005(M4 실행·디버그) 코드 완료 — F5 검증 대기.** 2분할: TASK-010 실행(`core/taskRunner.ts` executeTask+onDidEndTaskProcess 종료코드·프로젝트별 동시실행 거부 E9 · orchestrator.build()/run() = required 칩 검증 E4→Task 실행→실패 시 Problems 포커스 토스트 · 상태바 spin · `$devswitcher-rustc` 자체 problemMatcher(package.json, Rust 확장 없이 resolve) · ctrl+alt+b/r/d 키바인딩)·TASK-011 디버그(`cargoAdapter.createDebugConfig`=resolveExecutable+순수 `buildLldbConfig` · `core/ensureExtension.ts` CodeLLDB 온디맨드 설치 §13.3 · orchestrator.debug() §7.4 전체 플로우 · launch.json "Run Extension (with extensions)" 구성 추가). mocha 46(buildLldbConfig 2 신규). **F5 검증 통과**(Build/Run + Debug 중단점 정지). `ensureExtension` 온디맨드 설치 루프 fix(39af4ac). **MS-005 Done·main FF 병합.**
-- **세션 #004 (계속)**: **MS-006 코어(설정 페이지) 구현·F5 검증 통과 — 미병합 `feature/ms-006-settings-page`.** 3분할: TASK-012(오버레이 주입 — `buildConfigArgs`/`tomlScalar`/`buildRustflags`/`parseArgsLine`, cargoAdapter가 compiler→`--config profile.<p>.<id>`·linker→RUSTFLAGS·env/outputDir 주입, execCapture에 env 추가로 resolveExecutable 동일 아티팩트)·TASK-013(`ui/settingsPanel/` WebviewPanel CSP·단방향 state·프로젝트/Features/프로파일RO 탭·`openSettings`+상태바 기어)·TASK-014(옵션 카탈로그 에디터·`core/invocationConfig.ts applyOption`(compiler/linker record·outputDir·env[label])·`core/argsLine.ts`(parseArgsLine 이동)·build/run 명령 미리보기(Task의 ProcessExecution 역읽기)). mocha 61. F5 피드백 반영: 명령 미리보기 2줄(runArgs 표시)·**자동갱신**(orchestrator `viewSync`→settingsPanel.refresh, Refresh 버튼 제거)·키바인딩 제거(충돌)·enum 기본값 튐 수정(실효값 표시)·입력창 넓힘/라벨 위 배치·**launch 기본을 확장 포함으로**(clean은 별도 구성). ui_spec.md 작성(C-1 해소). **다음: MS-006 병합 + TASK-015(export/import).**
-- **세션 #005**: **MS-006 코어 main FF 병합 완료**(335f982, `feature/ms-006-settings-page` 삭제). 병합 전 게이트 재확인 — check-types/eslint clean·mocha 61·esbuild 41.4kb OK. B-1 해소.
-- **세션 #005 (계속)**: **TASK-015(export/import F12) 완료 — F5 통과·main FF 병합(b7864cf), MS-006 Done.** `core/profileExport.ts`(vscode-free: build/parse(검증→`PROFILE_IMPORT_INVALID`)/merge(스캔 존재분만 반영·skip)) + `ProfileExport`(C-4: PersistedState 정렬, activeProjectId 제외) + StateStore getState/importState + orchestrator export/importProfile(save/open 다이얼로그+`workspace.fs`, import 후 refresh reconcile) + 커맨드 2종. **파생 개선(설정 페이지 UX)**: 옵션 `example`을 주입형태→**bare 값(placeholder)**로 교정하고 `injectsAs`(주입 힌트)·`docUrl`(공식문서 링크) 분리 — 사용자가 예제를 복붙해 이중 접두사 되던 문제 해결. Command preview에 **env 주입 표시**(`VAR=val` 접두사) 추가로 RUSTFLAGS/CARGO_TARGET_DIR/RUST_LOG 검증 가능. F5: export→값변경→import 라운드트립 복원 + preview env 정상 + docs 링크 정상 확인. mocha 73. **다음: MS-007(품질·배포) 착수 — Task 분해부터.**
-- **세션 #005 (계속) — MS-007 016~020 완료·병합**: TASK-016·017(Doctor — `core/diagnostics.ts` 순수판정 + `LanguageAdapter.collectDiagnostics` + QuickPick + **E1 툴체인 경고칩** + 디버그취소 Run Doctor)·TASK-018(rustup target 자동설치 — `listAllTargets`/`parseTargetList`/`addTarget` + `ChipDescriptor.onPick` 훅 + **미설치 target 토글 접기**(`secondary`/`secondaryToggle`))·TASK-019(pre/postBuild 실행 — `core/buildEvents.ts` ShellExecution Task, NFR-002a 셸예외, pre 실패→중단 + buildEvent 에디터, **C-5 해소**)·TASK-020(`@vscode/test-electron` 통합 하네스 3 passing + §15.2 체크리스트 + 05_verification 3종). **부가 v1 UX**: 상태바 `compact`(아이콘만)·`selectedOnly`(값 없는 optional 칩 숨김, `isBlank`로 features 'default'도) 설정 + 설정페이지 General 탭 토글. **버그 fix**: 설정페이지 백지(템플릿 리터럴 `\n`→`\\n`)·**taskDefinitions 등록**(작업형식 경고 제거)·옵션/RunArgs 필드 UX 통일(placeholder 제거·2줄). 아키텍처 미선택=`default`(`unsetText`)·`Host default` 복귀(`clearValueId`). mocha 92 + 통합 3. **ChipDescriptor 확장**: onPick·secondary·secondaryToggle·unsetText·clearValueId·isBlank.
+- **세션 #002~#005 완료 서사**: [state_archive.md](state_archive.md) `#002~#005 이관분` 참조 (R1 다이어트, 세션 #008 마무리 이관). 요지: ADR-011·012(오버레이·설정페이지) → MS-001~006(스캐폴드·types·CargoBridge/Adapter·상태바/저장/감시·실행/디버그·설정페이지+export/import) → MS-007(Doctor·E1칩·rustup·pre/postBuild·통합테스트) 전부 Done·병합.
 - **세션 #006 — TASK-021 완료·MS-007 Done·v0.1.0 릴리즈**: README.md(한국어: 소개·지원범위·요구사항·설치·상태바 칩표·명령·설정페이지·settings·한계) + package.json(version 0.1.0·publisher `lim8603`·repository `github.com/lim8603/dot-tools`·keywords) + `.vscodeignore`(dist+README+LICENSE+CHANGELOG+images/png만; 소스맵·CLAUDE/AGENTS·.claude·profile.json·workspace 제외) + LICENSE(MIT) + CHANGELOG(v0.1.0). **상태바 목업 2종**: 처음 손그림 SVG→PNG했으나 아이콘이 실물과 달라, **실제 VSCode codicon 폰트(simple-browser/media/codicon.css 내장 base64)로 HTML 렌더 후 Edge headless 스크린샷** → 실 codicon PNG(`images/status-bar.png`·`status-bar-compact.png`), 2x+LCD off로 색번짐 제거. `vsce package`→`devswitcher-tools-0.1.0.vsix`(9파일 34.68KB), 격리 프로필 설치 스모크 통과(`lim8603.devswitcher-tools@0.1.0`). Gate 5 조건부 Pass(D-12). 잔여 수동검증(TC-11 WSL 등)은 지시 시.
 - **세션 #006 (계속) — v0.1.0 병합·push + MS-008 착수(TASK-022 코드완료·F5 대기)**: `feature/task-021-readme-vsix`→main FF 병합·`git push`(GitHub v0.1.0 반영). MS-008 분해(TASK-022~024, D-13). **TASK-022 구현**: `core/projectName.ts`(순수 검증·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`types.ts NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`, ProcessExecution 셸無)+`adapterRegistry.adapter()/creatableAdapters()`+`orchestrator.newProject()`(마법사→createProjectTask→TaskRunner(synthetic lock)→성공 시 refresh+findCreatedProject→setActiveProject+renderActive 자동전환 OQ-001; 실패 시 Run Doctor; 스텁 throw catch)+`extension.ts`/`package.json`(newProject 커맨드·devswitcher-newproject taskDef). check-types·lint·**unit 96**·esbuild OK. TASK-022 F5 통과·커밋(ab58c15/6999f34).
 - **세션 #006 (계속) — TASK-023 코드완료·F5 대기**: 계약 일반화 `createProjectTask→createProject(target): {kind:'task'}|{kind:'files'}`(types.ts `ProjectFile`/`ProjectCreation`). cargo/dotnet=네이티브 new(task, `dotnet new console -o`), **cmake/python=확장이 `workspace.fs`로 템플릿 작성(files)** — D-13을 ShellExecution→workspace.fs로 개정(셸 종류 미제어·C++ `<>` 충돌 발견). `cmakeTemplate.ts`/`pythonTemplate.ts`(순수·mocha2) + orchestrator `newProject` kind 분기 + `writeProjectFiles`(createDirectory+writeFile). interface_contract §5 갱신. **scope A**: v1 스위처 자동등장=Rust만(나머지 3개 listProjects v2 스텁). check-types·lint·**unit 98**·esbuild OK. TASK-023 F5 통과(4언어 생성·내용 검증)·커밋(2684ee7/467f8f3).
@@ -173,6 +164,7 @@
 | D-12 | v0.1.0 릴리즈 확정 — publisher=`lim8603`, `devswitcher-tools-0.1.0.vsix` 산출·설치 스모크 통과로 MS-007 Done. Gate 5 조건부 Pass(잔여 수동검증 TC-11 WSL 등은 문서화된 리스크로 수용) | `verification_evidence.md`, TASK-021 | 2026-08-16 |
 | D-13 | MS-008 — OQ-001=자동 활성전환(생성 후 새 프로젝트 활성화). 계약 일반화 `createProject(target): {kind:'task'} \| {kind:'files'}`. cargo/dotnet=네이티브 new(task). **CMake/Python=확장이 `workspace.fs`로 템플릿 작성(files)** — 최초 "ShellExecution" 안에서 **셸 종류 미제어·C++ `<>` 리다이렉션 충돌** 발견해 workspace.fs로 개정(구현 중 우려 1회). ADR-010은 "네이티브 있으면 위임, 없으면 확장 작성"으로 해석. **v1 스위처 자동등장=Rust만**(scope A) | `interface_contract.md §5`, TASK-023 | 2026-08-16 |
 | D-14 | v0.2.0 릴리즈 — F20 마법사 + 수동검증 중 발견한 버그 2건 수정(features 칩 토글/카운트/none 보존, untrusted 워크스페이스 무한스피너) 포함. `devswitcher-tools-0.2.0.vsix` 산출·설치 스모크 통과. version 0.1.0→0.2.0, CHANGELOG [Unreleased]→[0.2.0], README 마법사 반영 | `CHANGELOG.md`, `package.json` | 2026-08-16 |
+| D-16 | **MS-012 CMake = 자체 `cmake` CLI 구동** (CMake Tools 확장 미위임). configure/build 2단계 `-D`/`--config` 호출시 주입, 타깃·실행경로=CMake File API(codemodel-v2), 디버그만 디버거 확장. cargo/dotnet/python 선례·§8·ADR-013(파일 무편집)에 부합. requiredExtensions=디버거(TASK-035 확정) | `ADR-014` | 2026-08-16 |
 | D-15 | **C-3 폐기(Won't Do)** — 오버레이를 캐노니컬 파일에 영구 편집/승격하는 기능을 v2 백로그에서 제거. 근거: ①ADR-011 근간이 "파일 무편집" ②영속화·공유는 프로파일 export/import(F12)가 이미 해결 ③TOML 손상·머지충돌 리스크. 후속: `LanguageAdapter.persistSetting` 계약 제거(TASK-026). "파일 무편집 = 영구 불변식"을 ADR-013으로 기록. **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정, 완주 로드맵 MS-009~013 착수 | `ADR-013`, `milestone_registry.md` | 2026-08-16 |
 
 ---
@@ -238,8 +230,8 @@
 | Milestone | MS-008 | F20 시작 마법사 | Done | 4개 언어 생성 F5 통과(2026-08-16). 스위처 자동등장=Rust(scope A) |
 | Milestone | MS-009 | v1.1 정리 (자유 플래그 L-1 + 계약 정리) | Done | TASK-025(L-1, F5 통과)·TASK-026(persistSetting 제거). 2026-08-16 |
 | Milestone | MS-010 | C# (Dotnet) 어댑터 실구현 | Done | F5 통과(build/run/coreclr 디버그·Doctor). main FF 병합. C-7 1/3 |
-| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | In Progress | C-7 2/3. TASK-030~032 착수 |
-| Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | Planned | C-7 3/3. TASK-033~035. 연동 방식 착수 시 ADR |
+| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | Done | C-7 2/3. F5(Doctr 제외) 통과·main 병합·push. v1.2 |
+| Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | In Progress | C-7 3/3. ADR-014(자체 cmake CLI). TASK-033 Doctor 슬라이스 완료 |
 | Milestone | MS-013 | Run Group (C-6) | Planned | v2.0. TASK-036~040. C-7 이후 |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
 | Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Done | F20 마법사 + features/untrusted 수정. 9파일 37.47KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.2.0`) |

@@ -38,6 +38,7 @@
 | ADR-011 | 호출 구성 오버레이 (파일 무편집, --config/env 주입, 편집 v2 이월) | Accepted | 2026-08-15 | INT-001 | MS-006 | `adrs/ADR-011_호출_구성_오버레이.md` | 세션 #002 신규. F21·FR-014. ADR-007 보완 |
 | ADR-012 | 설정 페이지(WebviewPanel) + 선언적 옵션 카탈로그 | Accepted | 2026-08-15 | INT-001 | MS-006 | `adrs/ADR-012_설정_페이지_옵션_카탈로그.md` | 세션 #002 신규. 명칭 정정(다이얼로그→페이지). ADR-003 연장 |
 | ADR-013 | 캐노니컬 파일 무편집 = 영구 불변식 (C-3 폐기) | Accepted | 2026-08-16 | INT-001 | MS-009 | `adrs/ADR-013_캐노니컬_파일_무편집_영구_불변식.md` | 세션 #007 신규. ADR-011 v2 이월 항목 종결. `persistSetting` 계약 제거(TASK-026). D-15 |
+| ADR-014 | CMake 어댑터는 자체 `cmake` CLI 구동 (CMake Tools 미위임, File API) | Accepted | 2026-08-16 | INT-001 | MS-012 | `adrs/ADR-014_CMake_자체_CLI_구동_File_API.md` | 세션 #008 신규. cargo/dotnet/python 선례·§8 `-D`/`--config` 주입·KB #8 경로해석. requiredExtensions=디버거(TASK-035) |
 
 > ADR-001~009 = 상세설계서 §2 DD-01~09 승격(제목에 DD 번호 병기). ADR-010 = 세션 #001 신규. ADR-011·012 = 세션 #002 신규(호출 구성 오버레이·설정 페이지). ADR-013 = 세션 #007 신규(C-3 폐기·파일 무편집 불변식).
 
