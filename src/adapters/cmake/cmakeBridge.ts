@@ -94,11 +94,28 @@ export interface CMakeExeTarget {
   artifactPath?: string;
 }
 
-/** From the reply index, the codemodel reply filename (`reply["codemodel-v2"].jsonFile`). */
-export function parseReplyIndexCodemodel(indexJson: string): string | undefined {
+/** From the reply index, the reply filename for one object kind (`reply[key].jsonFile`). */
+function parseReplyIndexObject(indexJson: string, key: string): string | undefined {
   try {
     const idx = JSON.parse(indexJson) as { reply?: Record<string, { jsonFile?: string }> };
-    return idx.reply?.['codemodel-v2']?.jsonFile;
+    return idx.reply?.[key]?.jsonFile;
+  } catch {
+    return undefined;
+  }
+}
+
+/** From the reply index, the codemodel reply filename (`reply["codemodel-v2"].jsonFile`). */
+export function parseReplyIndexCodemodel(indexJson: string): string | undefined {
+  return parseReplyIndexObject(indexJson, 'codemodel-v2');
+}
+
+/** The CXX compiler id from a toolchains-v1 reply — 'MSVC' | 'GNU' | 'Clang' | … (undefined if absent). */
+export function parseCxxCompilerId(toolchainsJson: string): string | undefined {
+  try {
+    const tc = JSON.parse(toolchainsJson) as {
+      toolchains?: { language?: string; compiler?: { id?: string } }[];
+    };
+    return (tc.toolchains ?? []).find((t) => t.language === 'CXX')?.compiler?.id;
   } catch {
     return undefined;
   }
@@ -216,6 +233,54 @@ export function overlayDefines(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Debugger selection (ADR-014, TASK-035) — the debugger is bound to the compiler,
+// so it is auto-detected from the File API toolchains reply (WSL/MinGW/Linux/Mac
+// all follow whatever compiler configured), with an optional user override.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const CPPTOOLS_EXTENSION = 'ms-vscode.cpptools';
+export const CODELLDB_EXTENSION = 'vadimcn.vscode-lldb';
+
+/** User override for the CMake debugger (VS Code setting devSwitcher.cmake.debugger). */
+export type DebuggerOverride = 'auto' | 'cpptools' | 'codelldb';
+
+/** The chosen debug launch backend: VS Code debug `type`, optional MIMode, and its extension. */
+export interface DebuggerChoice {
+  type: string; // 'cppvsdbg' | 'cppdbg' | 'lldb'
+  mimode?: string; // 'gdb' | 'lldb' (cppdbg only)
+  extensionId: string;
+}
+
+/**
+ * Pick the debugger for a compiler. MSVC → cppvsdbg; GNU → cppdbg+gdb; Clang → cppdbg+lldb;
+ * unknown → platform fallback (MSVC on Windows, gdb elsewhere) — all via the C/C++ extension.
+ * The `codelldb` override forces CodeLLDB (lldb) regardless of compiler; `cpptools` keeps the
+ * C/C++ extension but still picks the type from the compiler.
+ */
+export function debuggerFor(
+  compilerId: string | undefined,
+  platform: NodeJS.Platform,
+  override: DebuggerOverride = 'auto',
+): DebuggerChoice {
+  if (override === 'codelldb') {
+    return { type: 'lldb', extensionId: CODELLDB_EXTENSION };
+  }
+  const id = (compilerId ?? '').toLowerCase();
+  if (id.includes('msvc')) {
+    return { type: 'cppvsdbg', extensionId: CPPTOOLS_EXTENSION };
+  }
+  if (id.includes('gnu')) {
+    return { type: 'cppdbg', mimode: 'gdb', extensionId: CPPTOOLS_EXTENSION };
+  }
+  if (id.includes('clang')) {
+    return { type: 'cppdbg', mimode: 'lldb', extensionId: CPPTOOLS_EXTENSION };
+  }
+  return platform === 'win32'
+    ? { type: 'cppvsdbg', extensionId: CPPTOOLS_EXTENSION }
+    : { type: 'cppdbg', mimode: 'gdb', extensionId: CPPTOOLS_EXTENSION };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // cmake CLI I/O boundary — exec-injected, vscode-free (mirrors the other bridges)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -318,6 +383,30 @@ export async function readReplyDir(replyDir: string, config?: string): Promise<C
   return targets;
 }
 
+/**
+ * Read the CXX compiler id from a File API reply directory (newest index → toolchains-v1
+ * reply). Used to auto-select the debugger (debuggerFor). Undefined when the toolchains
+ * reply is absent (no configure yet, or the query was not written). Node fs only.
+ */
+export async function detectCompilerId(replyDir: string): Promise<string | undefined> {
+  let entries: string[];
+  try {
+    entries = await readdir(replyDir);
+  } catch {
+    return undefined;
+  }
+  const indexFiles = entries.filter((f) => f.startsWith('index-') && f.endsWith('.json')).sort();
+  if (indexFiles.length === 0) {
+    return undefined;
+  }
+  const indexJson = await readFile(join(replyDir, indexFiles[indexFiles.length - 1]), 'utf8');
+  const toolchainsFile = parseReplyIndexObject(indexJson, 'toolchains-v1');
+  if (!toolchainsFile) {
+    return undefined;
+  }
+  return parseCxxCompilerId(await readFile(join(replyDir, toolchainsFile), 'utf8'));
+}
+
 /** Result of checkToolchain — version when present; ok when cmake is available (E1). */
 export interface CMakeToolchainStatus {
   cmake?: string;
@@ -363,7 +452,7 @@ export class CMakeBridge {
     if (this.configuredSig.get(buildDir) === signature) {
       return; // already configured with these options
     }
-    await this.writeCodemodelQuery(buildDir);
+    await this.writeApiQueries(buildDir);
     const result = await execCapture('cmake', configureArgs(srcDir, buildDir, opts), undefined, this.exec);
     if (result.exitCode !== 0) {
       throw new DevSwitcherError(
@@ -410,11 +499,25 @@ export class CMakeBridge {
     return this.targetsFor(srcDir, buildDir, {}, config);
   }
 
-  /** Ask cmake for a codemodel reply on the next configure (shared stateless query). */
-  private async writeCodemodelQuery(buildDir: string): Promise<void> {
+  /** Request codemodel (targets/paths) + toolchains (compiler id) replies on the next
+   *  configure (shared stateless queries; file names select the reply, content ignored). */
+  private async writeApiQueries(buildDir: string): Promise<void> {
     const queryDir = join(buildDir, '.cmake', 'api', 'v1', 'query');
     await mkdir(queryDir, { recursive: true });
-    await writeFile(join(queryDir, 'codemodel-v2'), ''); // content ignored; name selects the reply
+    await writeFile(join(queryDir, 'codemodel-v2'), '');
+    await writeFile(join(queryDir, 'toolchains-v1'), '');
+  }
+
+  /** The build-relative artifact path for a cached (buildDir, config) target — synchronous,
+   *  for the run Task assembly (createRunTask is sync; prepareInvocation warms the cache). */
+  peekArtifact(buildDir: string, config: string | undefined, target: string): string | undefined {
+    const key = `${buildDir}\0${config ?? ''}`;
+    return this.targetCache.get(key)?.find((t) => t.name === target)?.artifactPath;
+  }
+
+  /** The CXX compiler id (File API toolchains) for a configured build dir — drives debuggerFor. */
+  detectCompiler(buildDir: string): Promise<string | undefined> {
+    return detectCompilerId(join(buildDir, '.cmake', 'api', 'v1', 'reply'));
   }
 
   /** Drop all cached probes/discovery (F17 invalidation / explicit Rescan). */

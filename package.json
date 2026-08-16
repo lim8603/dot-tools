@@ -113,6 +113,21 @@
           "type": "boolean",
           "default": false,
           "description": "Show only chips that have a value; hide unselected optional chips (required chips stay visible). Default shows all chips."
+        },
+        "devSwitcher.cmake.debugger": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "cpptools",
+            "codelldb"
+          ],
+          "enumDescriptions": [
+            "Auto-detect from the compiler (File API): MSVC → cppvsdbg, GCC → cppdbg+gdb, Clang → cppdbg+lldb (all via the C/C++ extension).",
+            "Force the Microsoft C/C++ extension (cppvsdbg/cppdbg).",
+            "Force CodeLLDB (lldb)."
+          ],
+          "default": "auto",
+          "description": "Which debugger the CMake adapter uses. 'auto' picks the right one from the configured compiler; override only when you prefer a specific debugger (e.g. CodeLLDB for Clang)."
         }
       }
     },

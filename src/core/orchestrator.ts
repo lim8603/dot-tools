@@ -446,10 +446,6 @@ export class Orchestrator {
     }
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
-    const task =
-      action === 'build'
-        ? adapter.createBuildTask(project, selection, config)
-        : adapter.createRunTask(project, selection, config);
 
     this.statusBar.markActionBusy(action);
     try {
@@ -466,22 +462,41 @@ export class Orchestrator {
       if (!(await this.runBuildEvents(project, config.preBuild, 'pre'))) {
         return;
       }
+      // A run may need a prior build (CMake: run executes a pre-built artifact, not a
+      // self-building command). Build the target first and abort if it fails.
+      if (action === 'run' && adapter.actions.runRequiresBuild) {
+        const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
+        if (!build.succeeded) {
+          await this.showTaskFailure('build', build.exitCode);
+          return;
+        }
+      }
+      // Task built after prepareInvocation so a sync run task (CMake) can read the warm cache.
+      const task =
+        action === 'build'
+          ? adapter.createBuildTask(project, selection, config)
+          : adapter.createRunTask(project, selection, config);
       const result = await this.taskRunner.run(task, project.id);
       if (!result.succeeded) {
-        const showProblems = 'Show Problems';
-        const choice = await vscode.window.showErrorMessage(
-          `DevSwitcher: ${action} failed (exit ${result.exitCode ?? 'unknown'}).`,
-          showProblems,
-        );
-        if (choice === showProblems) {
-          void vscode.commands.executeCommand('workbench.actions.view.problems');
-        }
+        await this.showTaskFailure(action, result.exitCode);
         return;
       }
       // Post-build commands run only after the build/run succeeds.
       await this.runBuildEvents(project, config.postBuild, 'post');
     } finally {
       await this.renderActive(); // clear the busy spinner
+    }
+  }
+
+  /** Report a failed build/run with a "Show Problems" affordance (E?/§7.3). */
+  private async showTaskFailure(action: string, exitCode: number | undefined): Promise<void> {
+    const showProblems = 'Show Problems';
+    const choice = await vscode.window.showErrorMessage(
+      `DevSwitcher: ${action} failed (exit ${exitCode ?? 'unknown'}).`,
+      showProblems,
+    );
+    if (choice === showProblems) {
+      void vscode.commands.executeCommand('workbench.actions.view.problems');
     }
   }
 

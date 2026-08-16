@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
+import { ensureExtension } from '../../core/ensureExtension';
 import {
   ChipItem,
   DiagnosticProbe,
@@ -9,14 +10,17 @@ import {
   ProjectInfo,
   Selection,
 } from '../../core/types';
-import { notImplemented } from '../notImplemented';
 import { cmakeProjectFiles } from './cmakeTemplate';
 import {
   CMakeBridge,
   CMakeExeTarget,
+  CODELLDB_EXTENSION,
+  CPPTOOLS_EXTENSION,
   ConfigureOptions,
+  DebuggerOverride,
   buildArgs,
   cmakeProjectName,
+  debuggerFor,
   hasProjectCommand,
   overlayDefines,
   parseProjectName,
@@ -131,6 +135,43 @@ function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: Invoca
   return task;
 }
 
+/** Run task: execute the built artifact directly (no debugger extension needed, ADR-009). The
+ *  path comes from the warm File API cache (prepareInvocation ran; the orchestrator built first
+ *  because actions.runRequiresBuild). Falls back to the conventional multi-config path on a miss. */
+function makeCmakeRunTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
+  const srcDir = srcDirOf(project);
+  const buildDir = buildDirFor(srcDir, config);
+  const cfg = activeCfg(sel);
+  const target = activeTarget(sel) ?? '';
+  const rel = bridge.peekArtifact(buildDir, cfg, target);
+  const exe = rel ? join(buildDir, rel) : join(buildDir, cfg, target); // cache miss → conventional path
+  const execution = new vscode.ProcessExecution(exe, config.runArgs ?? [], {
+    cwd: srcDir,
+    env: taskEnv(config),
+  });
+  const definition: vscode.TaskDefinition = { type: CMAKE_TASK_TYPE, action: 'run', projectId: project.id };
+  const task = new vscode.Task(definition, project.workspaceFolder, `run ${project.name}`, 'cmake', execution);
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
+}
+
+/** Friendly names for the debugger extensions Doctor/prompts show. */
+const EXTENSION_LABELS: Record<string, string> = {
+  [CPPTOOLS_EXTENSION]: 'C/C++ (cpptools)',
+  [CODELLDB_EXTENSION]: 'CodeLLDB',
+};
+const extensionLabel = (id: string): string => EXTENSION_LABELS[id] ?? id;
+
+/** The user's debugger override (VS Code setting); 'auto' unless a valid override is set. */
+function debuggerOverride(): DebuggerOverride {
+  const value = vscode.workspace.getConfiguration('devSwitcher.cmake').get<string>('debugger', 'auto');
+  return value === 'cpptools' || value === 'codelldb' ? value : 'auto';
+}
+
 /**
  * C++ (CMake) adapter — MS-012 / C-7 (ADR-014). The extension drives `cmake` itself (no CMake
  * Tools delegation): switch/build/run/debug are the same "vscode-free bridge + thin wiring +
@@ -144,7 +185,7 @@ function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: Invoca
 export const cmakeAdapter: LanguageAdapter = {
   id: 'cmake',
   displayName: 'C++ (CMake)',
-  actions: { build: true },
+  actions: { build: true, runRequiresBuild: true }, // run = build the target, then execute the artifact
   manifestGlobs: ['**/CMakeLists.txt'],
   // Build/run are extension-free (ADR-014/ADR-009). The debugger extension (cpptools or
   // CodeLLDB) is added here once the debugger is finalized in TASK-035.
@@ -265,18 +306,54 @@ export const cmakeAdapter: LanguageAdapter = {
   },
 
   // Two-stage build (ADR-014): prepareInvocation configures with the overlay -D flags, then
-  // the build task is a single `cmake --build`. resolveExecutable reads the artifact path from
-  // the File API. Run + debug (build-then-launch) land in TASK-035.
+  // the build task is a single `cmake --build`. run executes the built artifact (orchestrator
+  // builds first via runRequiresBuild); debug auto-selects the debugger from the compiler.
   createBuildTask(project, sel, config) {
     return makeCmakeBuildTask(project, sel, config);
   },
-  createRunTask: (_project, _sel, _config) => notImplemented('CMakeAdapter.createRunTask', 'TASK-035'),
-  createDebugConfig: (_project, _sel, _config) => notImplemented('CMakeAdapter.createDebugConfig', 'TASK-035'),
+  createRunTask(project, sel, config) {
+    return makeCmakeRunTask(project, sel, config);
+  },
 
-  /** Configure with the overlay before the build task (§7.3/§7.4). Idempotent (signature-cached). */
+  /**
+   * Debug config (§7.4): the orchestrator builds first, so resolveExecutable reads the artifact
+   * path here. The debugger is auto-selected from the configured compiler (File API toolchains) —
+   * MSVC → cppvsdbg, GCC → cppdbg+gdb, Clang → cppdbg+lldb — with the devSwitcher.cmake.debugger
+   * override. requiredExtensions is empty (the extension is dynamic), so ensure it here.
+   */
+  async createDebugConfig(project, sel, config) {
+    const srcDir = srcDirOf(project);
+    const buildDir = buildDirFor(srcDir, config);
+    const program = await this.resolveExecutable(project, sel, config);
+    const compilerId = await bridge.detectCompiler(buildDir);
+    const dbg = debuggerFor(compilerId, process.platform, debuggerOverride());
+    const available = await ensureExtension(
+      dbg.extensionId,
+      `Debugging C++ needs ${extensionLabel(dbg.extensionId)}. Install it?`,
+    );
+    if (!available) {
+      throw new DevSwitcherError('EXTENSION_MISSING', `Debugger extension ${dbg.extensionId} is required.`);
+    }
+    const debugConfig: vscode.DebugConfiguration = {
+      type: dbg.type,
+      request: 'launch',
+      name: `Debug ${project.name}`,
+      program,
+      args: config.runArgs ?? [],
+      cwd: srcDir,
+    };
+    if (dbg.mimode) {
+      debugConfig.MIMode = dbg.mimode;
+    }
+    return debugConfig;
+  },
+
+  /** Configure with the overlay and warm the File API cache (targets + toolchains) before the
+   *  build/run/debug task (§7.3/§7.4). Idempotent (signature-cached). */
   async prepareInvocation(project, sel, config) {
     const srcDir = srcDirOf(project);
-    await bridge.configure(srcDir, buildDirFor(srcDir, config), configureOptsFor(sel, config));
+    const buildDir = buildDirFor(srcDir, config);
+    await bridge.targetsFor(srcDir, buildDir, configureOptsFor(sel, config), activeCfg(sel));
   },
 
   /**

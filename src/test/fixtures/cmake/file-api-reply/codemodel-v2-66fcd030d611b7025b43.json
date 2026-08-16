@@ -44,14 +44,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ALL_BUILD-Debug-74b562acb1d409d3dae1.json",
+					"jsonFile" : "target-ALL_BUILD-Debug-618392c25c2a669bf4a5.json",
 					"name" : "ALL_BUILD",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-Debug-f77124bbc3b5550922d0.json",
+					"jsonFile" : "target-ZERO_CHECK-Debug-16119fdf2f795df647d8.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				},
@@ -107,14 +107,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ALL_BUILD-Release-74b562acb1d409d3dae1.json",
+					"jsonFile" : "target-ALL_BUILD-Release-618392c25c2a669bf4a5.json",
 					"name" : "ALL_BUILD",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-Release-f77124bbc3b5550922d0.json",
+					"jsonFile" : "target-ZERO_CHECK-Release-16119fdf2f795df647d8.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				},
@@ -170,14 +170,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ALL_BUILD-MinSizeRel-74b562acb1d409d3dae1.json",
+					"jsonFile" : "target-ALL_BUILD-MinSizeRel-618392c25c2a669bf4a5.json",
 					"name" : "ALL_BUILD",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-MinSizeRel-f77124bbc3b5550922d0.json",
+					"jsonFile" : "target-ZERO_CHECK-MinSizeRel-16119fdf2f795df647d8.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				},
@@ -233,14 +233,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ALL_BUILD-RelWithDebInfo-74b562acb1d409d3dae1.json",
+					"jsonFile" : "target-ALL_BUILD-RelWithDebInfo-618392c25c2a669bf4a5.json",
 					"name" : "ALL_BUILD",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-ZERO_CHECK-RelWithDebInfo-f77124bbc3b5550922d0.json",
+					"jsonFile" : "target-ZERO_CHECK-RelWithDebInfo-16119fdf2f795df647d8.json",
 					"name" : "ZERO_CHECK",
 					"projectIndex" : 0
 				},
@@ -257,7 +257,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/user/AppData/Local/Temp/claude/D--GitHub-lim8603-dot-tools/7f5af191-1346-467b-9735-d40aa14a9c24/scratchpad/cmake-build",
+		"build" : "C:/Users/user/AppData/Local/Temp/claude/D--GitHub-lim8603-dot-tools/7f5af191-1346-467b-9735-d40aa14a9c24/scratchpad/cmake-tc",
 		"source" : "D:/GitHub/lim8603/dot-tools/src/test/fixtures/cmake/hello"
 	},
 	"version" : 

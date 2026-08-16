@@ -8,11 +8,14 @@ import {
   buildArgs,
   cmakeProjectName,
   configureArgs,
+  debuggerFor,
+  detectCompilerId,
   executableArtifact,
   hasProjectCommand,
   overlayDefines,
   parseCMakeVersion,
   parseCodemodelConfigs,
+  parseCxxCompilerId,
   parseProjectName,
   parseReplyIndexCodemodel,
   parseTargetInfo,
@@ -217,5 +220,48 @@ describe('CMakeBridge.configure (signature cache)', () => {
     } finally {
       rmSync(buildDir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('parseCxxCompilerId / detectCompilerId', () => {
+  it('reads the CXX compiler id from a toolchains reply', () => {
+    const json = JSON.stringify({
+      kind: 'toolchains',
+      toolchains: [
+        { language: 'CXX', compiler: { id: 'GNU', version: '13.2', path: '/usr/bin/g++' } },
+        { language: 'RC', compiler: { id: null } },
+      ],
+    });
+    assert.equal(parseCxxCompilerId(json), 'GNU');
+  });
+
+  it('returns undefined when no CXX toolchain / malformed json', () => {
+    assert.equal(parseCxxCompilerId(JSON.stringify({ toolchains: [{ language: 'C' }] })), undefined);
+    assert.equal(parseCxxCompilerId('{ not json'), undefined);
+  });
+
+  it('detectCompilerId resolves the compiler from the real reply fixture (MSVC)', async () => {
+    assert.equal(await detectCompilerId(FIXTURE_REPLY), 'MSVC');
+  });
+
+  it('detectCompilerId returns undefined when the reply dir is missing', async () => {
+    assert.equal(await detectCompilerId(join(FIXTURE_REPLY, 'nope')), undefined);
+  });
+});
+
+describe('debuggerFor', () => {
+  it('auto-selects the debug type from the compiler', () => {
+    assert.deepEqual(debuggerFor('MSVC', 'win32'), { type: 'cppvsdbg', extensionId: 'ms-vscode.cpptools' });
+    assert.deepEqual(debuggerFor('GNU', 'linux'), { type: 'cppdbg', mimode: 'gdb', extensionId: 'ms-vscode.cpptools' });
+    assert.deepEqual(debuggerFor('Clang', 'darwin'), { type: 'cppdbg', mimode: 'lldb', extensionId: 'ms-vscode.cpptools' });
+  });
+
+  it('falls back by platform for an unknown/undefined compiler', () => {
+    assert.equal(debuggerFor(undefined, 'win32').type, 'cppvsdbg');
+    assert.deepEqual(debuggerFor(undefined, 'linux'), { type: 'cppdbg', mimode: 'gdb', extensionId: 'ms-vscode.cpptools' });
+  });
+
+  it('the codelldb override forces CodeLLDB regardless of compiler', () => {
+    assert.deepEqual(debuggerFor('MSVC', 'win32', 'codelldb'), { type: 'lldb', extensionId: 'vadimcn.vscode-lldb' });
   });
 });

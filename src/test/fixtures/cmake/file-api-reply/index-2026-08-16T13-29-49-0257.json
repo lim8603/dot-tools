@@ -27,12 +27,21 @@
 	"objects" : 
 	[
 		{
-			"jsonFile" : "codemodel-v2-f50f95c914bb35af0e3e.json",
+			"jsonFile" : "codemodel-v2-66fcd030d611b7025b43.json",
 			"kind" : "codemodel",
 			"version" : 
 			{
 				"major" : 2,
 				"minor" : 11
+			}
+		},
+		{
+			"jsonFile" : "toolchains-v1-005b7f9162fcb8a3bdd4.json",
+			"kind" : "toolchains",
+			"version" : 
+			{
+				"major" : 1,
+				"minor" : 1
 			}
 		}
 	],
@@ -40,12 +49,22 @@
 	{
 		"codemodel-v2" : 
 		{
-			"jsonFile" : "codemodel-v2-f50f95c914bb35af0e3e.json",
+			"jsonFile" : "codemodel-v2-66fcd030d611b7025b43.json",
 			"kind" : "codemodel",
 			"version" : 
 			{
 				"major" : 2,
 				"minor" : 11
+			}
+		},
+		"toolchains-v1" : 
+		{
+			"jsonFile" : "toolchains-v1-005b7f9162fcb8a3bdd4.json",
+			"kind" : "toolchains",
+			"version" : 
+			{
+				"major" : 1,
+				"minor" : 1
 			}
 		}
 	}

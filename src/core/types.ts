@@ -105,6 +105,12 @@ export interface Selection {
 export interface ActionCapabilities {
   /** Whether a "build" concept exists. false hides the build button (Python). */
   build: boolean;
+  /**
+   * Whether `run` must build first. True when the adapter's run task executes a pre-built
+   * artifact rather than a self-building command — CMake (`cmake --build` then run the exe).
+   * Omitted (false) for single-command runs (cargo run / dotnet run / python script).
+   */
+  runRequiresBuild?: boolean;
   // run/debug are common to every language and need no declaration.
 }
 
