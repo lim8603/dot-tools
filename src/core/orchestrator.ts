@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
+import type { ChipValue, DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
 import { pickDiagnostic } from '../ui/doctorPick';
@@ -147,9 +147,18 @@ export class Orchestrator {
     if (!chip) {
       return;
     }
-    const value = await pickChipValue(chip, project, this.store.getValue(project.id, chipId));
+    // Multi-select applies live as boxes are toggled (no separate confirm); the chip
+    // re-renders on each change. Single-select stays commit-on-pick.
+    const onLiveChange = chip.multiSelect
+      ? (live: ChipValue): void => {
+          void this.store
+            .setValue(project.id, chipId, live)
+            .then(() => this.statusBar.render(adapter, project, this.store.getSelection(project.id)));
+        }
+      : undefined;
+    const value = await pickChipValue(chip, project, this.store.getValue(project.id, chipId), onLiveChange);
     if (value === undefined) {
-      return; // cancelled
+      return; // cancelled (single-select Escape; multi-select always returns a set)
     }
     // The clear sentinel (e.g. architecture 'Host default') removes the value → unset.
     if (chip.clearValueId !== undefined && value === chip.clearValueId) {

@@ -275,16 +275,24 @@ export function abbreviateTriple(triple: string): string {
   return `${arch}-${suffix}`;
 }
 
-/** Status-bar summary for the features chip. */
+/**
+ * Status-bar summary for the features chip. Counts every checked box so the number
+ * matches the selection (including `default`, a real entry in `[features]`):
+ *   []            → 'none'   (nothing enabled — `--no-default-features`, or a package
+ *                             with no features), distinct from the default-on state
+ *   ['default']   → 'default' (the default feature set is on — a plain `cargo build`)
+ *   ['gui']       → 'gui'    (single feature by name)
+ *   2+            → 'N features'
+ * The full list is always available in the chip tooltip.
+ */
 export function formatFeatureCount(features: string[]): string {
-  const nonDefault = features.filter((f) => f !== 'default');
-  if (nonDefault.length === 0) {
-    return 'default';
+  if (features.length === 0) {
+    return 'none';
   }
-  if (nonDefault.length === 1) {
-    return nonDefault[0];
+  if (features.length === 1) {
+    return features[0];
   }
-  return `${nonDefault.length} features`;
+  return `${features.length} features`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ export async function pickChipValue(
   chip: ChipDescriptor,
   project: ProjectInfo,
   current: ChipValue | undefined,
+  onLiveChange?: (value: ChipValue) => void,
 ): Promise<ChipValue | undefined> {
   const items = await chip.listItems(project);
   if (items.length === 0) {
@@ -33,11 +34,7 @@ export async function pickChipValue(
   }));
 
   if (chip.multiSelect) {
-    const picked = await vscode.window.showQuickPick(quickItems, {
-      canPickMany: true,
-      placeHolder: chip.label,
-    });
-    return picked ? picked.map((item) => item.id) : undefined; // undefined = cancelled
+    return pickMultiSelect(chip.label, quickItems, onLiveChange);
   }
 
   if (chip.secondaryToggle) {
@@ -46,6 +43,61 @@ export async function pickChipValue(
 
   const picked = await vscode.window.showQuickPick(quickItems, { placeHolder: chip.label });
   return picked?.id;
+}
+
+/**
+ * Multi-select pick (e.g. cargo features) as a toggle list — deliberately NOT
+ * canSelectMany, whose mandatory OK button can't be hidden. Each row shows a
+ * `$(check)`/`$(blank)` marker; Enter or click toggles it (the list stays open and
+ * the chip updates live via onLiveChange), and Esc / click-away closes and commits
+ * the toggled set — including the empty set (deselect-all → []). No confirm button.
+ */
+function pickMultiSelect(
+  label: string,
+  items: ChipQuickPickItem[],
+  onLiveChange?: (ids: string[]) => void,
+): Promise<string[]> {
+  const selected = new Set(items.filter((item) => item.picked).map((item) => item.id));
+  const idsOf = (): string[] => items.filter((item) => selected.has(item.id)).map((item) => item.id);
+
+  return new Promise((resolve) => {
+    const qp = vscode.window.createQuickPick<ChipQuickPickItem>();
+    qp.placeholder = `${label} — Enter/click toggles, Esc closes`;
+
+    const render = (): void => {
+      const activeId = qp.activeItems[0]?.id;
+      qp.items = items.map((item) => ({
+        ...item,
+        label: `${selected.has(item.id) ? '$(check)' : '$(blank)'} ${item.label}`,
+      }));
+      if (activeId !== undefined) {
+        const match = qp.items.find((item) => item.id === activeId);
+        if (match) {
+          qp.activeItems = [match];
+        }
+      }
+    };
+    render();
+
+    qp.onDidAccept(() => {
+      const active = qp.activeItems[0];
+      if (!active) {
+        return;
+      }
+      if (selected.has(active.id)) {
+        selected.delete(active.id);
+      } else {
+        selected.add(active.id);
+      }
+      render(); // stay open; reflect the new marker
+      onLiveChange?.(idsOf());
+    });
+    qp.onDidHide(() => {
+      qp.dispose();
+      resolve(idsOf()); // closing commits the toggled set (no cancel for multi-select)
+    });
+    qp.show();
+  });
 }
 
 /**

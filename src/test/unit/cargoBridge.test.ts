@@ -255,12 +255,14 @@ describe('abbreviateTriple', () => {
 });
 
 describe('formatFeatureCount', () => {
-  it('summarizes the features chip', () => {
-    assert.equal(formatFeatureCount([]), 'default');
-    assert.equal(formatFeatureCount(['default']), 'default');
+  it('summarizes the features chip by the number of checked boxes', () => {
+    assert.equal(formatFeatureCount([]), 'none'); // nothing on (--no-default-features)
+    assert.equal(formatFeatureCount(['default']), 'default'); // default set on — distinct from []
     assert.equal(formatFeatureCount(['gui']), 'gui');
-    assert.equal(formatFeatureCount(['default', 'gui']), 'gui');
+    // 'default' counts too, so the number matches the checked boxes (no off-by-one).
+    assert.equal(formatFeatureCount(['default', 'gui']), '2 features');
     assert.equal(formatFeatureCount(['gui', 'metrics']), '2 features');
+    assert.equal(formatFeatureCount(['default', 'gui', 'metrics']), '3 features');
   });
 });
 

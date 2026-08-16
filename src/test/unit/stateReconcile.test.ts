@@ -25,10 +25,16 @@ describe('reconcileValues', () => {
     assert.deepEqual(result.removed, ['features']);
   });
 
-  it('drops a multiSelect entirely when nothing valid remains', () => {
+  it('drops a once-populated multiSelect when nothing valid remains (falls back to default)', () => {
     const result = reconcileValues({ features: ['legacy'] }, { features: ['gui'] });
     assert.deepEqual(result.values, {});
     assert.deepEqual(result.removed, ['features']);
+  });
+
+  it('preserves an intentionally empty multiSelect (none / --no-default-features)', () => {
+    const result = reconcileValues({ features: [] }, { features: ['default', 'gui'] });
+    assert.deepEqual(result.values, { features: [] });
+    assert.deepEqual(result.removed, []);
   });
 
   it('leaves a chip untouched when no valid list is provided (unreconcilable this pass)', () => {

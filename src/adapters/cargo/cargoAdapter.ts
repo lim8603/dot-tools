@@ -228,15 +228,14 @@ export const cargoAdapter: LanguageAdapter = {
       icon: 'checklist',
       label: 'Features',
       multiSelect: true,
-      // Only 'default' (or nothing) selected reads as "default" → blank for selectedOnly,
-      // matching formatFeatureCount which filters 'default' out.
+      // 'default'-only (or nothing) is the baseline → blank for selectedOnly (hidden
+      // when a leaner bar is requested); any real feature makes the chip non-blank.
       isBlank: (value) => !Array.isArray(value) || value.every((f) => f === 'default'),
       listItems: async (project) => {
         const metadata = await bridge.fetchMetadata(project.manifestPath);
         return parseFeatures(metadata, project.name).names.map((name) => ({
           id: name,
-          label: name,
-          description: name === 'default' ? 'default' : undefined,
+          label: name, // 'default' is self-explanatory — no redundant description
         }));
       },
       format: (value) => formatFeatureCount(Array.isArray(value) ? value : []),

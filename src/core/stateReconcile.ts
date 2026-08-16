@@ -35,7 +35,10 @@ export function reconcileValues(
 
     if (Array.isArray(value)) {
       const kept = value.filter((id) => allowed.includes(id));
-      if (kept.length > 0) {
+      // Keep a still-populated selection, and keep an already-empty one — `[]` is a
+      // deliberate multiSelect state ('none' / cargo --no-default-features), not "unset".
+      // Drop only a once-populated selection whose every id vanished (falls back to default).
+      if (kept.length > 0 || value.length === 0) {
         result[chipId] = kept;
       }
       if (kept.length !== value.length) {
