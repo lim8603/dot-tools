@@ -282,8 +282,10 @@ export interface LanguageAdapter {
    */
   createProject(target: NewProjectTarget): ProjectCreation;
 
-  /** Local edit of the canonical file (ADR-007). v2 for Cargo.toml (§8.7). */
-  persistSetting(project: ProjectInfo, key: string, value: unknown): Promise<void>;
+  // Note: no canonical-file edit method. The extension never edits the user's build
+  // files — that is a permanent invariant (ADR-013 / D-15, C-3 dropped). Persisting or
+  // sharing settings goes through profile export/import (F12), and invocation overlays
+  // are injected at call time (ADR-011), never written back to Cargo.toml et al.
 
   /** Invalidate cache on manifest change (F17). */
   invalidateCache(project?: ProjectInfo): void;

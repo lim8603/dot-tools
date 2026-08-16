@@ -54,7 +54,6 @@ export const pythonAdapter: LanguageAdapter = {
   createDebugConfig: (_project, _sel, _config) => notImplemented('PythonAdapter.createDebugConfig', 'v2'),
   resolveExecutable: (_project, _sel, _config) => notImplemented('PythonAdapter.resolveExecutable', 'v2'),
   createProject: (target) => ({ kind: 'files', files: pythonProjectFiles(target.projectName) }),
-  persistSetting: (_project, _key, _value) => notImplemented('PythonAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('PythonAdapter.invalidateCache', 'v2'),
   collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet
 };

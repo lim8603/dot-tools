@@ -11,7 +11,6 @@ import {
   ProjectInfo,
   Selection,
 } from '../../core/types';
-import { notImplemented } from '../notImplemented';
 import {
   abbreviateTriple,
   assembleCargoArgs,
@@ -38,9 +37,9 @@ import { CARGO_OPTION_CATALOG } from './optionCatalog';
  * translation the bridge deliberately avoids — ProjectInfo → manifestPath / cwd —
  * and turns assembled args into vscode.Task objects (interface_contract §6, 상세설계서 §8).
  *
- * Deferred (still stubbed): persistSetting → v2 (§8.7, canonical-file edit). Custom
- * [profile.*] parsing is likewise a v2 concern. createDebugConfig (MS-005),
- * `rustup target add` (MS-007), and createProjectTask (MS-008, F20) are implemented.
+ * The extension never edits Cargo.toml — canonical-file edits are permanently out of
+ * scope (ADR-013, C-3 dropped); overlays inject at call time (ADR-011). createDebugConfig
+ * (MS-005), `rustup target add` (MS-007), and createProjectTask (MS-008, F20) are implemented.
  */
 
 /** Single toolchain per host — one bridge instance holds the metadata cache. */
@@ -81,7 +80,7 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
   if (config.outputDir) {
     env.CARGO_TARGET_DIR = config.outputDir;
   }
-  const rustflags = buildRustflags(config.linker ?? {});
+  const rustflags = buildRustflags(config.linker ?? {}, config.compiler ?? {});
   if (rustflags) {
     env.RUSTFLAGS = env.RUSTFLAGS ? `${env.RUSTFLAGS} ${rustflags}` : rustflags;
   }
@@ -340,7 +339,6 @@ export const cargoAdapter: LanguageAdapter = {
   },
 
   createProject: (target) => ({ kind: 'task', task: makeCargoNewTask(target) }),
-  persistSetting: (_project, _key, _value) => notImplemented('CargoAdapter.persistSetting', 'v2'),
 
   invalidateCache: (project) => bridge.invalidateCache(project?.manifestPath),
 

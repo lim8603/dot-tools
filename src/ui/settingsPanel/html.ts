@@ -89,6 +89,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     flex: 1 1 100%; min-width: 320px; max-width: 820px;
   }
   .opt select { min-width: 160px; }
+  .opt textarea { flex: 1 1 100%; min-width: 320px; max-width: 820px; min-height: 3.4em; }
   .preview { background: var(--vscode-textCodeBlock-background); padding: 10px 12px;
     border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
 </style>
@@ -218,6 +219,10 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       editor = '<input type="checkbox" ' + attrs + (val === true ? ' checked' : '') + ' />';
     } else if (o.type === 'int') {
       editor = '<input type="number" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
+    } else if (o.type === 'stringList') {
+      // Free-form list (L-1): one entry per line, committed on blur like the build-event editors.
+      const list = Array.isArray(val) ? val : [];
+      editor = '<textarea ' + attrs + ' rows="3">' + esc(list.join('\\n')) + '</textarea>';
     } else {
       editor = '<input type="text" ' + attrs + ' value="' + esc(val === undefined ? '' : val) + '" />';
     }
@@ -314,6 +319,10 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       let value;
       if (type === 'bool') value = el.checked;
       else if (type === 'int') value = el.value === '' ? undefined : Number(el.value);
+      else if (type === 'stringList') {
+        const items = el.value.split('\\n').map((s) => s.trim()).filter((s) => s.length > 0);
+        value = items.length ? items : undefined;
+      }
       else value = el.value; // enum / string
       if (value === undefined || value === '') post({ type: 'clearOption', optionId: id });
       else post({ type: 'setOption', optionId: id, value: value });

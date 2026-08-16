@@ -20,7 +20,10 @@ export function applyOption(
     linker: { ...config.linker },
     env: { ...config.env },
   };
-  const remove = value === undefined || value === '' || value === spec.defaultValue;
+  // stringList options (e.g. cargo extra rustflags, L-1) clear on an empty list, the
+  // array analogue of an empty string.
+  const isEmptyList = Array.isArray(value) && value.length === 0;
+  const remove = value === undefined || value === '' || isEmptyList || value === spec.defaultValue;
 
   switch (spec.category) {
     case 'compiler':

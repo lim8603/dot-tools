@@ -15,6 +15,7 @@ function spec(partial: Partial<OptionSpec> & Pick<OptionSpec, 'id' | 'category'>
 
 const optLevel = spec({ id: 'opt-level', category: 'compiler', defaultValue: '0' });
 const linker = spec({ id: 'linker', category: 'linker' });
+const rustflags = spec({ id: 'rustflags', category: 'compiler', type: 'stringList', injection: 'flag' });
 const targetDir = spec({ id: 'target-dir', category: 'output' });
 const rustLog = spec({ id: 'rust-log', category: 'env', label: 'RUST_LOG' });
 
@@ -42,6 +43,16 @@ describe('applyOption', () => {
     const next = applyOption(original, optLevel, '3');
     assert.deepEqual(original, { compiler: { lto: 'thin' } });
     assert.deepEqual(next.compiler, { lto: 'thin', 'opt-level': '3' });
+  });
+
+  it('stores a stringList (extra rustflags, L-1) under its compiler record', () => {
+    const config = applyOption({}, rustflags, ['-C target-cpu=native', '-C link-arg=-s']);
+    assert.deepEqual(config.compiler, { rustflags: ['-C target-cpu=native', '-C link-arg=-s'] });
+  });
+
+  it('clears a stringList (and prunes the record) on an empty list', () => {
+    const config = applyOption({ compiler: { rustflags: ['-C x'] } }, rustflags, []);
+    assert.equal(config.compiler, undefined);
   });
 });
 

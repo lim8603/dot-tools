@@ -207,12 +207,30 @@ describe('buildConfigArgs', () => {
   it('returns nothing for an empty overlay', () => {
     assert.deepEqual(buildConfigArgs({}, 'dev'), []);
   });
+
+  it('skips the free-form rustflags escape hatch (L-1) — it goes to RUSTFLAGS, not --config', () => {
+    assert.deepEqual(
+      buildConfigArgs({ 'opt-level': '3', rustflags: ['-C target-cpu=native'] }, 'dev'),
+      ['--config', 'profile.dev.opt-level=3'],
+    );
+  });
 });
 
 describe('buildRustflags', () => {
   it('emits -C linker= for the linker option', () => {
     assert.equal(buildRustflags({ linker: 'lld' }), '-C linker=lld');
     assert.equal(buildRustflags({}), '');
+  });
+
+  it('appends free-form extra rustflags (from compiler) after the linker flag (L-1)', () => {
+    assert.equal(
+      buildRustflags({ linker: 'lld' }, { rustflags: ['-C target-cpu=native', '-C opt-level=3'] }),
+      '-C linker=lld -C target-cpu=native -C opt-level=3',
+    );
+  });
+
+  it('emits extra rustflags alone and skips blank entries', () => {
+    assert.equal(buildRustflags({}, { rustflags: ['-C target-cpu=native', '  ', ''] }), '-C target-cpu=native');
   });
 });
 

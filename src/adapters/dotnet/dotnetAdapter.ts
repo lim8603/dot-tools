@@ -83,7 +83,6 @@ export const dotnetAdapter: LanguageAdapter = {
   createDebugConfig: (_project, _sel, _config) => notImplemented('DotnetAdapter.createDebugConfig', 'v2'),
   resolveExecutable: (_project, _sel, _config) => notImplemented('DotnetAdapter.resolveExecutable', 'v2'),
   createProject: (target) => ({ kind: 'task', task: makeDotnetNewTask(target) }),
-  persistSetting: (_project, _key, _value) => notImplemented('DotnetAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('DotnetAdapter.invalidateCache', 'v2'),
   collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet
 };

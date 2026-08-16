@@ -51,7 +51,6 @@ export const cmakeAdapter: LanguageAdapter = {
   createDebugConfig: (_project, _sel, _config) => notImplemented('CMakeAdapter.createDebugConfig', 'v2'),
   resolveExecutable: (_project, _sel, _config) => notImplemented('CMakeAdapter.resolveExecutable', 'v2'),
   createProject: (target) => ({ kind: 'files', files: cmakeProjectFiles(target.projectName) }),
-  persistSetting: (_project, _key, _value) => notImplemented('CMakeAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('CMakeAdapter.invalidateCache', 'v2'),
   collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet
 };

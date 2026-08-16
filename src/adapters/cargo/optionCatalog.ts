@@ -54,6 +54,21 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     injection: 'config',
   },
   {
+    id: 'rustflags',
+    category: 'compiler',
+    label: 'Extra rustflags',
+    description:
+      'Free-form escape hatch (L-1): raw rustc codegen flags passed through RUSTFLAGS, one ' +
+      'flag (with its value) per line — e.g. -C target-cpu=native. Do NOT put these in the ' +
+      '"Linker program" field (that field takes only a program name like lld). Applies to the ' +
+      'whole build and forces a full rebuild when changed.',
+    example: '-C target-cpu=native',
+    injectsAs: 'RUSTFLAGS=… <flags>',
+    docUrl: 'https://doc.rust-lang.org/rustc/codegen-options/index.html',
+    type: 'stringList',
+    injection: 'flag',
+  },
+  {
     id: 'linker',
     category: 'linker',
     label: 'Linker program',

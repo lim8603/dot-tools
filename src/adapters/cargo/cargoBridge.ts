@@ -160,20 +160,39 @@ export function tomlScalar(value: OptionValue): string {
 export function buildConfigArgs(compiler: Record<string, OptionValue>, profile: string): string[] {
   const args: string[] = [];
   for (const [id, value] of Object.entries(compiler)) {
+    // The free-form `rustflags` escape hatch (L-1) is a codegen list, not a profile
+    // scalar — it goes to RUSTFLAGS (buildRustflags), never `--config profile.*`.
+    if (id === 'rustflags') {
+      continue;
+    }
     args.push('--config', `profile.${profile}.${id}=${tomlScalar(value)}`);
   }
   return args;
 }
 
 /**
- * Linker-category options → a RUSTFLAGS string (space-joined). Only `linker` is
- * modelled today (`-C linker=<value>`); returns '' when nothing applies.
+ * RUSTFLAGS string (space-joined) assembled from the overlay: the linker option
+ * (`-C linker=<value>`) plus the free-form `rustflags` escape hatch (L-1, stored under
+ * compiler) whose entries are appended verbatim (RUSTFLAGS splits on whitespace, so
+ * `-C target-cpu=native` becomes two args). Returns '' when nothing applies.
  */
-export function buildRustflags(linker: Record<string, OptionValue>): string {
+export function buildRustflags(
+  linker: Record<string, OptionValue>,
+  compiler: Record<string, OptionValue> = {},
+): string {
   const flags: string[] = [];
   const linkerValue = linker['linker'];
   if (typeof linkerValue === 'string' && linkerValue.length > 0) {
     flags.push(`-C linker=${linkerValue}`);
+  }
+  const extra = compiler['rustflags'];
+  if (Array.isArray(extra)) {
+    for (const flag of extra) {
+      const token = String(flag).trim();
+      if (token.length > 0) {
+        flags.push(token);
+      }
+    }
   }
   return flags.join(' ');
 }
