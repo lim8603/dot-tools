@@ -86,6 +86,11 @@
         "category": "DevSwitcher"
       },
       {
+        "command": "devSwitcher.newProject",
+        "title": "New Project…",
+        "category": "DevSwitcher"
+      },
+      {
         "command": "devSwitcher.toggleCompact",
         "title": "Toggle Compact Status Bar",
         "category": "DevSwitcher"
@@ -151,6 +156,15 @@
           "phase": {
             "type": "string",
             "description": "The build-event phase (pre or post)."
+          }
+        }
+      },
+      {
+        "type": "devswitcher-newproject",
+        "properties": {
+          "language": {
+            "type": "string",
+            "description": "The language/adapter creating the new project."
           }
         }
       }

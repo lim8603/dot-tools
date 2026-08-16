@@ -1,11 +1,13 @@
+import { join, sep } from 'node:path';
 import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, ProjectInfo } from './types';
+import type { DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
 import { pickDiagnostic } from '../ui/doctorPick';
+import { runNewProjectWizard } from '../ui/newProjectWizard';
 import { ensureExtension } from './ensureExtension';
 import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
 import { buildDiagnostics, worstStatus } from './diagnostics';
@@ -302,6 +304,66 @@ export class Orchestrator {
       const message = error instanceof Error ? error.message : String(error);
       void vscode.window.showErrorMessage(`DevSwitcher: import failed — ${message}`);
     }
+  }
+
+  /**
+   * Start wizard (F20, 상세설계서 §14): pick folder → language → name, then let the
+   * chosen adapter's createProjectTask scaffold via its native tool (ADR-010 — the
+   * extension never writes files). On success we rescan and auto-switch to the new
+   * project (OQ-001). A missing native toolchain surfaces the failure with a Doctor
+   * entry point (F19). Stub adapters (until TASK-023) throw NOT_IMPLEMENTED, caught here.
+   */
+  async newProject(): Promise<void> {
+    const adapters = this.registry.creatableAdapters();
+    const result = await runNewProjectWizard(adapters.map((a) => ({ id: a.id, displayName: a.displayName })));
+    if (!result) {
+      return; // cancelled, or no workspace folder
+    }
+    const adapter = this.registry.adapter(result.adapterId);
+    if (!adapter) {
+      return;
+    }
+    let task: vscode.Task;
+    try {
+      task = adapter.createProjectTask(result.target);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(
+        `DevSwitcher: ${adapter.displayName} project creation isn't available yet — ${message}`,
+      );
+      return;
+    }
+    const lockKey = `new:${result.adapterId}:${result.target.folderUri.fsPath}${sep}${result.target.projectName}`;
+    const run = await this.taskRunner.run(task, lockKey);
+    if (!run.succeeded) {
+      const runDoctor = 'Run Doctor';
+      const choice = await vscode.window.showErrorMessage(
+        `DevSwitcher: project creation failed (exit ${run.exitCode ?? 'unknown'}). Is the ${adapter.displayName} toolchain installed?`,
+        runDoctor,
+      );
+      if (choice === runDoctor) {
+        void this.doctor();
+      }
+      return;
+    }
+    // Success — rescan picks up the new manifest; auto-switch to it (OQ-001).
+    await this.refresh();
+    const created = this.findCreatedProject(result.target);
+    if (created) {
+      await this.store.setActiveProject(created.id);
+      await this.renderActive();
+      void vscode.window.showInformationMessage(`DevSwitcher: created and switched to ${created.name}.`);
+    } else {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: created ${result.target.projectName}; it will appear once its manifest is detected.`,
+      );
+    }
+  }
+
+  /** The scanned project whose manifest lives under the just-created `<folder>/<name>/`. */
+  private findCreatedProject(target: NewProjectTarget): ProjectInfo | undefined {
+    const prefix = join(target.folderUri.fsPath, target.projectName) + sep;
+    return this.registry.getProjects().find((p) => p.manifestPath.startsWith(prefix));
   }
 
   /** Build/run flow (상세설계서 §7.3): validate required chips → run → surface failure. */

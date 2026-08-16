@@ -58,6 +58,16 @@ export class AdapterRegistry {
     return this.byId.get(project.adapterId);
   }
 
+  /** Adapter by id (all registered, independent of scan) — for the start wizard (F20). */
+  adapter(adapterId: string): LanguageAdapter | undefined {
+    return this.byId.get(adapterId);
+  }
+
+  /** Adapters that support the start wizard (F20). v1: all four declare canCreateProject. */
+  creatableAdapters(): LanguageAdapter[] {
+    return this.adapters.filter((a) => a.canCreateProject);
+  }
+
   /**
    * Adapters whose manifest is present in the workspace — Doctor's check set (F19).
    * Independent of scan() so it still reports (e.g.) a present Cargo.toml when

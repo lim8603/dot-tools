@@ -1,7 +1,16 @@
 import { dirname } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
-import { ChipItem, DiagnosticProbe, InvocationConfig, LanguageAdapter, ProjectInfo, Selection } from '../../core/types';
+import {
+  ChipItem,
+  DiagnosticProbe,
+  InvocationConfig,
+  LanguageAdapter,
+  NEW_PROJECT_TASK_TYPE,
+  NewProjectTarget,
+  ProjectInfo,
+  Selection,
+} from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import {
   abbreviateTriple,
@@ -29,10 +38,9 @@ import { CARGO_OPTION_CATALOG } from './optionCatalog';
  * translation the bridge deliberately avoids — ProjectInfo → manifestPath / cwd —
  * and turns assembled args into vscode.Task objects (interface_contract §6, 상세설계서 §8).
  *
- * Deferred (still stubbed): createDebugConfig → MS-005 (M4), createProjectTask →
- * MS-008 (F20 wizard), persistSetting → v2 (§8.7). Custom [profile.*] parsing,
- * `rustup target add` auto-install (F19), and the compiler/linker invocation
- * overlay are scoped out of M2 (see session #004 plan).
+ * Deferred (still stubbed): persistSetting → v2 (§8.7, canonical-file edit). Custom
+ * [profile.*] parsing is likewise a v2 concern. createDebugConfig (MS-005),
+ * `rustup target add` (MS-007), and createProjectTask (MS-008, F20) are implemented.
  */
 
 /** Single toolchain per host — one bridge instance holds the metadata cache. */
@@ -105,6 +113,32 @@ function makeCargoTask(
   if (action === 'build') {
     task.group = vscode.TaskGroup.Build;
   }
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
+}
+
+/**
+ * `cargo new <name>` in the target folder (F20, TASK-022) — the native tool scaffolds
+ * Cargo.toml + src/main.rs into a `<name>/` sub-folder (ADR-010: the extension never
+ * writes files itself). ProcessExecution, no shell (NFR-002). ManifestWatcher then
+ * detects the new manifest and the Orchestrator switches to it.
+ */
+function makeCargoNewTask(target: NewProjectTarget): vscode.Task {
+  const execution = new vscode.ProcessExecution('cargo', ['new', target.projectName], {
+    cwd: target.folderUri.fsPath,
+  });
+  const definition: vscode.TaskDefinition = { type: NEW_PROJECT_TASK_TYPE, language: 'rust' };
+  const task = new vscode.Task(
+    definition,
+    vscode.workspace.getWorkspaceFolder(target.folderUri) ?? vscode.TaskScope.Workspace,
+    `new ${target.projectName}`,
+    'cargo',
+    execution,
+  );
   task.presentationOptions = {
     reveal: vscode.TaskRevealKind.Always,
     panel: vscode.TaskPanelKind.Shared,
@@ -306,7 +340,7 @@ export const cargoAdapter: LanguageAdapter = {
     return executable;
   },
 
-  createProjectTask: (_target) => notImplemented('CargoAdapter.createProjectTask', 'MS-008'),
+  createProjectTask: (target) => makeCargoNewTask(target),
   persistSetting: (_project, _key, _value) => notImplemented('CargoAdapter.persistSetting', 'v2'),
 
   invalidateCache: (project) => bridge.invalidateCache(project?.manifestPath),

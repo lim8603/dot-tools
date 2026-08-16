@@ -125,6 +125,10 @@ export interface NewProjectTarget {
   projectName: string;
 }
 
+/** Task type used by every adapter's createProjectTask (F20) — registered in
+ *  package.json contributes.taskDefinitions so it raises no "unknown task type" warning. */
+export const NEW_PROJECT_TASK_TYPE = 'devswitcher-newproject';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // §7. Invocation config overlay (ADR-011)
 // Layer ③ config is stored per (projectId × profile) and injected at invocation
