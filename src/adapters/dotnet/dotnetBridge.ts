@@ -338,23 +338,17 @@ export class DotnetBridge {
   }
 
   /**
-   * Resolve the built assembly path (TargetPath) for a (project × configuration × TFM)
-   * via `dotnet msbuild -getProperty:TargetPath` — no path guessing (the dotnet analogue
-   * of DD-05). Includes the same `-p:` overlay props so an AssemblyName override resolves
-   * to the right DLL. A single -getProperty prints the bare value. Undefined on failure (E6).
+   * Resolve the built assembly path (TargetPath) by re-evaluating the SAME build args with
+   * `-getProperty:TargetPath` appended. `dotnet build -getProperty` evaluates WITHOUT
+   * building (fast), and because it reuses the exact build args it returns the same path
+   * the build produced — Configuration/TargetFramework/RuntimeIdentifier/-p: props all
+   * consistent. This is the dotnet analogue of DD-05 (no path guessing) and avoids the
+   * bug where a selected RID sends output to a `<rid>/` sub-folder a naive guess misses.
+   * A single -getProperty prints the bare value. Undefined on failure (E6). The debug flow
+   * (§7.4) builds first, so the DLL exists at this path.
    */
-  async resolveTargetPath(
-    manifestPath: string,
-    configuration: string,
-    framework: string | undefined,
-    props: string[] = [],
-  ): Promise<string | undefined> {
-    const args = ['msbuild', manifestPath, '-getProperty:TargetPath', `-p:Configuration=${configuration}`];
-    if (framework) {
-      args.push(`-p:TargetFramework=${framework}`);
-    }
-    args.push(...props);
-    const result = await execCapture('dotnet', args, dirname(manifestPath), this.exec);
+  async resolveTargetPath(cwd: string, buildArgs: string[]): Promise<string | undefined> {
+    const result = await execCapture('dotnet', [...buildArgs, '-getProperty:TargetPath'], cwd, this.exec);
     if (result.exitCode !== 0) {
       return undefined;
     }

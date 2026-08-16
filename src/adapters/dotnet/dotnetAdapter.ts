@@ -3,7 +3,6 @@ import { dirname } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
 import {
   ChipItem,
-  ChipValue,
   DiagnosticProbe,
   InvocationConfig,
   LanguageAdapter,
@@ -39,10 +38,6 @@ const DOTNET_TASK_TYPE = 'devSwitcher.dotnet';
 /** Directory a dotnet command runs in — the project directory. */
 function cwdOf(project: ProjectInfo): string {
   return dirname(project.manifestPath);
-}
-
-function asString(v: ChipValue | undefined): string | undefined {
-  return typeof v === 'string' ? v : undefined;
 }
 
 /** The invocation overlay's env for a Task (dotnet has no RUSTFLAGS/target-dir analogue). */
@@ -253,11 +248,12 @@ export const dotnetAdapter: LanguageAdapter = {
   },
 
   async resolveExecutable(project, sel, config) {
-    // The built assembly path from MSBuild's TargetPath — no path guessing (DD-05 analogue).
-    const configuration = asString(sel.values.profile) ?? 'Debug';
-    const framework = asString(sel.values.target);
+    // Re-evaluate the SAME build args the pre-build used (assembleDotnetArgs) with
+    // -getProperty:TargetPath, so the path matches the build output exactly — RID and all
+    // (a selected RID builds into a <rid>/ sub-folder). §7.4 builds first, so it exists.
     const props = buildMsbuildProps(config.compiler ?? {}, config.linker ?? {});
-    const targetPath = await bridge.resolveTargetPath(project.manifestPath, configuration, framework, props);
+    const buildArgs = assembleDotnetArgs('build', project.manifestPath, sel, config, props);
+    const targetPath = await bridge.resolveTargetPath(cwdOf(project), buildArgs);
     if (!targetPath) {
       throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `Could not resolve the output assembly for ${project.name}.`); // E6
     }
