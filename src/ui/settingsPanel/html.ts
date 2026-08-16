@@ -204,7 +204,11 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
 
   function renderOption(o) {
     const val = currentOptionValue(o);
-    const attrs = 'data-action="set-option" data-option-id="' + esc(o.id) + '" data-type="' + esc(o.type) + '"';
+    // aria-label mirrors the visible <b>label</b> so every generated control has an
+    // accessible name (axe "Form elements must have labels"); the label sits in a sibling
+    // div, not a <label for>, so the control itself carries the name.
+    const attrs = 'data-action="set-option" data-option-id="' + esc(o.id) +
+      '" data-type="' + esc(o.type) + '" aria-label="' + esc(o.label) + '"';
     let editor;
     if (o.type === 'enum') {
       // Show the effective value (stored, else the option's default) so picking the
@@ -250,7 +254,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       html += '<h3 class="cat">' + esc(cat) + '</h3>';
       if (cat === 'runArgs') {
         const args = state.invocation.runArgs || [];
-        html += '<div class="row"><input type="text" id="runargs-input" value="' + esc(args.join(' ')) + '" /></div>' +
+        html += '<div class="row"><input type="text" id="runargs-input" aria-label="Run arguments" value="' + esc(args.join(' ')) + '" /></div>' +
           '<div class="muted">Arguments passed to your program, after <code>cargo run --</code> ' +
           '(shell-quoted). &nbsp;e.g. <code>--verbose --input data.txt</code></div>' +
           '<div class="muted meta">argv: [' + args.map((t) => '<code>' + esc(t) + '</code>').join(', ') + ']</div>';
@@ -258,9 +262,9 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
         const pre = (state.invocation.preBuild || []).join('\\n');
         const post = (state.invocation.postBuild || []).join('\\n');
         html += '<div class="opt-label"><b>Pre-build</b> <span class="muted">one command per line · runs before build/run</span></div>' +
-          '<div class="row"><textarea id="prebuild-input" rows="2">' + esc(pre) + '</textarea></div>' +
+          '<div class="row"><textarea id="prebuild-input" aria-label="Pre-build commands" rows="2">' + esc(pre) + '</textarea></div>' +
           '<div class="opt-label"><b>Post-build</b> <span class="muted">runs after a successful build/run</span></div>' +
-          '<div class="row"><textarea id="postbuild-input" rows="2">' + esc(post) + '</textarea></div>' +
+          '<div class="row"><textarea id="postbuild-input" aria-label="Post-build commands" rows="2">' + esc(post) + '</textarea></div>' +
           '<div class="muted">Runs as your shell in the project directory (NFR-002a). ' +
           'e.g. <code>cargo fmt</code> · <code>npm run codegen</code> · <code>cp target/release/app dist/</code></div>';
       } else {
