@@ -69,10 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **`feature/ms-008-new-project-wizard` → main FF 병합 + push** (진행 중). MS-008 + 검증 버그수정 2건.
-2. (선택) **v0.2.0 릴리즈** — F20 포함. version 0.1.0→0.2.0 범프 + `vsce package` + CHANGELOG [Unreleased]→[0.2.0].
-3. **TC-11(WSL/F18)** — WSL 내부 재클론 후 별도 진행(Deferred).
-4. 이후: v2 백로그(C-3 캐노니컬 편집·C-6 Run Group·L-1 extra rustflags) 또는 새 Intent.
+1. **TC-11(WSL/F18)** — WSL 내부 재클론 후 별도 진행(Deferred, GAP-001).
+2. v2 백로그 또는 새 Intent: C-3(캐노니컬 편집)·C-6(Run Group)·L-1(extra rustflags), 그리고 CMake/Dotnet/Python 어댑터 실구현(스위치·빌드·디버그).
+3. (완료) MS-001~008 · v0.2.0 릴리즈(main push). 수동검증 TC-02/03/09 Pass.
 
 ---
 
@@ -170,6 +169,7 @@
 | D-11 | C-4 확정 — export 포맷(`ProfileExport`)을 `PersistedState`와 정렬(2-맵 selections+invocation, activeProjectId 제외, runArgs는 ADR-011 승격 위치). import는 스캔 존재 projectId만 반영 | `data_model.md §2`, `src/core/types.ts`, TASK-015 | 2026-08-15 |
 | D-12 | v0.1.0 릴리즈 확정 — publisher=`lim8603`, `devswitcher-tools-0.1.0.vsix` 산출·설치 스모크 통과로 MS-007 Done. Gate 5 조건부 Pass(잔여 수동검증 TC-11 WSL 등은 문서화된 리스크로 수용) | `verification_evidence.md`, TASK-021 | 2026-08-16 |
 | D-13 | MS-008 — OQ-001=자동 활성전환(생성 후 새 프로젝트 활성화). 계약 일반화 `createProject(target): {kind:'task'} \| {kind:'files'}`. cargo/dotnet=네이티브 new(task). **CMake/Python=확장이 `workspace.fs`로 템플릿 작성(files)** — 최초 "ShellExecution" 안에서 **셸 종류 미제어·C++ `<>` 리다이렉션 충돌** 발견해 workspace.fs로 개정(구현 중 우려 1회). ADR-010은 "네이티브 있으면 위임, 없으면 확장 작성"으로 해석. **v1 스위처 자동등장=Rust만**(scope A) | `interface_contract.md §5`, TASK-023 | 2026-08-16 |
+| D-14 | v0.2.0 릴리즈 — F20 마법사 + 수동검증 중 발견한 버그 2건 수정(features 칩 토글/카운트/none 보존, untrusted 워크스페이스 무한스피너) 포함. `devswitcher-tools-0.2.0.vsix` 산출·설치 스모크 통과. version 0.1.0→0.2.0, CHANGELOG [Unreleased]→[0.2.0], README 마법사 반영 | `CHANGELOG.md`, `package.json` | 2026-08-16 |
 
 ---
 
@@ -232,7 +232,8 @@
 | Milestone | MS-006 | M5 설정 페이지·호출 구성 | Done | 코어(012·013·014) + export/import(015) F5 통과, main 병합(2026-08-15). pre/postBuild(C-5) 이월 |
 | Milestone | MS-007 | M6 품질·배포·통합테스트 | Done | 016~021 전부 Done. **v0.1.0 vsix 산출**(2026-08-16). Gate 5 조건부 Pass |
 | Milestone | MS-008 | F20 시작 마법사 | Done | 4개 언어 생성 F5 통과(2026-08-16). 스위처 자동등장=Rust(scope A) |
-| Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Done | 9파일 34.68KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.1.0`) |
+| Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
+| Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Done | F20 마법사 + features/untrusted 수정. 9파일 37.47KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.2.0`) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
