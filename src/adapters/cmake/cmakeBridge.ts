@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
+import type { OptionValue } from '../../core/types';
 import { DevSwitcherError } from '../../core/errors';
 
 /**
@@ -158,6 +159,63 @@ export function executableArtifact(info: CMakeTargetInfo): string | undefined {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// configure / build argument assembly (ADR-014, §8) — pure, overlay -D injection
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Options folded into a configure: build type, generator platform, and overlay -D flags. */
+export interface ConfigureOptions {
+  config?: string; // CMAKE_BUILD_TYPE (single-config generators use it; multi-config ignores it)
+  platform?: string; // generator platform (-A) for the VS generators
+  defines?: Record<string, string>; // extra -D overlay (CMAKE_CXX_FLAGS, CMAKE_EXE_LINKER_FLAGS, …)
+}
+
+/**
+ * Configure args: `cmake -S <src> -B <build> [-A <platform>] [-D CMAKE_BUILD_TYPE=<cfg>]
+ * [-D k=v …]`. The overlay is injected here (§8) — the canonical CMakeLists.txt is never
+ * edited (ADR-013). CMAKE_BUILD_TYPE is passed for single-config generators; multi-config
+ * generators select the config at build time via --config (buildArgs) and ignore it.
+ */
+export function configureArgs(srcDir: string, buildDir: string, opts: ConfigureOptions = {}): string[] {
+  const args = ['-S', srcDir, '-B', buildDir];
+  if (opts.platform) {
+    args.push('-A', opts.platform);
+  }
+  if (opts.config) {
+    args.push('-D', `CMAKE_BUILD_TYPE=${opts.config}`);
+  }
+  for (const [key, value] of Object.entries(opts.defines ?? {})) {
+    args.push('-D', `${key}=${value}`);
+  }
+  return args;
+}
+
+/** Build args: `cmake --build <build> --config <cfg> --target <target>` (no shell, NFR-002). */
+export function buildArgs(buildDir: string, config: string, target: string): string[] {
+  return ['--build', buildDir, '--config', config, '--target', target];
+}
+
+/**
+ * Map the compiler/linker overlay records (InvocationConfig, keyed by option id) to cmake
+ * -D defines (§8): compiler `cxx-flags` → CMAKE_CXX_FLAGS, linker `exe-linker-flags` →
+ * CMAKE_EXE_LINKER_FLAGS. Only non-empty string values are injected.
+ */
+export function overlayDefines(
+  compiler: Record<string, OptionValue>,
+  linker: Record<string, OptionValue>,
+): Record<string, string> {
+  const defines: Record<string, string> = {};
+  const cxx = compiler['cxx-flags'];
+  if (typeof cxx === 'string' && cxx.trim()) {
+    defines.CMAKE_CXX_FLAGS = cxx;
+  }
+  const link = linker['exe-linker-flags'];
+  if (typeof link === 'string' && link.trim()) {
+    defines.CMAKE_EXE_LINKER_FLAGS = link;
+  }
+  return defines;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // cmake CLI I/O boundary — exec-injected, vscode-free (mirrors the other bridges)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -274,7 +332,7 @@ export interface CMakeToolchainStatus {
 export class CMakeBridge {
   private readonly exec: CMakeExec;
   private cmakeVersion: string | null | undefined; // undefined = unprobed, null = absent
-  private readonly configured = new Set<string>(); // buildDirs already configured this session
+  private readonly configuredSig = new Map<string, string>(); // buildDir → last configure signature
   private readonly targetCache = new Map<string, CMakeExeTarget[]>(); // `${buildDir}\0${config}` → targets
 
   constructor(exec: CMakeExec = defaultExec) {
@@ -294,33 +352,62 @@ export class CMakeBridge {
   }
 
   /**
-   * List the executable targets of a project via the File API (ADR-014). Writes the
-   * codemodel query, runs a plain `cmake -S <srcDir> -B <buildDir>` configure (no overlay
-   * — target discovery only; the `-D` overlay injection is the build step, TASK-034), then
-   * reads the reply. `config` selects the build type on a multi-config generator. Configure
-   * runs once per buildDir (cached); results are cached per (buildDir, config).
+   * Configure a project (ADR-014): write the codemodel query, then run `cmake -S -B` with
+   * the overlay -D flags / build type / platform (configureArgs). Re-runs only when the
+   * options change (signature-gated) so repeated build/debug clicks don't reconfigure; a
+   * manifest edit forces a fresh configure via invalidateCache (Rescan). On a reconfigure
+   * the cached target lists for this build tree are dropped (a target may have been added).
    */
-  async listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeExeTarget[]> {
+  async configure(srcDir: string, buildDir: string, opts: ConfigureOptions = {}): Promise<void> {
+    const signature = JSON.stringify([srcDir, opts.config ?? '', opts.platform ?? '', opts.defines ?? {}]);
+    if (this.configuredSig.get(buildDir) === signature) {
+      return; // already configured with these options
+    }
+    await this.writeCodemodelQuery(buildDir);
+    const result = await execCapture('cmake', configureArgs(srcDir, buildDir, opts), undefined, this.exec);
+    if (result.exitCode !== 0) {
+      throw new DevSwitcherError(
+        'CMAKE_CONFIGURE_FAILED',
+        `cmake configure failed for ${srcDir} (exit ${result.exitCode}).`,
+        result.stderr,
+      );
+    }
+    this.configuredSig.set(buildDir, signature);
+    for (const key of [...this.targetCache.keys()]) {
+      if (key.startsWith(`${buildDir}\0`)) {
+        this.targetCache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Configure (if needed) and list the executable targets for a build type. `config` selects
+   * the codemodel configuration read back; results are cached per (buildDir, config).
+   */
+  async targetsFor(
+    srcDir: string,
+    buildDir: string,
+    opts: ConfigureOptions = {},
+    config?: string,
+  ): Promise<CMakeExeTarget[]> {
     const key = `${buildDir}\0${config ?? ''}`;
     const cached = this.targetCache.get(key);
     if (cached) {
       return cached;
     }
-    if (!this.configured.has(buildDir)) {
-      await this.writeCodemodelQuery(buildDir);
-      const result = await execCapture('cmake', ['-S', srcDir, '-B', buildDir], undefined, this.exec);
-      if (result.exitCode !== 0) {
-        throw new DevSwitcherError(
-          'CMAKE_CONFIGURE_FAILED',
-          `cmake configure failed for ${srcDir} (exit ${result.exitCode}).`,
-          result.stderr,
-        );
-      }
-      this.configured.add(buildDir);
-    }
+    await this.configure(srcDir, buildDir, opts);
     const targets = await readReplyDir(join(buildDir, '.cmake', 'api', 'v1', 'reply'), config);
     this.targetCache.set(key, targets);
     return targets;
+  }
+
+  /**
+   * List executable targets via a plain (overlay-free) configure — used by the Target chip,
+   * whose listItems has no invocation overlay. The build/debug flows inject the overlay via
+   * configure()/targetsFor() with real options (prepareInvocation, resolveExecutable).
+   */
+  listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeExeTarget[]> {
+    return this.targetsFor(srcDir, buildDir, {}, config);
   }
 
   /** Ask cmake for a codemodel reply on the next configure (shared stateless query). */
@@ -333,7 +420,7 @@ export class CMakeBridge {
   /** Drop all cached probes/discovery (F17 invalidation / explicit Rescan). */
   invalidateCache(): void {
     this.cmakeVersion = undefined;
-    this.configured.clear();
+    this.configuredSig.clear();
     this.targetCache.clear();
   }
 

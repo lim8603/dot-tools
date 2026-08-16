@@ -275,6 +275,16 @@ export interface LanguageAdapter {
   resolveExecutable(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string>; // resolve path before debug (ADR-005)
 
   /**
+   * Optional async pre-step run before the (synchronous) build/run task and before the
+   * debug build. Lets a two-stage toolchain do work the single-command build model can't
+   * express — CMake configures here (`cmake -S -B -D…`, ADR-014) so the overlay -D flags
+   * are injected before `cmake --build`. Adapters whose build is a single command
+   * (cargo/dotnet/python) omit it. Throws (DevSwitcherError) on failure → the orchestrator
+   * aborts the invocation. (interface_contract §4)
+   */
+  prepareInvocation?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<void>;
+
+  /**
    * F20 — scaffold a default-template project. Native tools return a `task`
    * (cargo new / dotnet new console) the TaskRunner runs; languages without a
    * scaffolder return `files` the Orchestrator writes (cmake / python, D-13).

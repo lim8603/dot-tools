@@ -245,6 +245,8 @@ export class Orchestrator {
     const config = this.activeConfig(project);
     this.statusBar.markActionBusy('debug');
     try {
+      // Two-stage adapters (CMake) configure with the overlay before the build (§7.4).
+      await adapter.prepareInvocation?.(project, selection, config);
       if (adapter.actions.build) {
         const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
         if (!build.succeeded) {
@@ -451,6 +453,15 @@ export class Orchestrator {
 
     this.statusBar.markActionBusy(action);
     try {
+      // Two-stage adapters (CMake) configure with the overlay here, before the build task
+      // (which is a single `cmake --build`). A configure failure aborts the invocation.
+      try {
+        await adapter.prepareInvocation?.(project, selection, config);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`DevSwitcher: ${action} preparation failed — ${message}`);
+        return;
+      }
       // Pre-build commands (F21/C-5) run first; a failure aborts the build.
       if (!(await this.runBuildEvents(project, config.preBuild, 'pre'))) {
         return;
