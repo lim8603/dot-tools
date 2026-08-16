@@ -53,7 +53,7 @@
 | EV ID | 유형 | 검증 대상 / 범위 | 판정 | 관련 Gate | 원본 근거 위치 | 마지막 갱신일 | 비고 |
 |-------|------|------------------|------|-----------|----------------|--------------|------|
 | EV-001 | Unit | 순수 코어 98 케이스(파서·reconcile·오버레이·export·진단·argsLine·**이름검증·템플릿**) | Pass | Gate 4 | `out/test/unit`, `npm run test:unit` | 2026-08-16 | CI 가능 |
-| EV-002 | Integration | 확장 활성화·**11 커맨드**(+newProject) 기여·설정 페이지 오픈. 퍼블리셔 `lim8603` | Pass | Gate 4 | `src/test/integration/extension.test.ts`, `npm run test:integration` (3 passing) | 2026-08-16 | VSCode 호스트 실행 |
+| EV-002 | Integration | 확장 활성화·**12 커맨드**(+newProject·+rescan)·설정 페이지 오픈. 퍼블리셔 `lim8603` | Pass | Gate 4 | `src/test/integration/extension.test.ts`, `npm run test:integration` (3 passing) | 2026-08-16 | VSCode 호스트 실행. 세션 #008 rescan 추가 |
 | EV-003 | E2E(Manual) | TC-01·04·05·07·08·12·13 (칩·빌드·디버그·watcher·export/import·target add·Doctor) | Pass | Gate 4 | 세션 로그 #004·#005 F5 | 2026-08-15 | 7 케이스 |
 | EV-004 | E2E(Manual) | TC-06(디버그×오버레이)·TC-10(E1 칩) | Partial | Gate 4 | 세션 #005 | 2026-08-15 | 코어 검증됨, 결합 재확인 권장 |
 | EV-005 | E2E(Manual) | TC-09(재시작 복원)·TC-02(workspace 3멤버)·TC-03(멀티루트) | Pass | Gate 4/5 | 세션 #006 F5 (scratchpad/verify 픽스처) | 2026-08-16 | 검증 중 버그 2건 발견·수정(features e7b462b·untrusted eb8983a) |

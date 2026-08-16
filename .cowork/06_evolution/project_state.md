@@ -19,14 +19,14 @@
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
 | 활성 Milestone | MS-011 Python 어댑터 실구현 (리트머스, 진행 중 — MS-010 병합 완료) |
-| 활성 Task | TASK-030 Review(감지+칩, 실 python 스모크 통과) → 다음 TASK-031(실행+PYTHONPATH) |
+| 활성 Task | MS-011 F5 대기 — TASK-030·031·032 전부 Review(감지·실행·디버그·진단 코드 완료) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
 | 마지막 갱신일 | 2026-08-16 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-16_007.md |
+| 참조 세션 로그 | session_2026-08-16_008.md |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-031 | Python 실행 + PYTHONPATH env 주입 | AI | Planned | 2026-08-16 | 다음 재개점 — `python <script> [args]` Task 조립 + env(PYTHONPATH 등) 주입 + resolveExecutable=스크립트 경로. environment 미선택 시 `python` 폴백 |
+| (MS-011 F5) | Python 어댑터 end-to-end 수동 검증 | Human | 부분 통과 | 2026-08-16 | **통과**: 감지·리트머스(빌드버튼 미표시·configCategories 축소)·env/target 칩·Run(PYTHONPATH)·debugpy 중단점. **잔여**: Doctor(Python 인터프리터/Python 확장) + 재-F5 [A] Environment dedup(`python` 하나) [B] New Project 폴더 선택창 [C] Rescan Projects 명령 → 통과 시 MS-011 Done → v1.2 → TASK-031·032 커밋(지시 시) → MS-012 CMake |
 
-> **TASK-001~029 Done. MS-010(C#) F5 통과·병합. MS-011 진행: TASK-030(감지+칩) Review·커밋.** 다음: **TASK-031**(Python 실행) → TASK-032(debugpy+진단·리트머스) → MS-011 F5 → MS-012 CMake → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
+> **TASK-001~032 Done/Review. MS-010(C#) 병합. MS-011 코드 완료(TASK-030·031·032 Review) — F5 게이트 대기.** 다음: **MS-011 F5** → Done → MS-012 CMake(033~035) → MS-013 Run Group(036~040). C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-031**(Python 실행) — `python <script> [args]` + PYTHONPATH env 주입 + resolveExecutable=스크립트 경로. `feature/ms-011-python-adapter` 브랜치에서 이어감. environment 미선택 시 `python` 폴백.
-2. 이어서 TASK-032(debugpy+진단·리트머스 검증) → MS-011 F5 → Done → MS-012 CMake(TASK-034 resolveExecutable=KB #8 원칙).
+1. **MS-011 재-F5**(Human 게이트) — 잔여: **Doctor**(Python 인터프리터/Python 확장) + **[A] Environment 칩 dedup**(`python` 하나만) + **[B] New Project 폴더 선택창**(하위 폴더 생성) + **[C] Rescan Projects 명령**(폴더 이동 후 경로 갱신). (감지·리트머스·칩·Run·debugpy는 통과). 통과 시 MS-011 Done → v1.2.
+2. F5 통과 후 TASK-030·031·032 커밋(feat+docs, 지시 시) → **MS-012 CMake**(TASK-033 착수 시 CMake Tools 연동 ADR·TASK-034 resolveExecutable=KB #8 원칙).
 3. **C-6**: MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
@@ -124,6 +124,7 @@
 - **세션 #006 (계속) — v0.1.0 병합·push + MS-008 착수(TASK-022 코드완료·F5 대기)**: `feature/task-021-readme-vsix`→main FF 병합·`git push`(GitHub v0.1.0 반영). MS-008 분해(TASK-022~024, D-13). **TASK-022 구현**: `core/projectName.ts`(순수 검증·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`types.ts NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`, ProcessExecution 셸無)+`adapterRegistry.adapter()/creatableAdapters()`+`orchestrator.newProject()`(마법사→createProjectTask→TaskRunner(synthetic lock)→성공 시 refresh+findCreatedProject→setActiveProject+renderActive 자동전환 OQ-001; 실패 시 Run Doctor; 스텁 throw catch)+`extension.ts`/`package.json`(newProject 커맨드·devswitcher-newproject taskDef). check-types·lint·**unit 96**·esbuild OK. TASK-022 F5 통과·커밋(ab58c15/6999f34).
 - **세션 #006 (계속) — TASK-023 코드완료·F5 대기**: 계약 일반화 `createProjectTask→createProject(target): {kind:'task'}|{kind:'files'}`(types.ts `ProjectFile`/`ProjectCreation`). cargo/dotnet=네이티브 new(task, `dotnet new console -o`), **cmake/python=확장이 `workspace.fs`로 템플릿 작성(files)** — D-13을 ShellExecution→workspace.fs로 개정(셸 종류 미제어·C++ `<>` 충돌 발견). `cmakeTemplate.ts`/`pythonTemplate.ts`(순수·mocha2) + orchestrator `newProject` kind 분기 + `writeProjectFiles`(createDirectory+writeFile). interface_contract §5 갱신. **scope A**: v1 스위처 자동등장=Rust만(나머지 3개 listProjects v2 스텁). check-types·lint·**unit 98**·esbuild OK. TASK-023 F5 통과(4언어 생성·내용 검증)·커밋(2684ee7/467f8f3).
 - **세션 #006 (계속) — TASK-024·MS-008 Done**: 통합 테스트에 `newProject` 추가 + **퍼블리셔 회귀 fix**(EXTENSION_ID `seunghyun`→`lim8603`) → `npm run test:integration` **3 passing**. test_case(§1 퍼블리셔·11커맨드·§2 TC-14~17 F20 Pass·요약 Manual 11)·verification_evidence(EV-007 F20·EV-001 unit98·EV-002 11커맨드)·CHANGELOG([Unreleased] F20) 갱신. **MS-008 Done → 등록 Milestone(MS-001~008) 전부 완료.** 브랜치 `feature/ms-008-new-project-wizard` 5커밋(022·023 각 feat+docs + 024) **병합 대기**. **다음: main FF 병합+push (지시 시) → 선택적 v0.2.0 릴리즈.**
+- **세션 #008 — TASK-031(Python 실행) 코드 완료(Review, F5 대기)**: `makePythonRunTask`(ProcessExecution 셸無 NFR-002 · 인터프리터=environment 칩값, 순수 helper `resolveInterpreter`로 미선택 시 `python` 폴백[createRunTask 동기라 checkToolchain await 불가] · script=target 칩 · runArgs 뒤따름 · **problemMatcher 없음**[인터프리터 런은 컴파일 진단 없음]) + createRunTask 배선 + `taskEnv`(config.env 전달, dotnet 동형 — Python은 outputDir/RUSTFLAGS 아날로그 없음, env가 전부 §8) + `resolveExecutable`=**대상 `.py` 절대경로**(빌드 없음 → exec 호출 없이 경로 해석·부재 시 E6). **설계 판단**: registry는 "인터프리터 경로"였으나 debugpy launch가 `program`=스크립트/`python`=인터프리터 구조 → project_state handoff("스크립트 경로") 채택(TASK-032 디버그 `program` 직결). optionCatalog `PYTHONOPTIMIZE`(env, ≡`-O`) 추가 + `devSwitcher.python` taskDef 등록. **실 python 3.12 run 스모크 통과**(PYTHONPATH 모듈 import·PYTHONOPTIMIZE→`__debug__=False`·argv). **TASK-032(디버그+진단)**: 순수 `buildDebugpyConfig`(debugpy: program=스크립트·python=인터프리터[run 동일]·`console:integratedTerminal`[stdin]·justMyCode·env 비면 생략) + `createDebugConfig`(빌드 없음 §7.4 직행) + `collectDiagnostics`(Python 인터프리터 critical tier2 + `ms-python.python` optional tier1). debug 플로우는 어댑터-무지라 코드 변경 불요(build===false→빌드 스킵, requiredExtensions ensure로 Python 확장=debugpy 번들 설치 유도). **디버그 타입=`debugpy`**(구 `python` 아님, 현행 확장 등록). check-types·lint·**unit 133**(+debugpy 2)·esbuild 71.1kb OK. **MS-011 어댑터 계약 전 메서드 실구현 완성**(createBuildTask만 build===false 미호출 스텁). **F5(Human): 감지·리트머스·칩·Run·debugpy 통과 / Doctor 미확인.** F5 유래 수정 2건: **[A] Environment 칩 중복**(`python`/`python3` 동일 인터프리터 2회) → probe를 `-c`(버전+`sys.executable`)로 바꿔 실경로 `interpreterKey` dedup(선호순 유지·venv 겹침도 처리). **[B] New Project 항상 루트 생성** → 마법사 step1을 네이티브 폴더 선택창(showOpenDialog·하위 폴더 자유 선택·워크스페이스 내부 검증)으로 교체(`target.folderUri`만 변경, 배선 무변경). functional_spec F20 §2 동기화. **[C] 수동 재스캔 명령 부재**(감시가 폴더 이동 놓쳐 이전 경로 기억) → `DevSwitcher: Rescan Projects`(`devSwitcher.rescan`) 추가: `registry.invalidateAll`(전 어댑터 캐시)→`orchestrator.rescan`(refresh+진단+개수 토스트)+명령 등록+통합 12커맨드+README/functional_spec F17/EV-002 동기화. **F5 재현 버그 fix**: `invalidateAll`이 CMake 스텁 `invalidateCache`(notImplemented throw)까지 호출해 rescan 실패 → try/catch 관용(scan()이 스텁 listProjects throw 관용과 동일). check-types·lint·**unit 135**·**통합 3 passing**·esbuild 72.1kb OK. **다음: MS-011 재-F5(Doctor·A·B·C) → Done → v1.2.**
 - **세션 #007 — INT-001 완주 로드맵 착수 + C-3 폐기 + L-1 구현**: ① 진척 브리핑 중 task_registry TASK-022·023 stale(`Review`) 발견→`Done` 정정. ② **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정. **C-3(캐노니컬 파일 편집) 폐기**(D-15/**ADR-013** — "파일 무편집 = 영구 불변식"; 영속화는 export/import가 이미 해결; `persistSetting` 계약 제거=TASK-026). ③ 스케줄 등록: **MS-009**(정리: L-1+계약정리) → **MS-010 C#** → **MS-011 Python** → **MS-012 CMake**(=C-7) → **MS-013 Run Group**(C-6). TASK-025~040. ④ **MS-009 Done**: TASK-025(L-1 Extra rustflags) — cargo optionCatalog `stringList`(**Compiler 섹션**) + `applyOption` 빈배열 제거 + `buildConfigArgs` rustflags 스킵 + `buildRustflags(linker, compiler)` append + 설정 페이지 stringList 에디터(textarea·blur) + preview RUSTFLAGS. **F5 통과**(1차 UX 버그=Linker 섹션 오배치→Compiler 이동 후 재확인 통과). TASK-026 — `persistSetting` 계약 제거(types.ts + 4어댑터 stub + cargo import 정리 + interface_contract/domain_model/functional_spec 정리, 호출처 0). **unit 104·esbuild 61.7kb OK.** **다음: MS-010(TASK-027 DotnetBridge)부터 C-7 착수.**
 
 ---

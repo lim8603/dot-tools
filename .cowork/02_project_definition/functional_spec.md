@@ -106,6 +106,8 @@
 
 **흐름**: `FileSystemWatcher`가 `manifestGlobs` 감시 → create/change/delete 이벤트 → 500ms 디바운스 → 해당 어댑터 `invalidateCache()` → 변경된 workspaceFolder만 재스캔 → `reconcile()` → 상태바 갱신. `target/`, `node_modules/` 제외. 확장은 캐노니컬 파일을 편집하지 않으므로(ADR-013) 재스캔 트리거는 외부 편집·F20 생성뿐이다.
 
+**수동 재스캔 (세션 #008)**: 감시가 놓치는 변경(폴더 이동/이름변경, VCS 체크아웃, 편집기 밖 파일조작)에 대비해 명령 `DevSwitcher: Rescan Projects`(`devSwitcher.rescan`)로 강제 갱신을 제공한다 — 전 어댑터 캐시 무효화 + 재스캔 + reconcile + 툴체인 재점검 + 결과 개수 토스트.
+
 ### F19 — 환경 진단·의존성 처리 (Doctor)
 
 **원칙**: 우아한 성능 저하 — 없는 것에 의존하는 기능만 비활성화하고 복구 경로를 항상 제시.
@@ -125,7 +127,7 @@
 
 **기본 흐름**
 1. 명령 `DevSwitcher: 새 프로젝트 시작`(`devSwitcher.newProject`) **수동 호출**.
-2. 대상 폴더 확인(현재 워크스페이스 폴더 또는 선택).
+2. 대상 **부모 폴더 선택** — 네이티브 폴더 선택창(기본=워크스페이스 루트, **하위 폴더 자유 선택** 예: `services/`·`apps/`). 워크스페이스 내부로 제한(스캔 감지 위해). 세션 #008 개선(구: 루트만).
 3. 언어 QuickPick: Rust / C++ / C# / Python.
 4. 해당 어댑터가 네이티브 도구로 **기본 템플릿 생성에 위임**:
    - Rust → `cargo new`(또는 `cargo init`)

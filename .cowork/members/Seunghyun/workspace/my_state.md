@@ -12,7 +12,7 @@
 | 역할 (Role ID) | 프로젝트 오너 |
 | 활성 Milestone | **MS-011 Python** (리트머스, C-7 2/3) · MS-010 C# Done·병합 완료 |
 | 마지막 갱신일 | 2026-08-16 |
-| 참조 세션 로그 | session_2026-08-16_007.md |
+| 참조 세션 로그 | session_2026-08-16_008.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-031 | Python 실행 + PYTHONPATH env 주입 | MS-011 | Planned | 다음 재개점 | 없음 |
+| MS-011 F5 | Python 어댑터 end-to-end 수동 검증 | MS-011 | 부분 통과 | Doctor·A·B·C 재-F5 잔여 | 없음 |
 
-> **TASK-001~029 Done. MS-010 C# 병합. MS-011 진행: TASK-030(감지+칩) Review·커밋**(실 python 3.12 스모크 통과). 다음 세션: `feature/ms-011-python-adapter`에서 **TASK-031**(실행)부터 → TASK-032(debugpy·리트머스) → MS-011 F5.
+> **TASK-001~032 Done/Review. MS-010 C# 병합. MS-011 코드 완료(030·031·032 Review).** F5(Human): 감지·리트머스·칩·Run·debugpy 통과 / **Doctor 미확인 + F5 유래 수정 3건 재-F5**(A: Environment 실경로 dedup·B: New Project 폴더 선택창·C: Rescan Projects 명령). 다음: `feature/ms-011-python-adapter`에서 **재-F5** → Done → 커밋(지시 시) → MS-012 CMake.
 
 ---
 
@@ -37,13 +37,14 @@
 | #005 | 2026-08-15 | **MS-006 코어 병합 + TASK-015(export/import F12) 완료 → MS-006 Done.** C-4 확정(ProfileExport=PersistedState 정렬). 파생: 옵션 example bare화+injectsAs/docUrl·preview env 표시. F5 라운드트립 통과. mocha 73 | MS-006 | TASK-015 | **MS-001~006 전부 완료·병합** |
 | #006 | 2026-08-16 | **대형 세션 — v0.1.0 릴리즈 + MS-008(F20 마법사) 완주 + 수동검증 + v0.2.0 릴리즈.** ① TASK-021→MS-007 Done→v0.1.0(publisher lim8603·codicon PNG 목업·vsce·설치스모크) ② MS-008 TASK-022~024(마법사 4언어 생성, 계약 `createProject: task\|files`, workspace.fs D-13)→Done ③ 수동검증 TC-02/03/09 Pass·TC-11 Deferred ④ 검증 중 버그 2건 수정(features 칩 e7b462b·untrusted 무한스피너 eb8983a) ⑤ **v0.2.0 릴리즈**(main push). unit 99+통합 3 | MS-007·008 | TASK-021~024 | **MS-001~008 전부 완료·v0.2.0** |
 | #007 | 2026-08-16 | **초대형 세션 — INT-001 완주 로드맵 착수.** ① 로드맵 확정(MS-009~013)+**C-3 폐기**(D-15/ADR-013) ② **MS-009**(L-1 자유 rustflags·persistSetting 계약 제거)→Done·병합 ③ **MS-010 C#**(TASK-027~029: `msbuild -getProperty` 감지·`-p:` 주입·coreclr 디버그·Doctor, **디버그 RID 경로 fix**)→Done·병합·F5 ④ **MS-011 Python** TASK-030(감지+environment/target 칩)Review ⑤ KB #8 승격. unit 128, cargo/dotnet10/py3.12 스모크 | MS-009·010·011 | TASK-025~030 | **MS-009·010 완료·병합 / MS-011 진행(TASK-031부터)** |
+| #008 | 2026-08-16 | **MS-011 Python 어댑터 실구현 코드 완료(Review, F5 대기).** TASK-031(실행): `makePythonRunTask`(ProcessExecution·인터프리터=environment 칩·`resolveInterpreter` 폴백·script=target·runArgs)+createRunTask+taskEnv+**resolveExecutable=스크립트 절대경로**(빌드 없음·E6)+PYTHONOPTIMIZE env+`devSwitcher.python` taskDef. TASK-032(디버그+진단): `buildDebugpyConfig`(debugpy·program=스크립트·python=인터프리터·integratedTerminal)+createDebugConfig+collectDiagnostics(인터프리터/Python 확장). unit **133**·esbuild 71.1kb·실 python run 스모크 통과. **F5(Doctor 제외 통과) 유래 수정 3건**: A) Environment 실경로 dedup(`python`/`python3` 동일 sys.executable) B) New Project 네이티브 폴더 선택창(하위 폴더) C) `Rescan Projects` 명령(감시 미스 대비). unit **135**·통합 3·esbuild 72.1kb | MS-011 | TASK-031·032 +F5수정 | **MS-011 코드 완료 / 재-F5(Doctor·A·B·C) 대기** |
 
 ---
 
 ## 다음 시작점
 
-1. **TASK-031**(Python 실행) — `python <script> [args]` + PYTHONPATH env 주입 + resolveExecutable=스크립트 경로. `feature/ms-011-python-adapter`에서 이어감. environment 미선택 시 `python` 폴백.
-2. 이어서 TASK-032(debugpy+진단·리트머스 검증) → MS-011 F5 → Done → MS-012 CMake(TASK-034 resolveExecutable=KB #8).
+1. **MS-011 재-F5**(Human 게이트) — `feature/ms-011-python-adapter`에서 잔여 검증: Doctor(Python 인터프리터/Python 확장) + [A] Environment dedup(`python` 하나만) + [B] New Project 폴더 선택창(하위 폴더) + [C] Rescan Projects 명령(폴더 이동 후 갱신). (감지·리트머스·칩·Run·debugpy 통과). 통과 시 MS-011 Done → v1.2.
+2. MS-011 Done 후 TASK-030·031·032 커밋(feat+docs, 지시 시) → **MS-012 CMake**(TASK-034 resolveExecutable=KB #8).
 3. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---
