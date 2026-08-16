@@ -105,6 +105,20 @@ export class Orchestrator {
     }
   }
 
+  /**
+   * Manual Rescan (command palette) — force a fresh detection when the ManifestWatcher
+   * missed a change: a project folder moved/renamed, files changed outside the editor, or
+   * a VCS checkout. Invalidates every adapter's cache so metadata is re-read, re-scans +
+   * reconciles, re-checks the toolchain, then reports the new count.
+   */
+  async rescan(): Promise<void> {
+    this.registry.invalidateAll();
+    await this.refresh();
+    await this.refreshDiagnostics();
+    const count = this.registry.getProjects().length;
+    void vscode.window.showInformationMessage(`DevSwitcher: rescanned — ${count} project(s) found.`);
+  }
+
   /** Rescan and re-render — invoked on activation and on every debounced manifest change. */
   async refresh(): Promise<void> {
     const projects = await this.registry.scan();

@@ -50,6 +50,22 @@ export class AdapterRegistry {
     return this.projects;
   }
 
+  /**
+   * Drop every adapter's cached metadata (manual Rescan / force refresh, F17). Stub
+   * adapters (cmake until MS-012) throw NOT_IMPLEMENTED from invalidateCache — ignored,
+   * exactly as scan() tolerates their listProjects: they hold no cache to drop, so one
+   * unimplemented adapter must never break a global rescan.
+   */
+  invalidateAll(): void {
+    for (const adapter of this.adapters) {
+      try {
+        adapter.invalidateCache();
+      } catch {
+        // Stub adapter with nothing to invalidate — skip.
+      }
+    }
+  }
+
   project(projectId: string): ProjectInfo | undefined {
     return this.projects.find((p) => p.id === projectId);
   }

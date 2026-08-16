@@ -1,17 +1,80 @@
 import * as vscode from 'vscode';
 import { dirname, join } from 'node:path';
-import { ChipItem, LanguageAdapter, ProjectInfo } from '../../core/types';
+import { DevSwitcherError } from '../../core/errors';
+import {
+  ChipItem,
+  DiagnosticProbe,
+  InvocationConfig,
+  LanguageAdapter,
+  ProjectInfo,
+  Selection,
+} from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import { pythonProjectFiles } from './pythonTemplate';
 import {
   PythonBridge,
   SYSTEM_INTERPRETERS,
   VENV_DIRS,
+  assemblePythonArgs,
+  buildDebugpyConfig,
+  interpreterKey,
   pythonProjectName,
+  resolveInterpreter,
   venvInterpreter,
 } from './pythonBridge';
 
 const bridge = new PythonBridge();
+
+const PYTHON_TASK_TYPE = 'devSwitcher.python';
+
+/** Friendly names for the extensions Doctor reports (F19); falls back to the id. */
+const EXTENSION_LABELS: Record<string, string> = { 'ms-python.python': 'Python' };
+const extensionLabel = (id: string): string => EXTENSION_LABELS[id] ?? id;
+
+/** Directory a python command runs in — the project directory (next to pyproject.toml). */
+function cwdOf(project: ProjectInfo): string {
+  return dirname(project.manifestPath);
+}
+
+/**
+ * The invocation overlay's env for a Task. Python has no outputDir / RUSTFLAGS analogue —
+ * every overlay option (PYTHONPATH, PYTHONOPTIMIZE, …) is already an env var (§8), so this
+ * just surfaces config.env when non-empty. Mirrors dotnet's taskEnv.
+ */
+function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
+  const env: Record<string, string> = { ...(config.env ?? {}) };
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+/**
+ * Build a ProcessExecution-backed `python <script> [args]` run Task (no shell, array
+ * args — NFR-002). The interpreter comes from the environment chip (venv path or system
+ * command, `python` fallback); the script is the target chip's `.py` file; runArgs follow
+ * the script (F16). No problemMatcher — an interpreted run has no compile diagnostics.
+ */
+function makePythonRunTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
+  const interpreter = resolveInterpreter(sel.values.environment);
+  const script = typeof sel.values.target === 'string' ? sel.values.target : 'main.py';
+  const args = assemblePythonArgs(script, config.runArgs ?? []);
+  const execution = new vscode.ProcessExecution(interpreter, args, {
+    cwd: cwdOf(project),
+    env: taskEnv(config),
+  });
+  const definition: vscode.TaskDefinition = { type: PYTHON_TASK_TYPE, action: 'run', projectId: project.id };
+  const task = new vscode.Task(
+    definition,
+    project.workspaceFolder,
+    `run ${project.name}`,
+    'python',
+    execution,
+  );
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
+}
 
 /** True when a file exists (remote-safe via workspace.fs, ADR-008). */
 async function fileExists(fsPath: string): Promise<boolean> {
@@ -78,6 +141,18 @@ export const pythonAdapter: LanguageAdapter = {
       type: 'string',
       injection: 'env',
     },
+    {
+      id: 'pyoptimize',
+      category: 'env',
+      // Env form of the `-O` interpreter flag — injected as env so injection stays uniform
+      // (Python has no compiler-flag channel; §8). The label IS the variable name.
+      label: 'PYTHONOPTIMIZE',
+      description: 'Optimization level (like python -O): 1 removes assert statements, 2 also strips docstrings.',
+      example: '1',
+      injectsAs: 'PYTHONOPTIMIZE=<value>',
+      type: 'string',
+      injection: 'env',
+    },
   ],
 
   chips: [
@@ -86,22 +161,32 @@ export const pythonAdapter: LanguageAdapter = {
       icon: 'server-environment',
       label: 'Environment',
       // Project-local venvs first, then system interpreters — self-discovered (no
-      // dependency on the Python extension's interpreter picker).
+      // dependency on the Python extension's interpreter picker). System commands are
+      // deduped by their real sys.executable so PATH aliases that resolve to one
+      // interpreter (python vs python3 vs py) list only once, highest-preference first.
       listItems: async (project) => {
         const items: ChipItem[] = [];
+        const seen = new Set<string>(); // real interpreter paths already listed
         const projectDir = dirname(project.manifestPath);
         for (const venv of VENV_DIRS) {
           const interpreter = venvInterpreter(join(projectDir, venv), process.platform);
           if (await fileExists(interpreter)) {
-            const version = await bridge.detectVersion(interpreter);
-            items.push({ id: interpreter, label: venv, description: version ?? 'venv' });
+            const info = await bridge.detectInterpreter(interpreter);
+            seen.add(interpreterKey(info?.executable ?? interpreter, process.platform));
+            items.push({ id: interpreter, label: venv, description: info?.version ?? 'venv' });
           }
         }
         for (const command of SYSTEM_INTERPRETERS) {
-          const version = await bridge.detectVersion(command);
-          if (version) {
-            items.push({ id: command, label: command, description: version });
+          const info = await bridge.detectInterpreter(command);
+          if (!info) {
+            continue;
           }
+          const key = interpreterKey(info.executable, process.platform);
+          if (seen.has(key)) {
+            continue; // same interpreter as an entry already listed (alias or the active venv)
+          }
+          seen.add(key);
+          items.push({ id: command, label: command, description: info.version });
         }
         return items;
       },
@@ -153,10 +238,66 @@ export const pythonAdapter: LanguageAdapter = {
 
   // actions.build === false → createBuildTask is never called (Python has no build step).
   createBuildTask: (_project, _sel, _config) => notImplemented('PythonAdapter.createBuildTask (no build concept)', 'n/a'),
-  createRunTask: (_project, _sel, _config) => notImplemented('PythonAdapter.createRunTask', 'TASK-031'),
-  createDebugConfig: (_project, _sel, _config) => notImplemented('PythonAdapter.createDebugConfig', 'TASK-032'),
-  resolveExecutable: (_project, _sel, _config) => notImplemented('PythonAdapter.resolveExecutable', 'TASK-031'),
+
+  createRunTask(project, sel, config) {
+    return makePythonRunTask(project, sel, config);
+  },
+
+  async createDebugConfig(project, sel, config) {
+    // No build (build === false), so the orchestrator (§7.4) skips straight here.
+    // program = the target script (resolveExecutable validates it exists); python = the
+    // same interpreter the run task uses so a picked venv debugs where it runs; env carries
+    // the overlay (PYTHONPATH, …) into the debug session. debugpy ships with ms-python.python.
+    const program = await this.resolveExecutable(project, sel, config);
+    const python = resolveInterpreter(sel.values.environment);
+    return buildDebugpyConfig(project.name, program, python, config.runArgs ?? [], cwdOf(project), taskEnv(config));
+  },
+
+  async resolveExecutable(project, sel, _config) {
+    // Interpreted: no build, no compiled artifact. The "executable" the debug flow (§7.4)
+    // launches is the target .py script itself (debugpy's `program`; the interpreter is the
+    // separate `python` field, TASK-032). Resolve its absolute path and confirm it exists.
+    const script = typeof sel.values.target === 'string' ? sel.values.target : undefined;
+    if (!script) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `No target script selected for ${project.name}.`); // E6
+    }
+    const abs = join(cwdOf(project), script);
+    if (!(await fileExists(abs))) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `Target script not found: ${abs}.`); // E6
+    }
+    return abs;
+  },
+
   createProject: (target) => ({ kind: 'files', files: pythonProjectFiles(target.projectName) }),
   invalidateCache: (_project) => bridge.invalidateCache(),
-  collectDiagnostics: () => Promise.resolve([]), // real interpreter/extension checks land in TASK-032
+
+  // F19 (§13.5) — probe the interpreter (critical) and the Python extension (optional, for
+  // debugpy). Doctor's pure core (core/diagnostics) turns these into ordered items.
+  collectDiagnostics: async (): Promise<DiagnosticProbe[]> => {
+    const tc = await bridge.checkToolchain();
+    const probes: DiagnosticProbe[] = [
+      {
+        id: 'python',
+        label: 'Python',
+        severity: 'critical',
+        present: tc.ok,
+        detail: tc.python, // e.g. 'Python 3.12.13'
+        tier: 2,
+        resolution: { kind: 'openUrl', url: 'https://www.python.org/downloads/' },
+      },
+    ];
+    for (const extId of pythonAdapter.requiredExtensions) {
+      const ext = vscode.extensions.getExtension(extId);
+      probes.push({
+        id: extId,
+        label: extensionLabel(extId),
+        severity: 'optional',
+        present: ext !== undefined,
+        detail: ext?.packageJSON?.version as string | undefined,
+        tier: 1,
+        resolution: { kind: 'installExtension', extensionId: extId },
+      });
+    }
+    return probes;
+  },
 };

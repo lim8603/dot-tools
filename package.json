@@ -86,6 +86,11 @@
         "category": "DevSwitcher"
       },
       {
+        "command": "devSwitcher.rescan",
+        "title": "Rescan Projects",
+        "category": "DevSwitcher"
+      },
+      {
         "command": "devSwitcher.newProject",
         "title": "New Project…",
         "category": "DevSwitcher"
@@ -156,6 +161,19 @@
           "action": {
             "type": "string",
             "description": "The DevSwitcher action this task runs (build or run)."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The DevSwitcher project id the task belongs to."
+          }
+        }
+      },
+      {
+        "type": "devSwitcher.python",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The DevSwitcher action this task runs (run)."
           },
           "projectId": {
             "type": "string",

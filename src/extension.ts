@@ -38,6 +38,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('devSwitcher.exportProfile', () => orchestrator.exportProfile()),
     vscode.commands.registerCommand('devSwitcher.importProfile', () => orchestrator.importProfile()),
     vscode.commands.registerCommand('devSwitcher.doctor', () => orchestrator.doctor()),
+    vscode.commands.registerCommand('devSwitcher.rescan', () => orchestrator.rescan()),
     vscode.commands.registerCommand('devSwitcher.newProject', () => orchestrator.newProject()),
     vscode.commands.registerCommand('devSwitcher.toggleCompact', async () => {
       const config = vscode.workspace.getConfiguration('devSwitcher');

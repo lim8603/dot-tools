@@ -77,8 +77,9 @@ code --install-extension devswitcher-tools-0.2.0.vsix
 | `DevSwitcher: Build` / `Run` / `Debug` | 빌드 / 실행 / 디버그 |
 | `DevSwitcher: Open Settings` | 설정 페이지 열기 |
 | `DevSwitcher: Doctor (environment diagnostics)` | 환경 진단 |
+| `DevSwitcher: Rescan Projects` | 워크스페이스 다시 스캔 (폴더 이동·외부 변경을 감시가 놓쳤을 때 강제 갱신) |
 | `DevSwitcher: Export Profile` / `Import Profile` | 프로파일 내보내기 / 가져오기 |
-| `DevSwitcher: New Project…` | 새 프로젝트 시작 마법사 (폴더 → 언어 → 이름) |
+| `DevSwitcher: New Project…` | 새 프로젝트 시작 마법사 (부모 폴더 → 언어 → 이름) |
 | `DevSwitcher: Toggle Compact Status Bar` | Compact(아이콘 전용) 모드 토글 |
 
 ### 설정 페이지

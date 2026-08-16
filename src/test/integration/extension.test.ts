@@ -22,6 +22,7 @@ const CONTRIBUTED_COMMANDS = [
   'devSwitcher.exportProfile',
   'devSwitcher.importProfile',
   'devSwitcher.doctor',
+  'devSwitcher.rescan',
   'devSwitcher.toggleCompact',
   'devSwitcher.newProject',
 ];

@@ -22,6 +22,14 @@ src/test/fixtures/**/Cargo.lock
 src/test/fixtures/**/bin/
 src/test/fixtures/**/obj/
 
+# ─── Python test-fixture caches / venvs ───
+src/test/fixtures/**/__pycache__/
+src/test/fixtures/**/.venv/
+src/test/fixtures/**/*.pyc
+
+# ─── CMake test-fixture build output ───
+src/test/fixtures/**/build/
+
 # ─── Member personal session logs ───
 .cowork/members/*/workspace/session_logs/*.md
 !.cowork/members/*/workspace/session_logs/.gitkeep
