@@ -114,15 +114,25 @@ export interface LanguageAdapter {
 
 ---
 
-## 5. F20 확장 — 프로젝트 생성 계약 (ADR-010) 【신규】
+## 5. F20 확장 — 프로젝트 생성 계약 (ADR-010) 【신규 · TASK-023 일반화】
 
-시작 마법사(F20)를 위해 `LanguageAdapter`에 **프로젝트 생성 능력**을 추가한다. 실제 파일 생성은 네이티브 도구에 위임하고, 확장은 오케스트레이션만 한다.
+시작 마법사(F20)를 위해 `LanguageAdapter`에 **프로젝트 생성 능력**을 추가한다. 네이티브 스캐폴더가 있는 언어는 Task를 반환하고, 없는 언어는 확장이 쓸 템플릿 파일 목록을 반환한다(D-13). 확장은 오케스트레이션만 한다.
 
 ```ts
 export interface NewProjectTarget {
   folderUri: vscode.Uri;    // 생성 대상 폴더 (빈 워크스페이스 폴더 또는 사용자 선택)
-  projectName: string;      // 새 프로젝트 이름
+  projectName: string;      // 새 프로젝트 이름 (= 생성될 `<name>/` 서브폴더)
 }
+
+export interface ProjectFile {
+  relativePath: string;     // 새 프로젝트 폴더 기준 상대 경로
+  content: string;
+}
+
+// 네이티브 스캐폴더 有 → task, 無 → files (Orchestrator가 workspace.fs로 작성)
+export type ProjectCreation =
+  | { kind: 'task'; task: vscode.Task }
+  | { kind: 'files'; files: ProjectFile[] };
 
 export interface LanguageAdapter {
   // ... §4 기존 멤버 ...
@@ -131,18 +141,20 @@ export interface LanguageAdapter {
   readonly canCreateProject: boolean;
 
   /**
-   * F20 — 네이티브 도구로 기본 템플릿 프로젝트를 생성하는 Task를 만든다.
-   * cargo new / dotnet new console / cmake 최소 템플릿 / python 기본 pyproject.toml.
-   * 실행은 TaskRunner가 담당(ADR-002). 완료 후 ManifestWatcher(F17)가 새 매니페스트를 감지.
+   * F20 — 기본 템플릿 프로젝트 생성 방법을 반환한다.
+   * cargo new / dotnet new console → { kind: 'task' } (TaskRunner 실행, ADR-002).
+   * cmake 최소 템플릿 / python pyproject.toml → { kind: 'files' } (확장이 workspace.fs로 작성, D-13).
+   * 완료 후 ManifestWatcher(F17)가 새 매니페스트를 감지.
    */
-  createProjectTask(target: NewProjectTarget): vscode.Task;
+  createProject(target: NewProjectTarget): ProjectCreation;
 }
 ```
 
 **계약 규칙 (F20)**
-- 확장은 파일을 직접 쓰지 않는다 — 네이티브 도구가 생성(SSOT·위임 원칙, ADR-007/ADR-010).
-- 네이티브 도구 부재 시 `requiredExtensions`/툴체인 점검과 동일하게 Doctor·온디맨드 경로로 연결(F19).
-- 생성 후 상태 반영은 별도 로직 없이 ManifestWatcher 단일 경로를 재사용한다(F17).
+- 네이티브 스캐폴더가 있으면(`cargo new`/`dotnet new`) 확장은 파일을 직접 쓰지 않는다(SSOT·위임, ADR-007/ADR-010).
+- **네이티브 스캐폴더가 없는 CMake/Python은 예외(D-13)** — 확장이 `workspace.fs`로 최소 템플릿을 작성한다(ShellExecution은 셸 종류 미제어·C++ `<>` 리다이렉션 충돌로 부적합). ADR-010을 "네이티브 도구가 있으면 위임, 없으면 확장이 작성"으로 해석.
+- 네이티브 도구 부재 시(task 실패) `requiredExtensions`/툴체인 점검과 동일하게 Doctor 경로로 연결(F19).
+- 생성 후 상태 반영은 별도 로직 없이 refresh(scan)+ManifestWatcher 경로를 재사용한다(F17). **v1 스위처 자동 등장은 Rust만**(cmake/dotnet/python은 listProjects 스텁이라 파일은 생성되나 스위처 등장은 v2, scope A).
 
 ---
 

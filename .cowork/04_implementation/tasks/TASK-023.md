@@ -18,18 +18,20 @@
 
 DotnetAdapter·CMakeAdapter·PythonAdapter의 `createProjectTask`를 실구현해, 마법사에서 4개 언어 모두 실제로 생성되게 한다.
 
-## 작업 항목
+## 작업 항목 (구현 완료)
 
-1. **Dotnet** — `dotnet new console -o <name>`(서브폴더 생성) ProcessExecution.
-2. **CMake** — 네이티브 `new` 명령 없음 → **ShellExecution으로 파일 작성**(D-13): `<name>/CMakeLists.txt`(최소 프로젝트) + `<name>/main.cpp`.
-3. **Python** — 동일하게 ShellExecution으로 `<name>/pyproject.toml`(기본 메타) 생성.
-4. **네이티브 도구 부재** — dotnet/cmake/python 미설치 시 Task 실패 → orchestrator가 이미 "Run Doctor" 안내(F19 재사용). 필요 시 각 어댑터 `collectDiagnostics`에 도구 프로브 추가 검토.
-5. 마법사 QuickPick에서 스텁 "아직 지원 안 함" 경로 제거(전 언어 실동작).
+1. **계약 일반화** — `createProjectTask(target): vscode.Task` → **`createProject(target): ProjectCreation`**(`{kind:'task'} | {kind:'files'}`). `ProjectFile`·`ProjectCreation` 타입 추가(types.ts). cargo도 `{kind:'task'}`로 전환.
+2. **Dotnet** — `dotnet new console -o <name>` ProcessExecution(셸無) → `{kind:'task'}`.
+3. **CMake** — `cmakeTemplate.cmakeProjectFiles(name)`(순수): `CMakeLists.txt`+`main.cpp` → `{kind:'files'}`.
+4. **Python** — `pythonTemplate.pythonProjectFiles(name)`(순수): `pyproject.toml`+`main.py` → `{kind:'files'}`.
+5. **orchestrator** — `newProject`가 kind 분기: task=TaskRunner, files=`writeProjectFiles`(workspace.fs createDirectory+writeFile). 스텁 "아직 지원 안 함" 경로 제거.
+6. **테스트** — `test/unit/projectTemplates.test.ts` 2(총 98).
 
-## 결정 반영
+## 결정 반영 (D-13 개정)
 
-- **D-13** — CMake/Python은 네이티브 스캐폴더가 없어 ShellExecution이 템플릿 파일을 작성한다(NFR-002a 셸 예외, buildEvents와 동일 패턴). ADR-010 "확장은 직접 파일을 쓰지 않는다"를 "셸(네이티브)이 쓴다"로 해석.
+- 최초 "ShellExecution 파일작성"이었으나 구현 중 **셸 종류 미제어(cmd/pwsh)·C++ `<>` 리다이렉션 충돌**을 발견 → **확장이 `workspace.fs`로 작성**으로 개정. ADR-010은 "네이티브 스캐폴더 있으면 위임(cargo/dotnet), 없으면 확장 작성(cmake/python)"으로 해석.
+- **scope A**: cmake/dotnet/python은 `listProjects`가 v2 스텁이라 **파일은 생성되나 스위처 자동등장은 Rust만 v1**. 나머지는 v2 어댑터 구현 시 등장.
 
 ## DoD
 
-- 4개 언어 각각 F5: New Project→언어→이름 → 매니페스트 생성 → 스위처 자동 등장. 도구 부재 시 Doctor 안내.
+- check-types·lint·unit 98·esbuild OK(달성). **F5**: 각 언어 New Project→이름 → 파일 생성 확인(cargo/dotnet=Task, cmake/python=fs 작성; Rust만 스위처 자동등장·전환). dotnet 도구 부재 시 Doctor 안내.
