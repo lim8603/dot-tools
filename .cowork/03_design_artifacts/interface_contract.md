@@ -102,6 +102,9 @@ export interface LanguageAdapter {
   createDebugConfig(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.DebugConfiguration>;
   resolveExecutable(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string>;   // 디버그 전 경로 해석(ADR-005)
 
+  // 선택적 — 동기 단일 Task 모델로 표현 못 하는 2단계 툴체인의 사전 단계. 오케스트레이터가 build/run/debug Task 실행 전에 await한다. CMake가 여기서 configure(`cmake -S -B -D…`)로 오버레이 -D를 주입한다(ADR-014). 단일 명령 빌드(cargo/dotnet/python)는 미구현(생략). 실패 시 throw→오케스트레이터가 호출 중단.
+  prepareInvocation?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<void>;   // 【신규 TASK-034】
+
   // 캐노니컬 파일 편집 메서드는 없다 — 확장은 사용자 빌드 파일을 절대 편집하지 않는다(영구 불변식, ADR-013 / D-15, C-3 폐기). 설정 영속화·공유는 프로파일 export/import(F12), 오버레이는 호출 시 주입(ADR-011).
   invalidateCache(project?: ProjectInfo): void;                              // 매니페스트 변경 시 캐시 무효화(F17)
 }
@@ -109,6 +112,7 @@ export interface LanguageAdapter {
 
 **계약 규칙**
 - 어댑터는 `vscode.Task` **객체 생성까지만** 책임진다. 실행·종료 코드 감지는 `TaskRunner`가 전담한다(ADR-002).
+- **2단계 툴체인(CMake configure+build)**: 동기 `createBuildTask`는 configure를 await할 수 없고 NFR-002가 빌드 셸을 금지하므로, 오버레이 configure는 optional **`prepareInvocation`**(비동기)에서 수행하고 build Task는 `cmake --build` 단일 명령으로 둔다(ADR-014). 타깃·실행경로는 CMake File API(codemodel-v2)의 `artifacts`로 해석(경로 추측 금지, KB #8).
 - Task는 `ProcessExecution`(배열 인자)로 만든다 — 셸 이스케이프 차단(NFR-002).
 - 경로·파일 접근은 `vscode.Uri` 기반, OS 경로 형식 가정 금지 — 원격 안전(ADR-008).
 

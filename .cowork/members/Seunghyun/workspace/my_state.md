@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-033 | CMakeBridge + listProjects + chips | MS-012 | Review | Doctor+listProjects+chips+File API 코드 완료·F5 대기 | 없음 |
+| TASK-034 | configure/build 주입 + resolveExecutable | MS-012 | Review | 코드 완료·F5 통과·커밋 대기 | 없음 |
 
-> **TASK-001~032 Done. MS-010·011 병합·push. TASK-033 코드 완료(Review·F5 대기)**: Doctor + listProjects(project() 루트) + chips 3종(profile 정적·architecture 정적·target=**File API codemodel-v2**) + File API 계층(readReplyDir·listTargets). unit 154·**실 cmake end-to-end 스모크 통과**(구성별 artifact 경로 정확). 브랜치 `feature/ms-012-cmake-adapter`(미커밋). 다음: **① F5(chips)+커밋 ② TASK-034**(configure/build `-D` 주입+resolveExecutable=File API artifact 재사용) → 035.
+> **TASK-001~033 Done(033 F5통과·커밋 `8664be9`+`4ca0330`). TASK-034 코드 완료(Review·F5 통과·커밋 대기)**: `prepareInvocation` 훅(오케스트레이터 사전 configure) + `createBuildTask`=`cmake --build` + configure `-D` 주입(profile/arch/compiler/linker/build-dir) + resolveExecutable=File API artifact. Build 실동작(test-cmake.exe)·실 cmake 빌드/실행 스모크 통과. unit 158. 브랜치 `feature/ms-012-cmake-adapter`. 다음: **TASK-034 커밋 → TASK-035**(run·debug: build-then-launch + 디버거 확장 확정).
 
 ---
 
@@ -43,8 +43,8 @@
 
 ## 다음 시작점
 
-1. **TASK-033 F5(Human)** — VS Code **완전 재시작** 후 F5: Doctor cmake 4.4.2 ✅·E1 소멸 + **chips 확인**(profile 4종·architecture 플랫폼·target=File API 실 타깃). `fixtures/cmake/hello` 사용 가능. (Rescan은 확장 캐시만, PATH는 프로세스 재시작 필요.)
-2. **커밋(feat+docs) 후 TASK-034**(`feature/ms-012-cmake-adapter`) — configure/build `-D` 주입(compiler/linker/output·CMAKE_BUILD_TYPE·`-A`) + resolveExecutable(File API artifact 재사용) → 035(디버그+디버거 확장 확정+통합) → MS-012 F5·병합.
+1. **TASK-034 커밋**(feat+docs) — 브랜치 `feature/ms-012-cmake-adapter`(미병합).
+2. **TASK-035**(동일 브랜치) — **run**(build-then-launch: prepareInvocation→build→exec artifact) + **debug**(resolveExecutable UI 경유 + 디버거 확장 확정 `cppdbg` vs CodeLLDB·`requiredExtensions` 반영) + 통합테스트 → MS-012 F5 → main 병합.
 3. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---
