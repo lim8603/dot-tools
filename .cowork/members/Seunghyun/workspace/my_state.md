@@ -12,7 +12,7 @@
 | 역할 (Role ID) | 프로젝트 오너 |
 | 활성 Milestone | **MS-012 C++(CMake)** (C-7 3/3) · MS-010 C#·MS-011 Python Done·병합·push 완료 |
 | 마지막 갱신일 | 2026-08-16 |
-| 참조 세션 로그 | session_2026-08-16_008.md |
+| 참조 세션 로그 | session_2026-08-16_009.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-033 | CMakeBridge + listProjects + chips | MS-012 | In Progress | Doctor 슬라이스 완료·listProjects+chips 남음 | 없음 |
+| TASK-033 | CMakeBridge + listProjects + chips | MS-012 | Review | Doctor+listProjects+chips+File API 코드 완료·F5 대기 | 없음 |
 
-> **TASK-001~032 Done. MS-010·011 병합·push. MS-012 진행: ADR-014(자체 cmake CLI) + TASK-033 Doctor 슬라이스(cmake 미설치→Doctor ❌+E1 실검증)** 완료·커밋. 다음: `feature/ms-012-cmake-adapter`에서 **① cmake ✅ 재검증(VS Code 완전 재시작 후 F5) ② TASK-033 계속**(listProjects+chips+File API). cmake 4.4.2+VS18 설치됨.
+> **TASK-001~032 Done. MS-010·011 병합·push. TASK-033 코드 완료(Review·F5 대기)**: Doctor + listProjects(project() 루트) + chips 3종(profile 정적·architecture 정적·target=**File API codemodel-v2**) + File API 계층(readReplyDir·listTargets). unit 154·**실 cmake end-to-end 스모크 통과**(구성별 artifact 경로 정확). 브랜치 `feature/ms-012-cmake-adapter`(미커밋). 다음: **① F5(chips)+커밋 ② TASK-034**(configure/build `-D` 주입+resolveExecutable=File API artifact 재사용) → 035.
 
 ---
 
@@ -43,8 +43,8 @@
 
 ## 다음 시작점
 
-1. **cmake ✅ 재검증** — VS Code **완전 재시작**(설치 후 PATH 반영) 후 F5 → Doctor에 cmake 4.4.2 ✅·E1 칩 소멸 확인. (Rescan은 확장 캐시만 비움, PATH는 프로세스 재시작 필요.)
-2. **TASK-033 계속**(MS-012, `feature/ms-012-cmake-adapter`) — listProjects(`**/CMakeLists.txt`) + chips(profile=CMAKE_BUILD_TYPE 정적·target=CMake File API). → 034(configure/build `-D` 주입+resolveExecutable) → 035(디버그+통합).
+1. **TASK-033 F5(Human)** — VS Code **완전 재시작** 후 F5: Doctor cmake 4.4.2 ✅·E1 소멸 + **chips 확인**(profile 4종·architecture 플랫폼·target=File API 실 타깃). `fixtures/cmake/hello` 사용 가능. (Rescan은 확장 캐시만, PATH는 프로세스 재시작 필요.)
+2. **커밋(feat+docs) 후 TASK-034**(`feature/ms-012-cmake-adapter`) — configure/build `-D` 주입(compiler/linker/output·CMAKE_BUILD_TYPE·`-A`) + resolveExecutable(File API artifact 재사용) → 035(디버그+디버거 확장 확정+통합) → MS-012 F5·병합.
 3. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---
