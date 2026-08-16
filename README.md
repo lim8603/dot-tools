@@ -18,14 +18,18 @@ Compact 모드(아이콘 전용) — 좁은 창용:
 - **설정 페이지**(Webview)에서 컴파일 옵션·링커·환경변수·빌드 전후 명령을 **파일을 건드리지 않고** `(프로젝트 × 구성)`별로 저장합니다.
 - **Doctor**가 툴체인·확장 설치 상태를 진단하고 해결 방법을 안내합니다.
 - **프로파일 export / import**로 선택·구성 상태를 파일로 주고받습니다.
+- **새 프로젝트 시작 마법사**(`DevSwitcher: New Project…`)로 폴더 → 언어 → 이름을 골라 기본 템플릿 프로젝트를 만듭니다(4개 언어).
 
-## 지원 범위 (v1)
+## 지원 범위
 
-| 언어 | 상태 | 비고 |
+| 언어 | 스위치·빌드·실행·디버그 | 새 프로젝트 생성(마법사) |
 |------|------|------|
-| **Rust (Cargo)** | ✅ 실구현 | 빌드·실행·디버그·아키텍처(target)·features·호출 구성 전부 동작 |
-| C++ (CMake) · C# (.NET) · Python | 🚧 스텁 | 칩 선언만 — 후속 버전에서 실구현 |
+| **Rust (Cargo)** | ✅ 실구현 | ✅ `cargo new` |
+| C# (.NET) | 🚧 스텁 (후속) | ✅ `dotnet new console` |
+| C++ (CMake) | 🚧 스텁 (후속) | ✅ 최소 템플릿 |
+| Python | 🚧 스텁 (후속) | ✅ `pyproject.toml` |
 
+> 스위치·빌드·실행·디버그는 v1에서 Rust만 실동작합니다(나머지는 칩 선언 스텁). **단 시작 마법사는 4개 언어 모두 프로젝트를 생성**합니다. 생성된 Rust 프로젝트는 상태바에 자동 등장하며, 나머지 언어는 어댑터가 구현되는 후속 버전에서 스위처에 나타납니다.
 > 아키텍처상 언어는 `LanguageAdapter` + `ChipDescriptor[]` 뒤로 숨겨져 있어, 어댑터만 추가하면 상태바/설정/실행 코드를 건드리지 않고 새 언어를 붙일 수 있습니다.
 
 ## 요구사항
@@ -37,10 +41,10 @@ Compact 모드(아이콘 전용) — 좁은 창용:
 
 ## 설치
 
-개인용 v0.1은 VSIX로 배포합니다:
+개인용 빌드는 VSIX로 배포합니다:
 
 ```bash
-code --install-extension devswitcher-tools-0.1.0.vsix
+code --install-extension devswitcher-tools-0.2.0.vsix
 ```
 
 또는 VSCode에서 **Extensions** 뷰 → `...` 메뉴 → **Install from VSIX...** → `.vsix` 선택.
@@ -74,6 +78,7 @@ code --install-extension devswitcher-tools-0.1.0.vsix
 | `DevSwitcher: Open Settings` | 설정 페이지 열기 |
 | `DevSwitcher: Doctor (environment diagnostics)` | 환경 진단 |
 | `DevSwitcher: Export Profile` / `Import Profile` | 프로파일 내보내기 / 가져오기 |
+| `DevSwitcher: New Project…` | 새 프로젝트 시작 마법사 (폴더 → 언어 → 이름) |
 | `DevSwitcher: Toggle Compact Status Bar` | Compact(아이콘 전용) 모드 토글 |
 
 ### 설정 페이지

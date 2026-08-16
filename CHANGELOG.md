@@ -3,7 +3,7 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.2.0] - 2026-08-16
 
 ### Added
 
@@ -14,6 +14,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   `main.py`). A new Rust project is auto-selected in the status bar; the other
   languages are created on disk and appear in the switcher once their adapter is
   implemented.
+
+### Fixed
+
+- Features chip: multi-select is now a toggle list with no confirm button — a click
+  applies immediately, and the count matches the checked boxes (empty reads `none`,
+  distinct from the default-on state). An intentionally empty selection now survives
+  a reload instead of resetting to the default.
+- Build / run / debug (and native project creation) no longer hang with a stuck
+  spinner in an untrusted workspace — they surface a "trust this workspace" prompt,
+  and a task that ends without spawning a process can no longer wedge the run lock.
 
 ## [0.1.0] - 2026-08-16
 
