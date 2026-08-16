@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음 — MS-009 Done** · 다음 MS-010 C#(C-7) 착수 지시 대기 |
+| 활성 Milestone | **MS-011 Python** (리트머스, C-7 2/3) · MS-010 C# Done·병합 완료 |
 | 마지막 갱신일 | 2026-08-16 |
 | 참조 세션 로그 | session_2026-08-16_007.md |
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| 없음 | (MS-009 Done — TASK-025·026 완료) | — | — | — | 없음 |
+| TASK-030 | PythonBridge + listProjects + chips | MS-011 | In Progress | 착수 | 없음 |
 
-> **TASK-001~026 Done.** 세션 #007에서 **INT-001 완주 로드맵** 착수(MS-009~013) + **C-3 폐기**(D-15/ADR-013) + **MS-009 완료**(TASK-025 L-1 F5 통과·TASK-026 persistSetting 제거, unit 104). 다음: **MS-010 C#(C-7)** = TASK-027 DotnetBridge부터.
+> **TASK-001~029 Done. MS-010 C# F5 통과·main FF 병합.** C# 스위처·build/run·coreclr 디버그·Doctor 실동작(RID 경로 fix). 세션 #007: 로드맵(MS-009~013)+C-3 폐기+MS-009+MS-010 완주. 다음: **MS-011 Python(리트머스)** TASK-030부터.
 
 ---
 
@@ -41,8 +41,8 @@
 
 ## 다음 시작점
 
-1. **MS-010 C# 착수**(C-7 1/3) — TASK-027 DotnetBridge(dotnet/msbuild CLI I/O·listProjects·chips)부터. cargoBridge/cargoAdapter 패턴 준용.
-2. 이어서 MS-011 Python → MS-012 CMake. 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).
+1. **MS-011 Python 착수**(C-7 2/3, 리트머스) — TASK-030 PythonBridge(인터프리터/venv 탐지·pyproject.toml)+environment/target 칩. `actions.build=false` UX 검증.
+2. 이어서 MS-012 CMake. 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).
 3. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---

@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
-| 활성 Milestone | MS-010 C# (Dotnet) 어댑터 실구현 (In Progress — 착수·도구검증 완료, MS-009 main FF 병합) |
-| 활성 Task | TASK-027·028·029 Review (MS-010 코드 완료·**MS-010 F5 대기**, 실 dotnet 10 스모크 통과) |
+| 활성 Milestone | MS-011 Python 어댑터 실구현 (리트머스, 착수 예정 — MS-010 F5 통과·main FF 병합 완료) |
+| 활성 Task | TASK-030 PythonBridge + listProjects + chips (착수) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | (MS-009 Done — TASK-025·026 완료) | AI | - | 2026-08-16 | 다음 활성 = MS-010 C# 착수 지시 시 TASK-027(DotnetBridge) |
+| TASK-030 | PythonBridge + listProjects + chips | AI | In Progress | 2026-08-16 | MS-011 착수 — 인터프리터/venv 탐지·pyproject.toml 스캔·environment/target 칩. Python 리트머스(actions.build=false) |
 
-> **TASK-001~026 Done.** MS-009(정리) 완료 — TASK-025(L-1 Extra rustflags, F5 통과) + TASK-026(persistSetting 계약 제거). unit 104·esbuild OK. 다음: **MS-010 C#(C-7)** = TASK-027~029 → MS-011 Python → MS-012 CMake → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
+> **TASK-001~029 Done. MS-010(C#) F5 통과·main FF 병합.** C# 프로젝트 스위처 등장·build/run/coreclr 디버그·Doctor 실동작(디버그 RID 경로 fix 포함). 다음: **MS-011 Python(C-7 2/3)** = TASK-030~032 → MS-012 CMake → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,8 +69,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-010 C# 착수**(C-7 1/3) — TASK-027 DotnetBridge(dotnet/msbuild CLI I/O·listProjects·chips)부터. cargoBridge/cargoAdapter 패턴 준용.
-2. 이어서 MS-011 Python → MS-012 CMake. **C-7 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).**
+1. **MS-011 Python 착수**(C-7 2/3, 리트머스) — TASK-030 PythonBridge(인터프리터/venv 탐지·pyproject.toml 스캔)+environment/target 칩. `actions.build=false` UX 검증 핵심.
+2. 이어서 MS-012 CMake. **C-7 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).**
 3. **C-6**: MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
@@ -236,8 +236,8 @@
 | Milestone | MS-007 | M6 품질·배포·통합테스트 | Done | 016~021 전부 Done. **v0.1.0 vsix 산출**(2026-08-16). Gate 5 조건부 Pass |
 | Milestone | MS-008 | F20 시작 마법사 | Done | 4개 언어 생성 F5 통과(2026-08-16). 스위처 자동등장=Rust(scope A) |
 | Milestone | MS-009 | v1.1 정리 (자유 플래그 L-1 + 계약 정리) | Done | TASK-025(L-1, F5 통과)·TASK-026(persistSetting 제거). 2026-08-16 |
-| Milestone | MS-010 | C# (Dotnet) 어댑터 실구현 | Planned | C-7 1/3. TASK-027~029 |
-| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | Planned | C-7 2/3. TASK-030~032 |
+| Milestone | MS-010 | C# (Dotnet) 어댑터 실구현 | Done | F5 통과(build/run/coreclr 디버그·Doctor). main FF 병합. C-7 1/3 |
+| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | In Progress | C-7 2/3. TASK-030~032 착수 |
 | Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | Planned | C-7 3/3. TASK-033~035. 연동 방식 착수 시 ADR |
 | Milestone | MS-013 | Run Group (C-6) | Planned | v2.0. TASK-036~040. C-7 이후 |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
