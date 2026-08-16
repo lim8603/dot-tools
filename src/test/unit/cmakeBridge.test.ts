@@ -1,12 +1,16 @@
 import { strict as assert } from 'node:assert';
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   CMakeBridge,
   type CMakeExec,
+  buildArgs,
   cmakeProjectName,
+  configureArgs,
   executableArtifact,
   hasProjectCommand,
+  overlayDefines,
   parseCMakeVersion,
   parseCodemodelConfigs,
   parseProjectName,
@@ -160,5 +164,58 @@ describe('readReplyDir (real reply fixture)', () => {
 
   it('returns [] when the reply dir does not exist', async () => {
     assert.deepEqual(await readReplyDir(join(FIXTURE_REPLY, 'nonexistent')), []);
+  });
+});
+
+describe('configureArgs / buildArgs / overlayDefines', () => {
+  it('configureArgs assembles -S/-B, platform, build type, and -D defines', () => {
+    assert.deepEqual(configureArgs('/src', '/src/build'), ['-S', '/src', '-B', '/src/build']);
+    assert.deepEqual(
+      configureArgs('/src', '/src/build', {
+        config: 'Release',
+        platform: 'x64',
+        defines: { CMAKE_CXX_FLAGS: '-O2' },
+      }),
+      ['-S', '/src', '-B', '/src/build', '-A', 'x64', '-D', 'CMAKE_BUILD_TYPE=Release', '-D', 'CMAKE_CXX_FLAGS=-O2'],
+    );
+  });
+
+  it('buildArgs targets a config + target', () => {
+    assert.deepEqual(buildArgs('/src/build', 'Debug', 'hello'), [
+      '--build', '/src/build', '--config', 'Debug', '--target', 'hello',
+    ]);
+  });
+
+  it('overlayDefines maps compiler/linker flags, ignoring empty values', () => {
+    assert.deepEqual(overlayDefines({ 'cxx-flags': '-O2 -Wall' }, { 'exe-linker-flags': '/DEBUG' }), {
+      CMAKE_CXX_FLAGS: '-O2 -Wall',
+      CMAKE_EXE_LINKER_FLAGS: '/DEBUG',
+    });
+    assert.deepEqual(overlayDefines({ 'cxx-flags': '   ' }, {}), {}); // whitespace-only ignored
+    assert.deepEqual(overlayDefines({}, {}), {});
+  });
+});
+
+describe('CMakeBridge.configure (signature cache)', () => {
+  it('reconfigures only when the options change or the cache is invalidated', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-cmake-'));
+    try {
+      let calls = 0;
+      const counting: CMakeExec = () => {
+        calls += 1;
+        return Promise.resolve({ stdout: '', stderr: '', exitCode: 0 });
+      };
+      const bridge = new CMakeBridge(counting);
+      await bridge.configure('/src', buildDir, { config: 'Debug' });
+      await bridge.configure('/src', buildDir, { config: 'Debug' }); // same options → served from cache
+      assert.equal(calls, 1);
+      await bridge.configure('/src', buildDir, { config: 'Release' }); // changed → reconfigure
+      assert.equal(calls, 2);
+      bridge.invalidateCache();
+      await bridge.configure('/src', buildDir, { config: 'Release' }); // invalidated → reconfigure
+      assert.equal(calls, 3);
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
   });
 });
