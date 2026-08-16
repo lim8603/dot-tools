@@ -113,6 +113,8 @@ export interface LanguageAdapter {
 **계약 규칙**
 - 어댑터는 `vscode.Task` **객체 생성까지만** 책임진다. 실행·종료 코드 감지는 `TaskRunner`가 전담한다(ADR-002).
 - **2단계 툴체인(CMake configure+build)**: 동기 `createBuildTask`는 configure를 await할 수 없고 NFR-002가 빌드 셸을 금지하므로, 오버레이 configure는 optional **`prepareInvocation`**(비동기)에서 수행하고 build Task는 `cmake --build` 단일 명령으로 둔다(ADR-014). 타깃·실행경로는 CMake File API(codemodel-v2)의 `artifacts`로 해석(경로 추측 금지, KB #8).
+- **run이 빌드를 요구하는 경우(`ActionCapabilities.runRequiresBuild`)**: cargo `run`처럼 단일 명령이 없는 어댑터(CMake)는 run이 산출물 실행이라 **오케스트레이터가 run 전에 build**를 돌린다(TASK-035). 동기 run Task는 `prepareInvocation`이 데운 캐시에서 실행 경로를 읽는다.
+- **디버거 확장은 정적이 아니라 동적일 수 있다**: CMake 디버거는 컴파일러(File API `toolchains`)에서 자동판별되므로 `requiredExtensions`(정적)가 아니라 **`createDebugConfig` 안에서 판별된 확장을 `ensureExtension`** 한다. 자동판별+override(설정)로 cpptools/CodeLLDB를 고르며 빌드/실행은 확장 무의존(ADR-009/ADR-014).
 - Task는 `ProcessExecution`(배열 인자)로 만든다 — 셸 이스케이프 차단(NFR-002).
 - 경로·파일 접근은 `vscode.Uri` 기반, OS 경로 형식 가정 금지 — 원격 안전(ADR-008).
 

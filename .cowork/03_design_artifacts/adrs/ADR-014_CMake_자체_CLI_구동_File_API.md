@@ -62,8 +62,9 @@ interface_contract §8은 CMake 주입을 이미 규정한다: 구성축=`CMAKE_
 - **타깃/실행경로 해석**: **CMake File API** — configure 전 `<buildDir>/.cmake/api/v1/query/`에 codemodel-v2 쿼리를 쓰고, configure 후 `reply/`의 codemodel + target JSON에서 실행 타깃(type=EXECUTABLE)과 `artifacts` 경로를 읽는다. resolveExecutable은 이 경로를 반환(추측 없음, KB #8).
 - **구성 칩(profile)**: 표준 build type(Debug/Release/RelWithDebInfo/MinSizeRel) 정적 목록(dotnet Debug/Release 방식). 커스텀은 후속.
 - **buildDir**: 기본 `build/`(옵션 카탈로그 `build-dir`로 오버레이 가능, output 카테고리).
-- **디버그**: 디버거 확장(cpptools `cppdbg` 또는 CodeLLDB) launch로 resolveExecutable 실행. **CMake Tools 미사용.** 구체 디버거는 TASK-035에서 확정.
-- **requiredExtensions**: `ms-vscode.cmake-tools` → 디버거 확장(TASK-035 확정)으로 교체. 빌드/실행은 무의존.
+- **디버그 (TASK-035 확정)**: 디버거는 **컴파일러 강결합**이라 File API `toolchains`의 `CMAKE_CXX_COMPILER_ID`로 **자동판별** — MSVC→`cppvsdbg`, GNU→`cppdbg`+gdb, Clang→`cppdbg`+lldb (모두 cpptools). OS 추측 아닌 실 컴파일러 기반이라 **WSL/MinGW/Linux/Mac 자동대응**. 사용자 **override 설정**(`devSwitcher.cmake.debugger`=auto/cpptools/codelldb)으로 CodeLLDB(`lldb`)까지 선택. **CMake Tools 미사용.**
+- **run (TASK-035 확정)**: 단일 명령이 없어 **build-then-exec** — `ActionCapabilities.runRequiresBuild`로 오케스트레이터가 build 후 산출 exe 직접 실행(디버거 무의존, ADR-009). 경로=File API artifact(`peekArtifact` 동기 캐시).
+- **requiredExtensions**: `ms-vscode.cmake-tools` → **`[]`**(빌드/실행 무의존). 디버거 확장은 정적 배열이 아니라 **동적**(판별된 cpptools/CodeLLDB를 `createDebugConfig`가 `ensureExtension`).
 
 ## Consequences (결과)
 
