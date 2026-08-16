@@ -19,7 +19,7 @@
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
 | 활성 Milestone | MS-010 C# (Dotnet) 어댑터 실구현 (In Progress — 착수·도구검증 완료, MS-009 main FF 병합) |
-| 활성 Task | TASK-027 Review(코드완료·F5 대기, 실 dotnet 스모크 통과) → 다음 TASK-028(build/run/resolveExecutable) |
+| 활성 Task | TASK-027·028·029 Review (MS-010 코드 완료·**MS-010 F5 대기**, 실 dotnet 10 스모크 통과) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
