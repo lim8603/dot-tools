@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-012 C++(CMake)** (C-7 3/3) — TASK-033·034·035 완료(핵심 루프), TASK-036(presets) 남음 |
+| 활성 Milestone | **MS-012 C++(CMake)** (C-7 3/3) — TASK-033·034·035 완료(핵심 루프), TASK-041(presets) 남음 |
 | 마지막 갱신일 | 2026-08-16 |
 | 참조 세션 로그 | session_2026-08-16_009.md |
 
@@ -22,7 +22,7 @@
 |---------|------|----------------|------|--------|--------|
 | TASK-035 | run + debug (컴파일러 자동판별 디버거) | MS-012 | Review | F5 통과(Run+Debug)·커밋 완료 | 없음 |
 
-> **TASK-001~035 완료(033·034 F5·커밋, 035 F5 Run+Debug 통과·이 세션 커밋).** CMake 핵심 루프(switch/build/run/debug) 완성. TASK-035: run=build-then-exec(`runRequiresBuild`·`peekArtifact`), debug=File API `toolchains`→`debuggerFor`(MSVC/GNU/Clang→cppvsdbg/cppdbg+gdb/lldb)+override 설정+동적 확장 ensure. unit 165. **다음: TASK-036**(CMakePresets.json — Preset 칩+`--preset`, 실 프로젝트 GCC/Clang/MSVC 전환) → MS-012 F5 → 병합. 브랜치 `feature/ms-012-cmake-adapter`.
+> **TASK-001~035 완료(033·034 F5·커밋, 035 F5 Run+Debug 통과·이 세션 커밋).** CMake 핵심 루프(switch/build/run/debug) 완성. TASK-035: run=build-then-exec(`runRequiresBuild`·`peekArtifact`), debug=File API `toolchains`→`debuggerFor`(MSVC/GNU/Clang→cppvsdbg/cppdbg+gdb/lldb)+override 설정+동적 확장 ensure. unit 165. **다음: TASK-041**(CMakePresets.json — Preset 칩+`--preset`, 실 프로젝트 GCC/Clang/MSVC 전환) → MS-012 F5 → 병합. 브랜치 `feature/ms-012-cmake-adapter`.
 
 ---
 
@@ -43,7 +43,7 @@
 
 ## 다음 시작점
 
-1. **TASK-036 (신규 세션)** — CMakePresets.json 지원: `configurePresets` 읽어 **Preset 칩** → `cmake --preset`. 프리셋 있으면 profile/arch 대체·없으면 현행 폴백. target 칩·디버거 자동판별 재사용. → MS-012 F5 → main 병합.
+1. **TASK-041 (신규 세션)** — CMakePresets.json 지원: `configurePresets` 읽어 **Preset 칩** → `cmake --preset`. 프리셋 있으면 profile/arch 대체·없으면 현행 폴백. target 칩·디버거 자동판별 재사용. → MS-012 F5 → main 병합.
 2. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---
