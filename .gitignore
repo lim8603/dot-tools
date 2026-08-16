@@ -18,6 +18,10 @@ out/
 src/test/fixtures/**/target/
 src/test/fixtures/**/Cargo.lock
 
+# ─── .NET test-fixture build output ───
+src/test/fixtures/**/bin/
+src/test/fixtures/**/obj/
+
 # ─── Member personal session logs ───
 .cowork/members/*/workspace/session_logs/*.md
 !.cowork/members/*/workspace/session_logs/.gitkeep
