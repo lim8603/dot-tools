@@ -199,6 +199,9 @@ export class Orchestrator {
       return;
     }
     const { project, adapter } = context;
+    if (!this.ensureTrusted('debug')) {
+      return;
+    }
     if (this.taskRunner.isRunning(project.id)) {
       void vscode.window.showInformationMessage(`DevSwitcher: a task is already running for ${project.name}.`);
       return;
@@ -335,7 +338,10 @@ export class Orchestrator {
     const creation = adapter.createProject(result.target);
     if (creation.kind === 'task') {
       // Native scaffolder (cargo new / dotnet new) — a missing toolchain fails the
-      // task, so offer Doctor (F19).
+      // task, so offer Doctor (F19). Needs a trusted workspace to run the process.
+      if (!this.ensureTrusted('create a project')) {
+        return;
+      }
       const lockKey = `new:${result.adapterId}:${result.target.folderUri.fsPath}${sep}${result.target.projectName}`;
       const run = await this.taskRunner.run(creation.task, lockKey);
       if (!run.succeeded) {
@@ -393,12 +399,28 @@ export class Orchestrator {
     return this.registry.getProjects().find((p) => p.manifestPath.startsWith(prefix));
   }
 
+  /**
+   * Tasks are restricted in an untrusted workspace — VS Code won't run the process, so
+   * the process-end event never arrives. Guard before launching so we surface a clear
+   * message instead of a stuck spinner. Returns false when the workspace isn't trusted.
+   */
+  private ensureTrusted(action: string): boolean {
+    if (vscode.workspace.isTrusted) {
+      return true;
+    }
+    void vscode.window.showWarningMessage(`DevSwitcher: trust this workspace to ${action}.`);
+    return false;
+  }
+
   /** Build/run flow (상세설계서 §7.3): validate required chips → run → surface failure. */
   private async runCargoTask(
     project: ProjectInfo,
     adapter: LanguageAdapter,
     action: 'build' | 'run',
   ): Promise<void> {
+    if (!this.ensureTrusted(action)) {
+      return;
+    }
     if (this.taskRunner.isRunning(project.id)) {
       void vscode.window.showInformationMessage(`DevSwitcher: a task is already running for ${project.name}.`);
       return;

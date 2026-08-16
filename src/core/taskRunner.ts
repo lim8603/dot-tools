@@ -27,12 +27,31 @@ export class TaskRunner {
     try {
       const execution = await vscode.tasks.executeTask(task);
       return await new Promise<TaskResult>((resolve) => {
-        const disposable = vscode.tasks.onDidEndTaskProcess((event) => {
-          if (event.execution === execution) {
-            disposable.dispose();
-            resolve({ exitCode: event.exitCode, succeeded: event.exitCode === 0 });
+        const subs: vscode.Disposable[] = [];
+        const finish = (result: TaskResult): void => {
+          for (const sub of subs) {
+            sub.dispose();
           }
-        });
+          resolve(result);
+        };
+        // Normal path: the process exits and carries the exit code.
+        subs.push(
+          vscode.tasks.onDidEndTaskProcess((event) => {
+            if (event.execution === execution) {
+              finish({ exitCode: event.exitCode, succeeded: event.exitCode === 0 });
+            }
+          }),
+        );
+        // Fallback: the task ends without ever spawning a process (e.g. blocked by an
+        // untrusted workspace, or cancelled). onDidEndTaskProcess would never fire, so
+        // without this the run would hang forever — stuck spinner and a held lock.
+        subs.push(
+          vscode.tasks.onDidEndTask((event) => {
+            if (event.execution === execution) {
+              finish({ exitCode: undefined, succeeded: false });
+            }
+          }),
+        );
       });
     } finally {
       this.running.delete(lockKey);
