@@ -1,9 +1,22 @@
 import * as vscode from 'vscode';
-import { ChipItem, LanguageAdapter, NEW_PROJECT_TASK_TYPE, NewProjectTarget, ProjectInfo } from '../../core/types';
+import { dirname } from 'node:path';
+import { DevSwitcherError } from '../../core/errors';
+import {
+  ChipItem,
+  ChipValue,
+  InvocationConfig,
+  LanguageAdapter,
+  NEW_PROJECT_TASK_TYPE,
+  NewProjectTarget,
+  ProjectInfo,
+  Selection,
+} from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import {
   DotnetBridge,
+  assembleDotnetArgs,
   buildConfigurationList,
+  buildMsbuildProps,
   dotnetProjectName,
   targetFrameworkItems,
 } from './dotnetBridge';
@@ -15,6 +28,56 @@ const HOST_DEFAULT_RID = '__host_default__';
 
 /** Common .NET runtime identifiers offered on the Architecture chip (optional, -r <rid>). */
 const COMMON_RIDS = ['win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'osx-x64', 'osx-arm64'];
+
+const DOTNET_TASK_TYPE = 'devSwitcher.dotnet';
+
+/** Directory a dotnet command runs in — the project directory. */
+function cwdOf(project: ProjectInfo): string {
+  return dirname(project.manifestPath);
+}
+
+function asString(v: ChipValue | undefined): string | undefined {
+  return typeof v === 'string' ? v : undefined;
+}
+
+/** The invocation overlay's env for a Task (dotnet has no RUSTFLAGS/target-dir analogue). */
+function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
+  const env: Record<string, string> = { ...(config.env ?? {}) };
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+/** Build a ProcessExecution-backed dotnet Task (no shell, array args — NFR-002). */
+function makeDotnetTask(
+  action: 'build' | 'run',
+  project: ProjectInfo,
+  sel: Selection,
+  config: InvocationConfig,
+): vscode.Task {
+  const props = buildMsbuildProps(config.compiler ?? {}, config.linker ?? {});
+  const args = assembleDotnetArgs(action, project.manifestPath, sel, config, props);
+  const execution = new vscode.ProcessExecution('dotnet', args, {
+    cwd: cwdOf(project),
+    env: taskEnv(config),
+  });
+  const definition: vscode.TaskDefinition = { type: DOTNET_TASK_TYPE, action, projectId: project.id };
+  const task = new vscode.Task(
+    definition,
+    project.workspaceFolder,
+    `${action} ${project.name}`,
+    'dotnet',
+    execution,
+    action === 'build' ? ['$msCompile'] : undefined, // built-in MSBuild matcher, no extension needed
+  );
+  if (action === 'build') {
+    task.group = vscode.TaskGroup.Build;
+  }
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
+}
 
 /** `dotnet new console -o <name>` in the target folder (F20, TASK-023) — the native
  *  template lands in a `<name>/` sub-folder. ProcessExecution, no shell (NFR-002). */
@@ -53,33 +116,50 @@ export const dotnetAdapter: LanguageAdapter = {
   requiredExtensions: ['ms-dotnettools.csdevkit'],
   canCreateProject: true,
   configCategories: ['compiler', 'linker', 'output', 'env', 'buildEvent', 'runArgs'],
+  // The catalog id IS the MSBuild property name — every option injects as `-p:<id>=<value>`
+  // (buildMsbuildProps). `example` is the bare value; `injectsAs` teaches the injected form.
   optionCatalog: [
     {
-      id: 'optimize',
+      id: 'Optimize',
       category: 'compiler',
       label: 'Optimize',
-      description: 'Enables compiler optimizations (-p:Optimize).',
-      example: 'dotnet build -p:Optimize=true',
+      description: 'Enables compiler optimizations. On by default in Release, off in Debug.',
+      example: 'true',
+      injectsAs: 'dotnet build -p:Optimize=<value>',
+      docUrl: 'https://learn.microsoft.com/dotnet/csharp/language-reference/compiler-options/code-generation#optimize',
       type: 'bool',
       defaultValue: false,
       injection: 'flag',
     },
     {
-      id: 'assembly-name',
-      category: 'output',
-      label: 'Assembly name',
-      description:
-        'Overrides the output assembly name (-p:AssemblyName) — injectable without editing the project.',
-      example: 'dotnet build -p:AssemblyName=MyApp',
+      id: 'LangVersion',
+      category: 'compiler',
+      label: 'Language version',
+      description: 'C# language version to compile against (e.g. latest, preview, 12).',
+      example: 'latest',
+      injectsAs: 'dotnet build -p:LangVersion=<value>',
+      docUrl: 'https://learn.microsoft.com/dotnet/csharp/language-reference/configure-language-version',
       type: 'string',
       injection: 'flag',
     },
     {
-      id: 'publish-trimmed',
+      id: 'AssemblyName',
+      category: 'compiler',
+      label: 'Assembly name',
+      description: 'Overrides the output assembly name — injectable without editing the project.',
+      example: 'MyApp',
+      injectsAs: 'dotnet build -p:AssemblyName=<value>',
+      type: 'string',
+      injection: 'flag',
+    },
+    {
+      id: 'PublishTrimmed',
       category: 'linker',
       label: 'Trim on publish',
-      description: 'Removes unused code when publishing (-p:PublishTrimmed).',
-      example: 'dotnet publish -p:PublishTrimmed=true',
+      description: 'Removes unused code when publishing to reduce size.',
+      example: 'true',
+      injectsAs: 'dotnet publish -p:PublishTrimmed=<value>',
+      docUrl: 'https://learn.microsoft.com/dotnet/core/deploying/trimming/trim-self-contained',
       type: 'bool',
       defaultValue: false,
       injection: 'flag',
@@ -153,10 +233,28 @@ export const dotnetAdapter: LanguageAdapter = {
     return projects;
   },
 
-  createBuildTask: (_project, _sel, _config) => notImplemented('DotnetAdapter.createBuildTask', 'TASK-028'),
-  createRunTask: (_project, _sel, _config) => notImplemented('DotnetAdapter.createRunTask', 'TASK-028'),
+  createBuildTask(project, sel, config) {
+    return makeDotnetTask('build', project, sel, config);
+  },
+
+  createRunTask(project, sel, config) {
+    return makeDotnetTask('run', project, sel, config);
+  },
+
   createDebugConfig: (_project, _sel, _config) => notImplemented('DotnetAdapter.createDebugConfig', 'TASK-029'),
-  resolveExecutable: (_project, _sel, _config) => notImplemented('DotnetAdapter.resolveExecutable', 'TASK-028'),
+
+  async resolveExecutable(project, sel, config) {
+    // The built assembly path from MSBuild's TargetPath — no path guessing (DD-05 analogue).
+    const configuration = asString(sel.values.profile) ?? 'Debug';
+    const framework = asString(sel.values.target);
+    const props = buildMsbuildProps(config.compiler ?? {}, config.linker ?? {});
+    const targetPath = await bridge.resolveTargetPath(project.manifestPath, configuration, framework, props);
+    if (!targetPath) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `Could not resolve the output assembly for ${project.name}.`); // E6
+    }
+    return targetPath;
+  },
+
   createProject: (target) => ({ kind: 'task', task: makeDotnetNewTask(target) }),
   invalidateCache: (project) => bridge.invalidateCache(project?.manifestPath),
   collectDiagnostics: () => Promise.resolve([]), // real SDK/extension checks land in TASK-029

@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { dirname } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
-import type { ChipItem } from '../../core/types';
+import type { ChipItem, ChipValue, InvocationConfig, OptionValue, Selection } from '../../core/types';
 
 /**
  * DotnetBridge — the `dotnet` CLI boundary layer for the C# adapter (MS-010, C-7).
@@ -100,6 +100,80 @@ export function buildConfigurationList(): ChipItem[] {
 /** Target-framework chip items (multi-TFM → one item per framework; confirmed MS-010 scope). */
 export function targetFrameworkItems(frameworks: string[]): ChipItem[] {
   return frameworks.map((tfm) => ({ id: tfm, label: tfm }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Argument assembly + overlay injection (interface_contract §8: dotnet injects every
+// overlay option as an MSBuild `-p:` property). Pure and testable.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function asString(v: ChipValue | undefined): string | undefined {
+  return typeof v === 'string' ? v : undefined;
+}
+
+/** Render an option value as an MSBuild property value (for `-p:Key=Value`). */
+export function msbuildValue(value: OptionValue): string {
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
+  }
+  if (Array.isArray(value)) {
+    return value.join(';'); // MSBuild item lists are semicolon-separated
+  }
+  return String(value);
+}
+
+/**
+ * Compiler/linker overlay options → `-p:Prop=Value` args. dotnet injects every catalog
+ * option as an MSBuild property (§8), so the catalog id IS the property name
+ * (e.g. Optimize, AssemblyName, PublishTrimmed).
+ */
+export function buildMsbuildProps(
+  compiler: Record<string, OptionValue>,
+  linker: Record<string, OptionValue>,
+): string[] {
+  const args: string[] = [];
+  for (const record of [compiler, linker]) {
+    for (const [prop, value] of Object.entries(record)) {
+      args.push(`-p:${prop}=${msbuildValue(value)}`);
+    }
+  }
+  return args;
+}
+
+/**
+ * Assemble `dotnet` CLI args for a build or run. Configuration comes from the profile
+ * chip (default Debug), TargetFramework from the target chip (`-f`; present for
+ * single-TFM projects via defaultValue), RID from the architecture chip (`-r`, optional).
+ * `props` are the `-p:` overlay properties; runArgs follow `--` for run (F16).
+ */
+export function assembleDotnetArgs(
+  action: 'build' | 'run',
+  projectPath: string,
+  sel: Selection,
+  config: InvocationConfig,
+  props: string[] = [],
+): string[] {
+  const configuration = asString(sel.values.profile) ?? 'Debug';
+  const framework = asString(sel.values.target);
+  const rid = asString(sel.values.architecture);
+  const common = [
+    '-c',
+    configuration,
+    ...(framework ? ['-f', framework] : []),
+    ...(rid ? ['-r', rid] : []),
+    ...props,
+  ];
+  if (action === 'build') {
+    return ['build', projectPath, ...common];
+  }
+  const runArgs = config.runArgs ?? [];
+  return [
+    'run',
+    '--project',
+    projectPath,
+    ...common,
+    ...(runArgs.length > 0 ? ['--', ...runArgs] : []),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -222,6 +296,31 @@ export class DotnetBridge {
   /** Cached metadata without fetching — undefined on a miss (for synchronous callers). */
   peekMetadata(manifestPath: string): DotnetMetadata | undefined {
     return this.metadataCache.get(manifestPath);
+  }
+
+  /**
+   * Resolve the built assembly path (TargetPath) for a (project × configuration × TFM)
+   * via `dotnet msbuild -getProperty:TargetPath` — no path guessing (the dotnet analogue
+   * of DD-05). Includes the same `-p:` overlay props so an AssemblyName override resolves
+   * to the right DLL. A single -getProperty prints the bare value. Undefined on failure (E6).
+   */
+  async resolveTargetPath(
+    manifestPath: string,
+    configuration: string,
+    framework: string | undefined,
+    props: string[] = [],
+  ): Promise<string | undefined> {
+    const args = ['msbuild', manifestPath, '-getProperty:TargetPath', `-p:Configuration=${configuration}`];
+    if (framework) {
+      args.push(`-p:TargetFramework=${framework}`);
+    }
+    args.push(...props);
+    const result = await execCapture('dotnet', args, dirname(manifestPath), this.exec);
+    if (result.exitCode !== 0) {
+      return undefined;
+    }
+    const value = result.stdout.trim();
+    return value.length > 0 ? value : undefined;
   }
 
   /**

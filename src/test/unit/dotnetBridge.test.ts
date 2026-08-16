@@ -1,11 +1,19 @@
 import { strict as assert } from 'node:assert';
 import {
+  assembleDotnetArgs,
   buildConfigurationList,
+  buildMsbuildProps,
   dotnetProjectName,
+  msbuildValue,
   parseGetProperty,
   splitTargetFrameworks,
   targetFrameworkItems,
 } from '../../adapters/dotnet/dotnetBridge';
+import type { ChipValue, Selection } from '../../core/types';
+
+function sel(values: Record<string, ChipValue>): Selection {
+  return { projectId: 'dotnet:App.csproj', values };
+}
 
 describe('parseGetProperty', () => {
   it('reads the Properties map from multi -getProperty JSON', () => {
@@ -63,6 +71,62 @@ describe('buildConfigurationList / targetFrameworkItems', () => {
     assert.deepEqual(targetFrameworkItems(['net8.0', 'net10.0']), [
       { id: 'net8.0', label: 'net8.0' },
       { id: 'net10.0', label: 'net10.0' },
+    ]);
+  });
+});
+
+describe('msbuildValue', () => {
+  it('renders bool / number / string / list', () => {
+    assert.equal(msbuildValue(true), 'true');
+    assert.equal(msbuildValue(false), 'false');
+    assert.equal(msbuildValue(12), '12');
+    assert.equal(msbuildValue('latest'), 'latest');
+    assert.equal(msbuildValue(['a', 'b']), 'a;b');
+  });
+});
+
+describe('buildMsbuildProps', () => {
+  it('emits -p:Prop=Value from the compiler and linker records', () => {
+    assert.deepEqual(
+      buildMsbuildProps({ Optimize: true, AssemblyName: 'MyApp' }, { PublishTrimmed: true }),
+      ['-p:Optimize=true', '-p:AssemblyName=MyApp', '-p:PublishTrimmed=true'],
+    );
+  });
+
+  it('returns [] for empty overlays', () => {
+    assert.deepEqual(buildMsbuildProps({}, {}), []);
+  });
+});
+
+describe('assembleDotnetArgs', () => {
+  it('builds with configuration, framework, rid, and props', () => {
+    const args = assembleDotnetArgs(
+      'build',
+      'App.csproj',
+      sel({ profile: 'Release', target: 'net10.0', architecture: 'win-x64' }),
+      {},
+      ['-p:Optimize=true'],
+    );
+    assert.deepEqual(args, [
+      'build', 'App.csproj', '-c', 'Release', '-f', 'net10.0', '-r', 'win-x64', '-p:Optimize=true',
+    ]);
+  });
+
+  it('defaults configuration to Debug and omits optional -f/-r', () => {
+    assert.deepEqual(assembleDotnetArgs('build', 'App.csproj', sel({}), {}), [
+      'build', 'App.csproj', '-c', 'Debug',
+    ]);
+  });
+
+  it('run puts runArgs after --', () => {
+    const args = assembleDotnetArgs(
+      'run',
+      'App.csproj',
+      sel({ profile: 'Debug', target: 'net10.0' }),
+      { runArgs: ['--verbose', 'a b'] },
+    );
+    assert.deepEqual(args, [
+      'run', '--project', 'App.csproj', '-c', 'Debug', '-f', 'net10.0', '--', '--verbose', 'a b',
     ]);
   });
 });
