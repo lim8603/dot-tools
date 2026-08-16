@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-001~007 Done·v0.1.0. **MS-008(F20 마법사) In Progress**) |
+| 현재 Phase | Build (**MS-001~008 전부 Done** — v0.1.0 릴리즈 + F20 마법사 4언어) |
 | 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | MS-008 (F20 시작 마법사, In Progress — 022·023 코드완료·F5 대기, 024 남음) |
-| 활성 Task | TASK-023 (dotnet/cmake/python createProject — Review, **F5 대기**) |
+| 활성 Milestone | 없음 (등록 Milestone 전부 Done. 다음은 v2 백로그/새 Intent) |
+| 활성 Task | 없음 (TASK-001~024 전부 Done) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-023 | dotnet/cmake/python createProject | AI | Review | 2026-08-16 | **F5 검증** — 각 언어 New Project→이름 → 파일 생성(dotnet=Task·cmake/python=fs). Rust만 스위처 자동등장. 통과 시 커밋 후 TASK-024(통합·마감) |
+| 없음 | (TASK-001~024 전부 Done) | - | - | 2026-08-16 | 새 작업은 v2 백로그(C-3/C-6/L-1)나 새 Intent 착수 지시 시 |
 
-> **TASK-001~021 Done(MS-001~007, v0.1.0).** MS-008 In Progress: **022·023 코드완료·F5 대기**(TASK-022 커밋됨), 024(통합·마감) 남음. 릴리즈 전 권장 수동검증(TC-11 WSL·TC-09·TC-02/03)은 v0.1 잔여 리스크로 수용(지시 시).
+> **TASK-001~024 전부 Done — MS-001~008 완료.** v0.1.0(vsix)+F20 마법사(4언어). `feature/ms-008-new-project-wizard`(6커밋) 병합 대기. 릴리즈 전 권장 수동검증(TC-11 WSL·TC-09·TC-02/03)은 잔여 리스크로 수용(지시 시).
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,9 +69,10 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-023 F5 검증** — 각 언어 New Project→이름 → 파일 생성 확인(dotnet=Task·cmake/python=workspace.fs·Rust만 스위처 자동등장). 통과 시 커밋 → **TASK-024**(통합 테스트·마감). (TASK-022 F5는 통과·커밋 완료)
-2. 릴리즈 전 권장 수동검증(잔여 리스크): **TC-11(WSL/F18)**·TC-09(재시작)·TC-02/03(workspace·멀티루트) — `test_case.md §2`. 지시 시 수행.
-3. 이월: 프로파일 편집(v2, C-3)·Run Group(v2, C-6)·extra rustflags/stringList 옵션(L-1)은 후속.
+1. **`feature/ms-008-new-project-wizard`(6커밋) → main FF 병합 + push** (지시 시). MS-008 완료분 반영.
+2. (선택) **v0.2.0 릴리즈** — F20 포함. version 0.1.0→0.2.0 범프 + `vsce package` + CHANGELOG [Unreleased]→[0.2.0]. 지시 시.
+3. 릴리즈 전 권장 수동검증(잔여 리스크): **TC-11(WSL/F18)**·TC-09(재시작)·TC-02/03 — `test_case.md §2`.
+4. 이후: v2 백로그(C-3 캐노니컬 편집·C-6 Run Group·L-1 extra rustflags) 또는 새 Intent.
 
 ---
 
@@ -121,7 +122,8 @@
 - **세션 #005 (계속) — MS-007 016~020 완료·병합**: TASK-016·017(Doctor — `core/diagnostics.ts` 순수판정 + `LanguageAdapter.collectDiagnostics` + QuickPick + **E1 툴체인 경고칩** + 디버그취소 Run Doctor)·TASK-018(rustup target 자동설치 — `listAllTargets`/`parseTargetList`/`addTarget` + `ChipDescriptor.onPick` 훅 + **미설치 target 토글 접기**(`secondary`/`secondaryToggle`))·TASK-019(pre/postBuild 실행 — `core/buildEvents.ts` ShellExecution Task, NFR-002a 셸예외, pre 실패→중단 + buildEvent 에디터, **C-5 해소**)·TASK-020(`@vscode/test-electron` 통합 하네스 3 passing + §15.2 체크리스트 + 05_verification 3종). **부가 v1 UX**: 상태바 `compact`(아이콘만)·`selectedOnly`(값 없는 optional 칩 숨김, `isBlank`로 features 'default'도) 설정 + 설정페이지 General 탭 토글. **버그 fix**: 설정페이지 백지(템플릿 리터럴 `\n`→`\\n`)·**taskDefinitions 등록**(작업형식 경고 제거)·옵션/RunArgs 필드 UX 통일(placeholder 제거·2줄). 아키텍처 미선택=`default`(`unsetText`)·`Host default` 복귀(`clearValueId`). mocha 92 + 통합 3. **ChipDescriptor 확장**: onPick·secondary·secondaryToggle·unsetText·clearValueId·isBlank.
 - **세션 #006 — TASK-021 완료·MS-007 Done·v0.1.0 릴리즈**: README.md(한국어: 소개·지원범위·요구사항·설치·상태바 칩표·명령·설정페이지·settings·한계) + package.json(version 0.1.0·publisher `lim8603`·repository `github.com/lim8603/dot-tools`·keywords) + `.vscodeignore`(dist+README+LICENSE+CHANGELOG+images/png만; 소스맵·CLAUDE/AGENTS·.claude·profile.json·workspace 제외) + LICENSE(MIT) + CHANGELOG(v0.1.0). **상태바 목업 2종**: 처음 손그림 SVG→PNG했으나 아이콘이 실물과 달라, **실제 VSCode codicon 폰트(simple-browser/media/codicon.css 내장 base64)로 HTML 렌더 후 Edge headless 스크린샷** → 실 codicon PNG(`images/status-bar.png`·`status-bar-compact.png`), 2x+LCD off로 색번짐 제거. `vsce package`→`devswitcher-tools-0.1.0.vsix`(9파일 34.68KB), 격리 프로필 설치 스모크 통과(`lim8603.devswitcher-tools@0.1.0`). Gate 5 조건부 Pass(D-12). 잔여 수동검증(TC-11 WSL 등)은 지시 시.
 - **세션 #006 (계속) — v0.1.0 병합·push + MS-008 착수(TASK-022 코드완료·F5 대기)**: `feature/task-021-readme-vsix`→main FF 병합·`git push`(GitHub v0.1.0 반영). MS-008 분해(TASK-022~024, D-13). **TASK-022 구현**: `core/projectName.ts`(순수 검증·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`types.ts NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`, ProcessExecution 셸無)+`adapterRegistry.adapter()/creatableAdapters()`+`orchestrator.newProject()`(마법사→createProjectTask→TaskRunner(synthetic lock)→성공 시 refresh+findCreatedProject→setActiveProject+renderActive 자동전환 OQ-001; 실패 시 Run Doctor; 스텁 throw catch)+`extension.ts`/`package.json`(newProject 커맨드·devswitcher-newproject taskDef). check-types·lint·**unit 96**·esbuild OK. TASK-022 F5 통과·커밋(ab58c15/6999f34).
-- **세션 #006 (계속) — TASK-023 코드완료·F5 대기**: 계약 일반화 `createProjectTask→createProject(target): {kind:'task'}|{kind:'files'}`(types.ts `ProjectFile`/`ProjectCreation`). cargo/dotnet=네이티브 new(task, `dotnet new console -o`), **cmake/python=확장이 `workspace.fs`로 템플릿 작성(files)** — D-13을 ShellExecution→workspace.fs로 개정(셸 종류 미제어·C++ `<>` 충돌 발견). `cmakeTemplate.ts`/`pythonTemplate.ts`(순수·mocha2) + orchestrator `newProject` kind 분기 + `writeProjectFiles`(createDirectory+writeFile). interface_contract §5 갱신. **scope A**: v1 스위처 자동등장=Rust만(나머지 3개 listProjects v2 스텁). check-types·lint·**unit 98**·esbuild OK. **다음: TASK-023 F5(각 언어 생성 확인) → 커밋 → TASK-024(통합·마감).**
+- **세션 #006 (계속) — TASK-023 코드완료·F5 대기**: 계약 일반화 `createProjectTask→createProject(target): {kind:'task'}|{kind:'files'}`(types.ts `ProjectFile`/`ProjectCreation`). cargo/dotnet=네이티브 new(task, `dotnet new console -o`), **cmake/python=확장이 `workspace.fs`로 템플릿 작성(files)** — D-13을 ShellExecution→workspace.fs로 개정(셸 종류 미제어·C++ `<>` 충돌 발견). `cmakeTemplate.ts`/`pythonTemplate.ts`(순수·mocha2) + orchestrator `newProject` kind 분기 + `writeProjectFiles`(createDirectory+writeFile). interface_contract §5 갱신. **scope A**: v1 스위처 자동등장=Rust만(나머지 3개 listProjects v2 스텁). check-types·lint·**unit 98**·esbuild OK. TASK-023 F5 통과(4언어 생성·내용 검증)·커밋(2684ee7/467f8f3).
+- **세션 #006 (계속) — TASK-024·MS-008 Done**: 통합 테스트에 `newProject` 추가 + **퍼블리셔 회귀 fix**(EXTENSION_ID `seunghyun`→`lim8603`) → `npm run test:integration` **3 passing**. test_case(§1 퍼블리셔·11커맨드·§2 TC-14~17 F20 Pass·요약 Manual 11)·verification_evidence(EV-007 F20·EV-001 unit98·EV-002 11커맨드)·CHANGELOG([Unreleased] F20) 갱신. **MS-008 Done → 등록 Milestone(MS-001~008) 전부 완료.** 브랜치 `feature/ms-008-new-project-wizard` 6커밋(022·023·024 각 feat+docs) **병합 대기**. **다음: main FF 병합+push (지시 시) → 선택적 v0.2.0 릴리즈.**
 
 ---
 
@@ -229,7 +231,7 @@
 | Milestone | MS-005 | M4 실행·디버그 | Done | F5 검증 통과(빌드·실행·중단점), main 병합(2026-08-15) |
 | Milestone | MS-006 | M5 설정 페이지·호출 구성 | Done | 코어(012·013·014) + export/import(015) F5 통과, main 병합(2026-08-15). pre/postBuild(C-5) 이월 |
 | Milestone | MS-007 | M6 품질·배포·통합테스트 | Done | 016~021 전부 Done. **v0.1.0 vsix 산출**(2026-08-16). Gate 5 조건부 Pass |
-| Milestone | MS-008 | F20 시작 마법사 | Planned | 다음 활성 후보. Task 분해 필요 |
+| Milestone | MS-008 | F20 시작 마법사 | Done | 4개 언어 생성 F5 통과(2026-08-16). 스위처 자동등장=Rust(scope A) |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Done | 9파일 34.68KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.1.0`) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`

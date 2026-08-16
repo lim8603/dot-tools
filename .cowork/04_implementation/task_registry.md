@@ -56,9 +56,9 @@
 | TASK-021 | README + VSIX 패키징 | MS-007 | INT-001 | 없음 | AI | Done | 2026-08-16 | 완료 — README.md(소개·지원범위·요구사항·설치·상태바 칩표·명령·설정페이지·settings·한계) + package.json(version 0.1.0·publisher `lim8603`·repository/keywords) + `.vscodeignore`·LICENSE(MIT)·CHANGELOG v0.1.0 + 상태바 목업 2종(실 codicon PNG) + `vsce package`→`devswitcher-tools-0.1.0.vsix`(9파일 34.68KB) + 격리 프로필 설치 스모크 통과. **MS-007 Done → v0.1** | TASK-016~020 | `tasks/TASK-021.md` | M6. 배포 산출물 |
 | TASK-022 | 마법사 코어 + Cargo createProjectTask | MS-008 | INT-001 | US-011 | AI | Review | 2026-08-16 | **코드 완료·F5 대기** — `core/projectName.ts`(순수·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`)+registry `adapter()`/`creatableAdapters()`+`orchestrator.newProject()`(생성→refresh→자동 활성전환 OQ-001, 실패 시 Run Doctor)+command/taskDefinition 등록. check-types·lint·**unit 96**·esbuild OK. F5: New Project→Rust→이름→생성·자동전환 | 없음 | `tasks/TASK-022.md` | F20 |
 | TASK-023 | 3개 어댑터 createProject (dotnet/cmake/python) | MS-008 | INT-001 | US-011 | AI | Review | 2026-08-16 | **코드 완료·F5 대기** — 계약 일반화 `createProject: task\|files`. Dotnet=`dotnet new console -o`(task)·CMake=CMakeLists.txt+main.cpp·Python=pyproject.toml+main.py(**workspace.fs 작성**, D-13 개정). 순수 템플릿 mocha2(총 98). check-types·lint·esbuild OK. F5: 각 언어 New Project→파일 생성 확인(Rust만 스위처 자동등장) | TASK-022 | `tasks/TASK-023.md` | F20 |
-| TASK-024 | F20 통합 테스트 + 검증 반영 | MS-008 | INT-001 | 없음 | AI | Planned | 2026-08-16 | 4언어 통합 테스트 + §15.2 체크리스트 갱신 + verification_evidence 반영 + CHANGELOG(v0.2) | TASK-022·023 | `tasks/TASK-024.md` | F20 마감 |
+| TASK-024 | F20 통합 테스트 + 검증 반영 | MS-008 | INT-001 | 없음 | AI | Done | 2026-08-16 | 완료 — 통합 테스트에 `newProject` 추가 + **퍼블리셔 회귀 fix**(`seunghyun`→`lim8603` EXTENSION_ID) → **3 passing**. test_case §1·§2(TC-14~17 F20)·verification_evidence(EV-007)·CHANGELOG([Unreleased] F20) 갱신. **MS-008 Done** | TASK-022·023 | `tasks/TASK-024.md` | F20 마감 |
 
-> 현재 등록 Task: TASK-001~024. **TASK-001~021 Done(MS-001~007, v0.1.0).** **MS-008(TASK-022~024) Planned — 022→023→024 순, 022부터 착수.**
+> 현재 등록 Task: TASK-001~024. **전부 Done — MS-001~008 완료.** F20 시작 마법사 4개 언어 실동작(v1 스위처 자동등장=Rust). 다음 활성 후보 없음(v2 백로그: C-3·C-6·L-1 / 릴리즈 전 수동검증 TC-11 등).
 
 - `담당`: `Human` / `AI` / `Role-*` / `(Role-* 인수자)`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done`

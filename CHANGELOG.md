@@ -3,6 +3,18 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- **Start wizard (F20)** — `DevSwitcher: New Project…` scaffolds a project through a
+  folder → language → name flow. Rust (`cargo new`) and C# (`dotnet new console`)
+  use their native scaffolders; C++ (CMake) and Python have none, so the extension
+  writes a minimal template (`CMakeLists.txt` + `main.cpp` / `pyproject.toml` +
+  `main.py`). A new Rust project is auto-selected in the status bar; the other
+  languages are created on disk and appear in the switcher once their adapter is
+  implemented.
+
 ## [0.1.0] - 2026-08-16
 
 First personal release. Rust (Cargo) is fully implemented; C++, C#, and Python

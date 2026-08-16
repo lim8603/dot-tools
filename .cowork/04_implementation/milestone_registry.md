@@ -35,14 +35,14 @@ Milestone은 `Phase`와 다르다.
 | MS-005 | M4 실행·디버그 | INT-001 | Build | Done | TASK-010, TASK-011 | | TaskRunner·problem matcher·디버그 플로우·키바인딩. TASK-010·011 Done. **F5 검증 통과**(Build/Run + Debug 중단점), main 병합(FF, 2026-08-15). Rust 빌드·실행·디버그 실사용 가능. F19·Doctor 이월 |
 | MS-006 | M5 설정 페이지 | INT-001 | Build | Done | TASK-012, TASK-013, TASK-014, TASK-015 | 2026-08-15 | 코어(012 주입·013 Webview 셸·014 호출구성 탭) + **015 export/import(F12)** 모두 **F5 통과·main 병합**. pre/postBuild 실행은 C-5로 MS-007 이월. **Cargo.toml 국소편집은 v2 이월** |
 | MS-007 | M6 품질·배포 | INT-001 | Build | Done | TASK-016~021 | 2026-08-16 | 016 Doctor 모델·017 Doctor UI+E1칩·018 rustup target·019 pre/postBuild(C-5)·020 통합테스트+체크리스트(F18)·021 README+VSIX 전부 Done·병합. **v0.1.0 vsix 산출**(`devswitcher-tools-0.1.0.vsix`). Gate 5 = README·VSIX 해소, 잔여 수동검증(TC-11 WSL·TC-09·TC-02/03)은 문서화된 잔여 리스크로 v0.1 확정 |
-| MS-008 | 시작 마법사 (F20) | INT-001 | Build | In Progress | TASK-022~024 | 2026-08-16 | Task 분해(2026-08-16): 022 마법사 코어+Cargo·023 dotnet/cmake/python·024 통합테스트. OQ-001=자동 활성전환, CMake/Python=ShellExecution 파일작성(D-13). 022부터 착수. 의존 MS-002·MS-005 충족 |
+| MS-008 | 시작 마법사 (F20) | INT-001 | Build | Done | TASK-022~024 | 2026-08-16 | 022 마법사 코어+Cargo·023 dotnet/cmake/python(계약 `createProject: task\|files`)·024 통합테스트+검증. **4개 언어 생성 F5 통과**(Rust/C#=네이티브 new, C++/Python=workspace.fs, D-13). OQ-001=자동 활성전환. scope A: v1 스위처 자동등장=Rust만. unit 98+통합 3 |
 
 > 현재 등록 Milestone: MS-001~MS-008 (상세설계서 §16 로드맵 M0~M6 + F20 마법사)
 
 - `주 Phase`: `Define` / `Design` / `Build` / `Verify` / `Evolve` / `Deliver`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done` / `Deferred`
 - 상세 계획이 필요한 Milestone은 `milestones/MS-*.md`를 생성한다(현재는 registry 경량 운영).
-- 의존 순서: MS-001 → MS-002 → MS-003 → MS-004 → MS-005 → MS-006 → MS-007 **전부 Done(2026-08-16, v0.1.0)**. MS-008(F20)은 MS-002·MS-005 완료 후 착수 가능(다음 활성 후보). **MS-004(M3)까지면 Rust 실사용 가능.**
+- 의존 순서: MS-001 → … → MS-007 **Done(2026-08-16, v0.1.0)**, **MS-008(F20) Done(2026-08-16)**. **등록된 모든 Milestone(MS-001~008) 완료.** 이후는 v2 백로그(C-3 캐노니컬 편집·C-6 Run Group 등)로 새 Intent/Milestone 시 착수.
 
 ---
 

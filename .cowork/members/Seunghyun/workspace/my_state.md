@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-008 (F20 시작 마법사) In Progress** — TASK-022·023 코드완료·F5 대기 |
+| 활성 Milestone | **없음 — MS-001~008 전부 Done** (v0.1.0 + F20 마법사). 병합 대기 |
 | 마지막 갱신일 | 2026-08-16 |
 | 참조 세션 로그 | session_2026-08-16_006.md |
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-023 | dotnet/cmake/python createProject | MS-008 | Review | 코드완료 | F5 대기 |
+| 없음 | (TASK-001~024 전부 Done) | — | — | — | 없음 |
 
-> **TASK-001~021 Done(MS-001~007·v0.1.0).** MS-008: 022 커밋됨·**023 코드완료·F5 대기**(각 언어 생성; cargo/dotnet=Task, cmake/python=workspace.fs; Rust만 스위처 자동등장), 024(통합·마감) 남음. 상세: `tasks/TASK-022~024.md`.
+> **TASK-001~024 전부 Done — MS-001~008 완료.** v0.1.0(vsix) + F20 마법사 4언어(F5 통과). 브랜치 `feature/ms-008-new-project-wizard`(6커밋) **병합 대기**. 상세: `tasks/TASK-022~024.md`.
 
 ---
 

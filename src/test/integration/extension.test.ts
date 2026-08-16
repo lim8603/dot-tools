@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
  * interaction or a toolchain the CI host may lack.
  */
 
-const EXTENSION_ID = 'seunghyun.devswitcher-tools';
+const EXTENSION_ID = 'lim8603.devswitcher-tools';
 
 const CONTRIBUTED_COMMANDS = [
   'devSwitcher.switchProject',
@@ -23,6 +23,7 @@ const CONTRIBUTED_COMMANDS = [
   'devSwitcher.importProfile',
   'devSwitcher.doctor',
   'devSwitcher.toggleCompact',
+  'devSwitcher.newProject',
 ];
 
 describe('DevSwitcher — activation smoke', () => {

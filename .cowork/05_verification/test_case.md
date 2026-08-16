@@ -9,7 +9,7 @@
 | 항목 | 내용 |
 | --- | --- |
 | 관련 Intent | INT-001 |
-| 관련 Milestone | MS-007 (M6 품질·배포), 검증 대상은 MS-001~006 전체 |
+| 관련 Milestone | MS-008 (F20 마법사), 검증 대상은 MS-001~008 전체 |
 | 관련 Test Strategy | `test_strategy.md` |
 | 관련 Verification Evidence | `verification_evidence.md` |
 | 출처 | 상세설계서 §15.2 (통합 테스트 + 수동 체크리스트) |
@@ -23,11 +23,11 @@
 
 | TC | 항목 | 기대 결과 | 결과 | 실행일 |
 | --- | --- | --- | --- | --- |
-| TC-A1 | 확장 활성화 | `seunghyun.devswitcher-tools` present + activate | ✅ Pass | 2026-08-15 |
-| TC-A2 | 커맨드 기여 | 9개 커맨드(switchProject·pickChip·build·run·debug·openSettings·export/importProfile·doctor) 등록 | ✅ Pass | 2026-08-15 |
-| TC-A3 | 설정 페이지 오픈 | `devSwitcher.openSettings` 예외 없이 실행 | ✅ Pass | 2026-08-15 |
+| TC-A1 | 확장 활성화 | `lim8603.devswitcher-tools` present + activate | ✅ Pass | 2026-08-16 |
+| TC-A2 | 커맨드 기여 | 11개 커맨드(switchProject·pickChip·build·run·debug·openSettings·export/importProfile·doctor·toggleCompact·**newProject**) 등록 | ✅ Pass | 2026-08-16 |
+| TC-A3 | 설정 페이지 오픈 | `devSwitcher.openSettings` 예외 없이 실행 | ✅ Pass | 2026-08-16 |
 
-> 단위 테스트(mocha 92, `out/test/unit`)는 순수 코어 전담 — `test_strategy.md` §1 참조.
+> 단위 테스트(mocha 98, `out/test/unit`)는 순수 코어 전담 — `test_strategy.md` §1 참조.
 
 ---
 
@@ -50,12 +50,18 @@
 | TC-11 | WSL에서 동일 레포 → 시나리오 1~7 동일, Windows 창과 선택 독립 (F18·DD-01) | Manual | ⬜ Not Run | **F18 WSL 스모크 — v0.1 릴리즈 전 수동 권장** |
 | TC-12 | CodeLLDB 온디맨드 설치 → 디버그 이어짐(E7) / 미설치 target 선택 → `rustup target add` (§13.4) | Manual | ✅ Pass | CodeLLDB=MS-005 F5, target add=TASK-018 F5 |
 | TC-13 | Doctor 실행 → 항목별 상태 정확, 1단계 즉시 설치, 2·3단계 안내 (F19) | Manual | ✅ Pass | TASK-017 F5 (cargo/rustup/CodeLLDB ✅+버전) |
+| TC-14 | New Project → Rust → 이름 → `cargo new` → 파일 생성 + **스위처 자동 등장·전환** (F20, OQ-001) | Manual | ✅ Pass | TASK-022·023 F5 (세션 #006) |
+| TC-15 | New Project → C# → `dotnet new console -o` → `<name>/<name>.csproj`+Program.cs 생성 (도구 부재 시 Doctor) | Manual | ✅ Pass | TASK-023 F5 (dotnet SDK 존재, restore까지) |
+| TC-16 | New Project → C++ → **workspace.fs** 작성 `<name>/CMakeLists.txt`+`main.cpp`(툴체인 불필요, `<iostream>` 온전) (F20, D-13) | Manual | ✅ Pass | TASK-023 F5 (생성 파일 내용 검증) |
+| TC-17 | New Project → Python → **workspace.fs** 작성 `<name>/pyproject.toml`+`main.py` (F20, D-13) | Manual | ✅ Pass | TASK-023 F5 (생성 파일 내용 검증) |
 
-**요약**: Auto 3/3 Pass · Manual 7 Pass · 2 Partial(TC-06·TC-10) · 4 Not Run(TC-02·03·09·11).
-릴리즈(TASK-021) 전 권장 보강: **TC-11(WSL/F18)**, TC-09(재시작 복원), TC-02/03(workspace·멀티루트).
+> TC-15~17은 v1 scope A로 스위처엔 미등장(생성만) — 정상. 이름 검증(validateProjectName)·템플릿 순수함수는 단위 테스트(mocha 98) 커버.
+
+**요약**: Auto 3/3 Pass · Manual 11 Pass · 2 Partial(TC-06·TC-10) · 4 Not Run(TC-02·03·09·11).
+릴리즈 전 권장 보강(v0.1 잔여): **TC-11(WSL/F18)**, TC-09(재시작 복원), TC-02/03(workspace·멀티루트).
 
 ---
 
 ## 3. 분할 승격 판단
 
-- 실질 케이스 16개(A1~A3 + 01~13)로 12개 초과 — 다만 대부분 §15.2 원본 1:1 매핑이라 **현 단일 문서 유지**가 추적에 유리. Milestone별 반복 참조가 생기면 `test_cases/` 승격 검토(§분할 기준).
+- 실질 케이스 20개(A1~A3 + 01~17)로 12개 초과 — 다만 대부분 §15.2 원본 1:1 매핑 + F20(14~17)이라 **현 단일 문서 유지**가 추적에 유리. Milestone별 반복 참조가 생기면 `test_cases/` 승격 검토(§분할 기준).
