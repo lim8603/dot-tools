@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import {
   assembleDotnetArgs,
   buildConfigurationList,
+  buildCoreclrConfig,
   buildMsbuildProps,
   dotnetProjectName,
   msbuildValue,
@@ -128,5 +129,25 @@ describe('assembleDotnetArgs', () => {
     assert.deepEqual(args, [
       'run', '--project', 'App.csproj', '-c', 'Debug', '-f', 'net10.0', '--', '--verbose', 'a b',
     ]);
+  });
+});
+
+describe('buildCoreclrConfig', () => {
+  it('builds a coreclr launch config from a resolved assembly', () => {
+    const cfg = buildCoreclrConfig('App', '/w/App/bin/Debug/net10.0/App.dll', ['--flag'], '/w/App');
+    assert.deepEqual(cfg, {
+      type: 'coreclr',
+      request: 'launch',
+      name: 'Debug App',
+      program: '/w/App/bin/Debug/net10.0/App.dll',
+      args: ['--flag'],
+      cwd: '/w/App',
+      stopAtEntry: false,
+      console: 'internalConsole',
+    });
+  });
+
+  it('falls back to a generic name when the project name is missing', () => {
+    assert.equal(buildCoreclrConfig(undefined, '/x/A.dll', [], '/x').name, 'Debug');
   });
 });

@@ -4,6 +4,7 @@ import { DevSwitcherError } from '../../core/errors';
 import {
   ChipItem,
   ChipValue,
+  DiagnosticProbe,
   InvocationConfig,
   LanguageAdapter,
   NEW_PROJECT_TASK_TYPE,
@@ -11,17 +12,21 @@ import {
   ProjectInfo,
   Selection,
 } from '../../core/types';
-import { notImplemented } from '../notImplemented';
 import {
   DotnetBridge,
   assembleDotnetArgs,
   buildConfigurationList,
+  buildCoreclrConfig,
   buildMsbuildProps,
   dotnetProjectName,
   targetFrameworkItems,
 } from './dotnetBridge';
 
 const bridge = new DotnetBridge();
+
+/** Friendly names for the extensions Doctor reports (F19); falls back to the id. */
+const EXTENSION_LABELS: Record<string, string> = { 'ms-dotnettools.csdevkit': 'C# Dev Kit' };
+const extensionLabel = (id: string): string => EXTENSION_LABELS[id] ?? id;
 
 /** Architecture-chip sentinel: pick this to clear the RID back to host default (no -r). */
 const HOST_DEFAULT_RID = '__host_default__';
@@ -241,7 +246,11 @@ export const dotnetAdapter: LanguageAdapter = {
     return makeDotnetTask('run', project, sel, config);
   },
 
-  createDebugConfig: (_project, _sel, _config) => notImplemented('DotnetAdapter.createDebugConfig', 'TASK-029'),
+  async createDebugConfig(project, sel, config) {
+    // §7.4 builds first; resolveExecutable then reads the assembly path (TargetPath).
+    const program = await this.resolveExecutable(project, sel, config);
+    return buildCoreclrConfig(project.name, program, config.runArgs ?? [], cwdOf(project));
+  },
 
   async resolveExecutable(project, sel, config) {
     // The built assembly path from MSBuild's TargetPath — no path guessing (DD-05 analogue).
@@ -257,5 +266,32 @@ export const dotnetAdapter: LanguageAdapter = {
 
   createProject: (target) => ({ kind: 'task', task: makeDotnetNewTask(target) }),
   invalidateCache: (project) => bridge.invalidateCache(project?.manifestPath),
-  collectDiagnostics: () => Promise.resolve([]), // real SDK/extension checks land in TASK-029
+
+  collectDiagnostics: async (): Promise<DiagnosticProbe[]> => {
+    const tc = await bridge.checkToolchain();
+    const probes: DiagnosticProbe[] = [
+      {
+        id: 'dotnet',
+        label: '.NET SDK',
+        severity: 'critical',
+        present: tc.dotnet !== undefined,
+        detail: tc.dotnet,
+        tier: 2,
+        resolution: { kind: 'openUrl', url: 'https://dotnet.microsoft.com/download' },
+      },
+    ];
+    for (const extId of dotnetAdapter.requiredExtensions) {
+      const ext = vscode.extensions.getExtension(extId);
+      probes.push({
+        id: extId,
+        label: extensionLabel(extId),
+        severity: 'optional',
+        present: ext !== undefined,
+        detail: ext?.packageJSON?.version as string | undefined,
+        tier: 1,
+        resolution: { kind: 'installExtension', extensionId: extId },
+      });
+    }
+    return probes;
+  },
 };

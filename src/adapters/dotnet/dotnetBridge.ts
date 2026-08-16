@@ -177,6 +177,45 @@ export function assembleDotnetArgs(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Debug configuration — coreclr launch config (C# Dev Kit / C# extension)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A `coreclr` launch config (ms-dotnettools); structurally a DebugConfiguration. */
+export interface CoreclrLaunchConfig {
+  type: 'coreclr';
+  request: 'launch';
+  name: string;
+  program: string; // the built .dll (coreclr runs it under `dotnet`)
+  args: string[];
+  cwd: string;
+  stopAtEntry: boolean;
+  console: 'internalConsole';
+}
+
+/**
+ * Assemble a `coreclr` launch config from a resolved assembly (the DLL from
+ * resolveExecutable). Pure so it is unit-testable; the adapter supplies `program`
+ * and `cwd`. Mirrors buildLldbConfig for the cargo adapter.
+ */
+export function buildCoreclrConfig(
+  projectName: string | undefined,
+  program: string,
+  args: string[],
+  cwd: string,
+): CoreclrLaunchConfig {
+  return {
+    type: 'coreclr',
+    request: 'launch',
+    name: projectName ? `Debug ${projectName}` : 'Debug',
+    program,
+    args,
+    cwd,
+    stopAtEntry: false,
+    console: 'internalConsole',
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // dotnet CLI I/O boundary — the only part that touches the process boundary.
 // vscode-free (plain cwd/manifestPath) and exec-injected (DotnetExec) so tests run
 // hermetically without a real .NET SDK. Mirrors CargoBridge's I/O half (TASK-005).
