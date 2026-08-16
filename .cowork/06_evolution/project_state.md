@@ -90,7 +90,8 @@
 | # | 항목 | 트리거 | 출처 |
 |---|------|--------|------|
 | ~~C-1~~ | **해소(2026-08-15, 세션 #004)** — `03_design_artifacts/ui_spec.md` 작성(설정 페이지 마스터-디테일·탭·명령 미리보기·데이터 흐름). 마법사 QuickPick 상세는 MS-008에서 보강 | (해소) | 세션 #001 Gate 3 → #004 작성 |
-| C-2 | **MS-007 분해 완료(2026-08-15, 세션 #005) — TASK-016~021**. MS-008(F20) 분해만 남음(착수 시) | MS-008 착수 시 | task_registry 경량 운영 |
+| ~~C-2~~ | **해소(2026-08-16, 세션 #006)** — MS-008(F20) TASK-022~024 분해·완료. 등록 Milestone 전부 완료 | (해소) | task_registry 경량 운영 |
+| C-7 | **CMake/Dotnet/Python 어댑터 실구현** — 스위치·빌드·실행·디버그(현재 스텁, F20 생성만 실동작). 실구현 시 각 언어 스위처 자동등장(scope A 해제) | v1.1+/새 Intent 착수 시 | 세션 #006 scope A |
 | C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
 | C-6 | **v2 신규 기능 후보: Run Group(실행 그룹·종속성)** — 여러 cargo 프로젝트를 그룹으로 묶어 종속 순서대로 일괄 기동/정리(예: auth→api→web). (선택)준비 감지=포트/헬스체크(docker-compose `depends_on` 유사). 현 v1은 "단일 활성 프로젝트·한 창=한 환경"(§12.4)이라 미포함. 필요 요소: 그룹 상태 모델 + GroupOrchestrator + 그룹 정의/트리거 UI. TaskRunner는 이미 프로젝트별 락이라 병렬 실행 가능 | v2/새 Intent 착수 시 | 세션 #005 Human 제기 |
 | ~~C-4~~ | **해소(2026-08-15, 세션 #005, TASK-015)** — `ProfileExport` 확정(= PersistedState 정렬: selections+invocation, activeProjectId 제외, runArgs는 ADR-011 승격 위치) + `data_model.md §2` 예시 정합화 | (해소) | 세션 #003 → #005 |

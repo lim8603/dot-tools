@@ -35,15 +35,15 @@
 | #003 | 2026-08-15 | TASK-001 F5·병합 → OQ-002 확정 → TASK-002 types.ts → TS2584 수정 → TASK-003 어댑터 스텁 → MS-002 병합 → 상세설계서 v1.2·imported_context 이동 → MS-003 착수·TASK-004(CargoBridge+mocha) | MS-001·002·003 | TASK-001~004 | 완료 |
 | #004 | 2026-08-15 | **MS-003·004·005 완료·병합 + MS-006 코어 F5 통과(미병합)**. TASK-005~014: CargoBridge I/O·CargoAdapter·상태바/저장/감시·실행/디버그·**설정 페이지(옵션 편집·명령 미리보기·오버레이 주입)**. mocha 61. CLAUDE/AGENTS 컨텍스트·ui_spec 작성 | MS-003~006 | TASK-005~014 | MS-006 병합만 남음 |
 | #005 | 2026-08-15 | **MS-006 코어 병합 + TASK-015(export/import F12) 완료 → MS-006 Done.** C-4 확정(ProfileExport=PersistedState 정렬). 파생: 옵션 example bare화+injectsAs/docUrl·preview env 표시. F5 라운드트립 통과. mocha 73 | MS-006 | TASK-015 | **MS-001~006 전부 완료·병합** |
-| #006 | 2026-08-16 | **TASK-021(README+VSIX) 완료 → MS-007 Done → v0.1.0 릴리즈.** publisher=lim8603·repo 설정·`.vscodeignore`·LICENSE·CHANGELOG·README + 상태바 목업 2종(실 codicon PNG) + `vsce package`(34.68KB)·설치 스모크. Gate 5 조건부 Pass | MS-007 | TASK-021 | **MS-001~007 전부 완료** |
+| #006 | 2026-08-16 | **대형 세션 — v0.1.0 릴리즈 + MS-008(F20 마법사) 완주 + 수동검증 + v0.2.0 릴리즈.** ① TASK-021→MS-007 Done→v0.1.0(publisher lim8603·codicon PNG 목업·vsce·설치스모크) ② MS-008 TASK-022~024(마법사 4언어 생성, 계약 `createProject: task\|files`, workspace.fs D-13)→Done ③ 수동검증 TC-02/03/09 Pass·TC-11 Deferred ④ 검증 중 버그 2건 수정(features 칩 e7b462b·untrusted 무한스피너 eb8983a) ⑤ **v0.2.0 릴리즈**(main push). unit 99+통합 3 | MS-007·008 | TASK-021~024 | **MS-001~008 전부 완료·v0.2.0** |
 
 ---
 
 ## 다음 시작점
 
-1. **MS-008(F20 시작 마법사) 착수** — Task 분해부터(newProjectWizard UI + `devSwitcher.newProject` + 4개 어댑터 createProjectTask). 의존 MS-002·MS-005 충족.
-2. 릴리즈 전 권장 수동검증(v0.1 잔여 리스크, 지시 시): TC-11(WSL/F18)·TC-09(재시작)·TC-02/03 (`test_case.md §2`)
-3. 이월: 프로파일 편집 v2(C-3)·Run Group(C-6, v2)·extra rustflags(L-1)
+1. **TC-11(WSL/F18)** — WSL 내부에 레포 재클론 후 별도 진행(Deferred, GAP-001).
+2. **CMake/Dotnet/Python 어댑터 실구현**(스위치·빌드·디버그) — 현재 스텁, F20 생성만 실동작(C-7).
+3. 이월: 프로파일 편집 v2(C-3)·Run Group(C-6)·extra rustflags(L-1).
 
 ---
 
