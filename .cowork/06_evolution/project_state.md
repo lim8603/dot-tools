@@ -16,17 +16,17 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (**MS-001~008 전부 Done** — v0.1.0 릴리즈 + F20 마법사 4언어) |
-| 활성 Intent | INT-001 (Approved, F20·F21 반영) |
-| 활성 Milestone | 없음 (등록 Milestone 전부 Done. 다음은 v2 백로그/새 Intent) |
-| 활성 Task | 없음 (TASK-001~024 전부 Done) |
+| 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
+| 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
+| 활성 Milestone | 없음 (MS-009 Done) — 다음 MS-010 C#(C-7) 착수 지시 대기 |
+| 활성 Task | 없음 (TASK-025·026 Done) — 다음 TASK-027(DotnetBridge) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
 | 마지막 갱신일 | 2026-08-16 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-16_006.md |
+| 참조 세션 로그 | session_2026-08-16_007.md |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -42,13 +42,13 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **MS-001~008 전부 완료.** v0.1.0 vsix 산출(MS-007) + **F20 시작 마법사 4개 언어 실동작(MS-008)**: Rust/C#=네이티브 new, C++/Python=workspace.fs 템플릿(D-13). 상태바 전환·빌드·실행·디버그·설정 페이지·프로파일 export/import·Doctor·프로젝트 생성 마법사 전부 실동작(v1 스위처 자동등장=Rust). mocha 98 + 통합 3. Gate 5 조건부 Pass(잔여 수동검증 TC-11 WSL 등은 문서화된 리스크). **다음: `feature/ms-008-new-project-wizard` 병합+push (지시 시) → 선택적 v0.2.0.**
+- **MS-001~008 Done · v0.2.0 릴리즈 완료.** 이후 **INT-001 완주 로드맵(MS-009~013) 착수** — Intent 이름이 "다언어"인데 스위치·빌드·실행·디버그 실동작이 Rust뿐이므로 C-7(다언어 어댑터 실구현)+C-6(Run Group)까지 완료해야 INT-001 완료로 판단. **C-3(캐노니컬 파일 편집)은 폐기**(D-15 — "파일 무편집" 영구 불변식). **현재: MS-009/TASK-025(L-1 자유 플래그) 구현 착수.**
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- v1 구현 완료: CargoAdapter(Rust) 실구현 + CMake/Dotnet/Python 스텁(칩 선언). 시작 마법사(F20)는 4개 언어 생성 실동작.
-- 남은 것은 병합/릴리즈(운영)와 v2 백로그(C-3 캐노니컬 편집·C-6 Run Group·L-1). 코드 스코프상 v1 목표 달성.
+- **완료**: MS-009(정리) Done — L-1 자유 플래그(TASK-025, F5 통과) + persistSetting 계약 제거(TASK-026).
+- **다음**: C-7 언어별 3 MS(**MS-010 C#** → MS-011 Python → MS-012 CMake) → C-6 Run Group(MS-013). 릴리즈는 언어별 증분(v1.1→1.2→1.3→2.0). MS-010 착수 = TASK-027 DotnetBridge부터.
 
 ---
 
@@ -57,9 +57,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| 없음 | (TASK-001~024 전부 Done) | - | - | 2026-08-16 | 새 작업은 v2 백로그(C-3/C-6/L-1)나 새 Intent 착수 지시 시 |
+| 없음 | (MS-009 Done — TASK-025·026 완료) | AI | - | 2026-08-16 | 다음 활성 = MS-010 C# 착수 지시 시 TASK-027(DotnetBridge) |
 
-> **TASK-001~024 전부 Done — MS-001~008 완료.** v0.1.0(vsix)+F20 마법사(4언어). 수동검증 TC-02/03/09 Pass(검증 중 features 칩·untrusted 무한스피너 버그 수정), **TC-11(WSL) Deferred**. `feature/ms-008-new-project-wizard`(MS-008 + fix e7b462b·eb8983a) 병합 대기.
+> **TASK-001~026 Done.** MS-009(정리) 완료 — TASK-025(L-1 Extra rustflags, F5 통과) + TASK-026(persistSetting 계약 제거). unit 104·esbuild OK. 다음: **MS-010 C#(C-7)** = TASK-027~029 → MS-011 Python → MS-012 CMake → MS-013 Run Group. C-3 폐기(D-15/ADR-013). 수동검증 TC-11(WSL) Deferred.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,9 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TC-11(WSL/F18)** — WSL 내부 재클론 후 별도 진행(Deferred, GAP-001).
-2. v2 백로그 또는 새 Intent: C-3(캐노니컬 편집)·C-6(Run Group)·L-1(extra rustflags), 그리고 CMake/Dotnet/Python 어댑터 실구현(스위치·빌드·디버그).
-3. (완료) MS-001~008 · v0.2.0 릴리즈(main push). 수동검증 TC-02/03/09 Pass.
+1. **MS-010 C# 착수**(C-7 1/3) — TASK-027 DotnetBridge(dotnet/msbuild CLI I/O·listProjects·chips)부터. cargoBridge/cargoAdapter 패턴 준용.
+2. 이어서 MS-011 Python → MS-012 CMake. **C-7 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).**
+3. **C-6**: MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
 
@@ -91,9 +91,9 @@
 |---|------|--------|------|
 | ~~C-1~~ | **해소(2026-08-15, 세션 #004)** — `03_design_artifacts/ui_spec.md` 작성(설정 페이지 마스터-디테일·탭·명령 미리보기·데이터 흐름). 마법사 QuickPick 상세는 MS-008에서 보강 | (해소) | 세션 #001 Gate 3 → #004 작성 |
 | ~~C-2~~ | **해소(2026-08-16, 세션 #006)** — MS-008(F20) TASK-022~024 분해·완료. 등록 Milestone 전부 완료 | (해소) | task_registry 경량 운영 |
-| C-7 | **CMake/Dotnet/Python 어댑터 실구현** — 스위치·빌드·실행·디버그(현재 스텁, F20 생성만 실동작). 실구현 시 각 언어 스위처 자동등장(scope A 해제) | v1.1+/새 Intent 착수 시 | 세션 #006 scope A |
-| C-3 | **v2 기능**: 호출 구성 오버레이를 캐노니컬 파일에 영구 반영(편집/승격) — 구 §8.7 `[profile.*]` 스칼라 국소편집 | v2 착수 시 | 세션 #002 ADR-011 |
-| C-6 | **v2 신규 기능 후보: Run Group(실행 그룹·종속성)** — 여러 cargo 프로젝트를 그룹으로 묶어 종속 순서대로 일괄 기동/정리(예: auth→api→web). (선택)준비 감지=포트/헬스체크(docker-compose `depends_on` 유사). 현 v1은 "단일 활성 프로젝트·한 창=한 환경"(§12.4)이라 미포함. 필요 요소: 그룹 상태 모델 + GroupOrchestrator + 그룹 정의/트리거 UI. TaskRunner는 이미 프로젝트별 락이라 병렬 실행 가능 | v2/새 Intent 착수 시 | 세션 #005 Human 제기 |
+| ~~C-7~~ | **승격(2026-08-16, 세션 #007) → MS-010·011·012** — CMake/Dotnet/Python 어댑터 실구현(스위치·빌드·실행·디버그). 언어별 3 MS 순차. 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제). INT-001 완료 조건 | (승격) | 세션 #006 scope A → #007 |
+| ~~C-3~~ | **폐기(2026-08-16, 세션 #007, D-15)** — 오버레이→캐노니컬 파일 영구 편집/승격. "파일 무편집"이 ADR-011의 근간이고 영속화·공유는 프로파일 export/import(F12)가 이미 파일 무편집으로 해결. 파일 손상·머지충돌 리스크 회피. `persistSetting` 계약도 제거(TASK-026). ADR-013으로 "파일 무편집 = 영구 불변식" 기록 | (폐기) | 세션 #002 ADR-011 → #007 |
+| ~~C-6~~ | **승격(2026-08-16, 세션 #007) → MS-013** — Run Group(실행 그룹·종속성): 여러 프로젝트를 그룹으로 묶어 종속 순서대로 일괄 기동/정리(예: auth→api→web). (선택)준비 감지=포트/헬스체크. 필요 요소: 그룹 상태 모델 + GroupOrchestrator + 정의/트리거 UI. TaskRunner 프로젝트별 락 기반 존재. C-7 이후 착수(다언어 그룹 가치 최대). INT-001 완료 조건 | (승격) | 세션 #005 → #007 |
 | ~~C-4~~ | **해소(2026-08-15, 세션 #005, TASK-015)** — `ProfileExport` 확정(= PersistedState 정렬: selections+invocation, activeProjectId 제외, runArgs는 ADR-011 승격 위치) + `data_model.md §2` 예시 정합화 | (해소) | 세션 #003 → #005 |
 | ~~C-5~~ | **해소(2026-08-15, 세션 #005, TASK-019)** — preBuild/postBuild를 ShellExecution Task로 실제 실행(pre 실패→중단, post 성공 후) + 설정 페이지 buildEvent 에디터 | (해소) | 세션 #004 → #005 |
 
@@ -101,7 +101,7 @@
 
 | # | 항목 | 출처 |
 |---|------|------|
-| L-1 | 옵션 카탈로그에 임의 추가 `-C` 플래그/여러 RUSTFLAGS를 넣는 자유 필드 없음(카탈로그 정의 옵션 + runArgs만 주입). 필요 시 `stringList` 타입 옵션/"extra rustflags" 필드 추가 | 세션 #005 TASK-015 검증 |
+| ~~L-1~~ | **승격(2026-08-16, 세션 #007) → MS-009/TASK-025 (In Progress)** — `stringList` 자유 플래그("extra flags") 카탈로그 항목+에디터+주입 추가 | 세션 #005 TASK-015 검증 → #007 |
 
 ---
 
@@ -124,6 +124,7 @@
 - **세션 #006 (계속) — v0.1.0 병합·push + MS-008 착수(TASK-022 코드완료·F5 대기)**: `feature/task-021-readme-vsix`→main FF 병합·`git push`(GitHub v0.1.0 반영). MS-008 분해(TASK-022~024, D-13). **TASK-022 구현**: `core/projectName.ts`(순수 검증·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`types.ts NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`, ProcessExecution 셸無)+`adapterRegistry.adapter()/creatableAdapters()`+`orchestrator.newProject()`(마법사→createProjectTask→TaskRunner(synthetic lock)→성공 시 refresh+findCreatedProject→setActiveProject+renderActive 자동전환 OQ-001; 실패 시 Run Doctor; 스텁 throw catch)+`extension.ts`/`package.json`(newProject 커맨드·devswitcher-newproject taskDef). check-types·lint·**unit 96**·esbuild OK. TASK-022 F5 통과·커밋(ab58c15/6999f34).
 - **세션 #006 (계속) — TASK-023 코드완료·F5 대기**: 계약 일반화 `createProjectTask→createProject(target): {kind:'task'}|{kind:'files'}`(types.ts `ProjectFile`/`ProjectCreation`). cargo/dotnet=네이티브 new(task, `dotnet new console -o`), **cmake/python=확장이 `workspace.fs`로 템플릿 작성(files)** — D-13을 ShellExecution→workspace.fs로 개정(셸 종류 미제어·C++ `<>` 충돌 발견). `cmakeTemplate.ts`/`pythonTemplate.ts`(순수·mocha2) + orchestrator `newProject` kind 분기 + `writeProjectFiles`(createDirectory+writeFile). interface_contract §5 갱신. **scope A**: v1 스위처 자동등장=Rust만(나머지 3개 listProjects v2 스텁). check-types·lint·**unit 98**·esbuild OK. TASK-023 F5 통과(4언어 생성·내용 검증)·커밋(2684ee7/467f8f3).
 - **세션 #006 (계속) — TASK-024·MS-008 Done**: 통합 테스트에 `newProject` 추가 + **퍼블리셔 회귀 fix**(EXTENSION_ID `seunghyun`→`lim8603`) → `npm run test:integration` **3 passing**. test_case(§1 퍼블리셔·11커맨드·§2 TC-14~17 F20 Pass·요약 Manual 11)·verification_evidence(EV-007 F20·EV-001 unit98·EV-002 11커맨드)·CHANGELOG([Unreleased] F20) 갱신. **MS-008 Done → 등록 Milestone(MS-001~008) 전부 완료.** 브랜치 `feature/ms-008-new-project-wizard` 5커밋(022·023 각 feat+docs + 024) **병합 대기**. **다음: main FF 병합+push (지시 시) → 선택적 v0.2.0 릴리즈.**
+- **세션 #007 — INT-001 완주 로드맵 착수 + C-3 폐기 + L-1 구현**: ① 진척 브리핑 중 task_registry TASK-022·023 stale(`Review`) 발견→`Done` 정정. ② **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정. **C-3(캐노니컬 파일 편집) 폐기**(D-15/**ADR-013** — "파일 무편집 = 영구 불변식"; 영속화는 export/import가 이미 해결; `persistSetting` 계약 제거=TASK-026). ③ 스케줄 등록: **MS-009**(정리: L-1+계약정리) → **MS-010 C#** → **MS-011 Python** → **MS-012 CMake**(=C-7) → **MS-013 Run Group**(C-6). TASK-025~040. ④ **MS-009 Done**: TASK-025(L-1 Extra rustflags) — cargo optionCatalog `stringList`(**Compiler 섹션**) + `applyOption` 빈배열 제거 + `buildConfigArgs` rustflags 스킵 + `buildRustflags(linker, compiler)` append + 설정 페이지 stringList 에디터(textarea·blur) + preview RUSTFLAGS. **F5 통과**(1차 UX 버그=Linker 섹션 오배치→Compiler 이동 후 재확인 통과). TASK-026 — `persistSetting` 계약 제거(types.ts + 4어댑터 stub + cargo import 정리 + interface_contract/domain_model/functional_spec 정리, 호출처 0). **unit 104·esbuild 61.7kb OK.** **다음: MS-010(TASK-027 DotnetBridge)부터 C-7 착수.**
 
 ---
 
@@ -171,6 +172,7 @@
 | D-12 | v0.1.0 릴리즈 확정 — publisher=`lim8603`, `devswitcher-tools-0.1.0.vsix` 산출·설치 스모크 통과로 MS-007 Done. Gate 5 조건부 Pass(잔여 수동검증 TC-11 WSL 등은 문서화된 리스크로 수용) | `verification_evidence.md`, TASK-021 | 2026-08-16 |
 | D-13 | MS-008 — OQ-001=자동 활성전환(생성 후 새 프로젝트 활성화). 계약 일반화 `createProject(target): {kind:'task'} \| {kind:'files'}`. cargo/dotnet=네이티브 new(task). **CMake/Python=확장이 `workspace.fs`로 템플릿 작성(files)** — 최초 "ShellExecution" 안에서 **셸 종류 미제어·C++ `<>` 리다이렉션 충돌** 발견해 workspace.fs로 개정(구현 중 우려 1회). ADR-010은 "네이티브 있으면 위임, 없으면 확장 작성"으로 해석. **v1 스위처 자동등장=Rust만**(scope A) | `interface_contract.md §5`, TASK-023 | 2026-08-16 |
 | D-14 | v0.2.0 릴리즈 — F20 마법사 + 수동검증 중 발견한 버그 2건 수정(features 칩 토글/카운트/none 보존, untrusted 워크스페이스 무한스피너) 포함. `devswitcher-tools-0.2.0.vsix` 산출·설치 스모크 통과. version 0.1.0→0.2.0, CHANGELOG [Unreleased]→[0.2.0], README 마법사 반영 | `CHANGELOG.md`, `package.json` | 2026-08-16 |
+| D-15 | **C-3 폐기(Won't Do)** — 오버레이를 캐노니컬 파일에 영구 편집/승격하는 기능을 v2 백로그에서 제거. 근거: ①ADR-011 근간이 "파일 무편집" ②영속화·공유는 프로파일 export/import(F12)가 이미 해결 ③TOML 손상·머지충돌 리스크. 후속: `LanguageAdapter.persistSetting` 계약 제거(TASK-026). "파일 무편집 = 영구 불변식"을 ADR-013으로 기록. **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정, 완주 로드맵 MS-009~013 착수 | `ADR-013`, `milestone_registry.md` | 2026-08-16 |
 
 ---
 
@@ -233,6 +235,11 @@
 | Milestone | MS-006 | M5 설정 페이지·호출 구성 | Done | 코어(012·013·014) + export/import(015) F5 통과, main 병합(2026-08-15). pre/postBuild(C-5) 이월 |
 | Milestone | MS-007 | M6 품질·배포·통합테스트 | Done | 016~021 전부 Done. **v0.1.0 vsix 산출**(2026-08-16). Gate 5 조건부 Pass |
 | Milestone | MS-008 | F20 시작 마법사 | Done | 4개 언어 생성 F5 통과(2026-08-16). 스위처 자동등장=Rust(scope A) |
+| Milestone | MS-009 | v1.1 정리 (자유 플래그 L-1 + 계약 정리) | Done | TASK-025(L-1, F5 통과)·TASK-026(persistSetting 제거). 2026-08-16 |
+| Milestone | MS-010 | C# (Dotnet) 어댑터 실구현 | Planned | C-7 1/3. TASK-027~029 |
+| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | Planned | C-7 2/3. TASK-030~032 |
+| Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | Planned | C-7 3/3. TASK-033~035. 연동 방식 착수 시 ADR |
+| Milestone | MS-013 | Run Group (C-6) | Planned | v2.0. TASK-036~040. C-7 이후 |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
 | Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Done | F20 마법사 + features/untrusted 수정. 9파일 37.47KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.2.0`) |
 

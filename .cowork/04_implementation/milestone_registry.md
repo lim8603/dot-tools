@@ -36,13 +36,18 @@ Milestone은 `Phase`와 다르다.
 | MS-006 | M5 설정 페이지 | INT-001 | Build | Done | TASK-012, TASK-013, TASK-014, TASK-015 | 2026-08-15 | 코어(012 주입·013 Webview 셸·014 호출구성 탭) + **015 export/import(F12)** 모두 **F5 통과·main 병합**. pre/postBuild 실행은 C-5로 MS-007 이월. **Cargo.toml 국소편집은 v2 이월** |
 | MS-007 | M6 품질·배포 | INT-001 | Build | Done | TASK-016~021 | 2026-08-16 | 016 Doctor 모델·017 Doctor UI+E1칩·018 rustup target·019 pre/postBuild(C-5)·020 통합테스트+체크리스트(F18)·021 README+VSIX 전부 Done·병합. **v0.1.0 vsix 산출**(`devswitcher-tools-0.1.0.vsix`). Gate 5 = README·VSIX 해소, 잔여 수동검증(TC-11 WSL·TC-09·TC-02/03)은 문서화된 잔여 리스크로 v0.1 확정 |
 | MS-008 | 시작 마법사 (F20) | INT-001 | Build | Done | TASK-022~024 | 2026-08-16 | 022 마법사 코어+Cargo·023 dotnet/cmake/python(계약 `createProject: task\|files`)·024 통합테스트+검증. **4개 언어 생성 F5 통과**(Rust/C#=네이티브 new, C++/Python=workspace.fs, D-13). OQ-001=자동 활성전환. scope A: v1 스위처 자동등장=Rust만. unit 98+통합 3 |
+| MS-009 | v1.1 정리 — 자유 플래그(L-1) + 계약 정리 | INT-001 | Build | Done | TASK-025, TASK-026 | 2026-08-16 | 025 `stringList` 자유 플래그(Extra rustflags, Compiler 섹션) F5 통과 · 026 `persistSetting` 계약 제거(C-3 폐기 후속, D-15/ADR-013). unit 104·esbuild OK |
+| MS-010 | C# (Dotnet) 어댑터 실구현 | INT-001 | Build | Planned | TASK-027~029 | | 스위치·빌드·실행·디버그·진단 실구현(현재 F20 생성만). cargo와 최유사(네이티브 CLI·output name 주입 가능). C-7 1/3. 릴리즈 후보 v1.1 |
+| MS-011 | Python 어댑터 실구현 (리트머스) | INT-001 | Build | Planned | TASK-030~032 | | environment 축·실행·디버그(debugpy)·PYTHONPATH env 주입. `actions.build=false` 리트머스 UX 실검증. C-7 2/3. v1.2 |
+| MS-012 | C++ (CMake) 어댑터 실구현 | INT-001 | Build | Planned | TASK-033~035 | | configure/build 2단계 주입·빌드트리 타깃 resolveExecutable·디버그(cppdbg). CMake Tools 연동 여부는 착수 시 ADR. C-7 3/3. v1.3 |
+| MS-013 | Run Group (C-6) | INT-001 | Build | Planned | TASK-036~040 | | 그룹 상태 모델+GroupOrchestrator(종속 위상정렬·순차/병렬·teardown)+정의/트리거 UI+(선택)준비감지. TaskRunner 프로젝트별 락 기반 존재. 다언어 그룹은 C-7 이후 가치 최대. v2.0 |
 
-> 현재 등록 Milestone: MS-001~MS-008 (상세설계서 §16 로드맵 M0~M6 + F20 마법사)
+> 현재 등록 Milestone: MS-001~MS-013 (M0~M6 + F20 마법사 완료 / MS-009~013 = INT-001 완주 로드맵: 정리 + 다언어 어댑터 실구현 C-7 + Run Group C-6)
 
 - `주 Phase`: `Define` / `Design` / `Build` / `Verify` / `Evolve` / `Deliver`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done` / `Deferred`
 - 상세 계획이 필요한 Milestone은 `milestones/MS-*.md`를 생성한다(현재는 registry 경량 운영).
-- 의존 순서: MS-001 → … → MS-007 **Done(2026-08-16, v0.1.0)**, **MS-008(F20) Done(2026-08-16)**. **등록된 모든 Milestone(MS-001~008) 완료.** 이후는 v2 백로그(C-3 캐노니컬 편집·C-6 Run Group 등)로 새 Intent/Milestone 시 착수.
+- 의존 순서: MS-001 → … → MS-008 **전부 Done(2026-08-16, v0.2.0)**. **INT-001 완주 로드맵 착수**: MS-009(정리, In Progress) → MS-010 C# → MS-011 Python → MS-012 CMake(= C-7 언어별 3 MS) → MS-013 Run Group(C-6). **C-3(캐노니컬 파일 편집)은 폐기**(D-15 — "파일 무편집" 영구 불변식). 릴리즈는 언어별 증분(v1.1 C# → v1.2 Python → v1.3 C++ → v2.0 Run Group).
 
 ---
 

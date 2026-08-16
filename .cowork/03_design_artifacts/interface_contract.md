@@ -102,7 +102,7 @@ export interface LanguageAdapter {
   createDebugConfig(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.DebugConfiguration>;
   resolveExecutable(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string>;   // 디버그 전 경로 해석(ADR-005)
 
-  persistSetting(project: ProjectInfo, key: string, value: unknown): Promise<void>;  // 캐노니컬 파일 국소 편집(ADR-007)
+  // 캐노니컬 파일 편집 메서드는 없다 — 확장은 사용자 빌드 파일을 절대 편집하지 않는다(영구 불변식, ADR-013 / D-15, C-3 폐기). 설정 영속화·공유는 프로파일 export/import(F12), 오버레이는 호출 시 주입(ADR-011).
   invalidateCache(project?: ProjectInfo): void;                              // 매니페스트 변경 시 캐시 무효화(F17)
 }
 ```

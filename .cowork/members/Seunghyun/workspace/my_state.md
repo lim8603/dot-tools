@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음 — MS-001~008 전부 Done · v0.2.0 릴리즈**(main push 완료) |
+| 활성 Milestone | **없음 — MS-009 Done** · 다음 MS-010 C#(C-7) 착수 지시 대기 |
 | 마지막 갱신일 | 2026-08-16 |
-| 참조 세션 로그 | session_2026-08-16_006.md |
+| 참조 세션 로그 | session_2026-08-16_007.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| 없음 | (TASK-001~024 전부 Done) | — | — | — | 없음 |
+| 없음 | (MS-009 Done — TASK-025·026 완료) | — | — | — | 없음 |
 
-> **TASK-001~024 전부 Done — MS-001~008 완료.** v0.1.0(vsix) + F20 마법사 4언어(F5 통과). 브랜치 `feature/ms-008-new-project-wizard`(5커밋) **병합 대기**. 상세: `tasks/TASK-022~024.md`.
+> **TASK-001~026 Done.** 세션 #007에서 **INT-001 완주 로드맵** 착수(MS-009~013) + **C-3 폐기**(D-15/ADR-013) + **MS-009 완료**(TASK-025 L-1 F5 통과·TASK-026 persistSetting 제거, unit 104). 다음: **MS-010 C#(C-7)** = TASK-027 DotnetBridge부터.
 
 ---
 
@@ -41,9 +41,9 @@
 
 ## 다음 시작점
 
-1. **TC-11(WSL/F18)** — WSL 내부에 레포 재클론 후 별도 진행(Deferred, GAP-001).
-2. **CMake/Dotnet/Python 어댑터 실구현**(스위치·빌드·디버그) — 현재 스텁, F20 생성만 실동작(C-7).
-3. 이월: 프로파일 편집 v2(C-3)·Run Group(C-6)·extra rustflags(L-1).
+1. **MS-010 C# 착수**(C-7 1/3) — TASK-027 DotnetBridge(dotnet/msbuild CLI I/O·listProjects·chips)부터. cargoBridge/cargoAdapter 패턴 준용.
+2. 이어서 MS-011 Python → MS-012 CMake. 완료 시 4개 언어 전부 스위처 자동등장(scope A 해제).
+3. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---
 

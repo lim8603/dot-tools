@@ -104,7 +104,7 @@
 
 ### F17 — 매니페스트 감시
 
-**흐름**: `FileSystemWatcher`가 `manifestGlobs` 감시 → create/change/delete 이벤트 → 500ms 디바운스 → 해당 어댑터 `invalidateCache()` → 변경된 workspaceFolder만 재스캔 → `reconcile()` → 상태바 갱신. `target/`, `node_modules/` 제외. `persistSetting` 쓰기도 같은 경로로 처리(단일화).
+**흐름**: `FileSystemWatcher`가 `manifestGlobs` 감시 → create/change/delete 이벤트 → 500ms 디바운스 → 해당 어댑터 `invalidateCache()` → 변경된 workspaceFolder만 재스캔 → `reconcile()` → 상태바 갱신. `target/`, `node_modules/` 제외. 확장은 캐노니컬 파일을 편집하지 않으므로(ADR-013) 재스캔 트리거는 외부 편집·F20 생성뿐이다.
 
 ### F19 — 환경 진단·의존성 처리 (Doctor)
 
