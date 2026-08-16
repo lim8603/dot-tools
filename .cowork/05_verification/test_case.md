@@ -38,16 +38,16 @@
 | TC | 시나리오 | 유형 | 결과 | 근거 (세션/MS) |
 | --- | --- | --- | --- | --- |
 | TC-01 | 단일 Rust 패키지 → 칩 4종 표시, 기본값(profile=dev, bin 1개면 target 자동) | Manual | ✅ Pass | MS-004 F5 (세션 #004) |
-| TC-02 | cargo workspace(멤버 3) → 스위처 3개, 전환 시 선택 상태 독립 유지 | Manual | ⬜ Not Run | 픽스처는 단일 패키지 — 멀티멤버 픽스처 필요 |
-| TC-03 | 멀티루트(Rust+Python) → 활성 프로젝트별 칩 변화, **Python 스텁 칩 회귀** | Manual | ⬜ Not Run | 멀티루트 수동 |
+| TC-02 | cargo workspace(멤버 3) → 스위처 3개, 전환 시 선택 상태 독립 유지 | Manual | ✅ Pass | 세션 #006 F5 (verify/cargo-workspace: alpha/beta/gamma 감지·선택 독립. 가상 workspace 루트는 미표시=정상) |
+| TC-03 | 멀티루트(Rust+Python) → 활성 프로젝트별 칩 변화, Python 스텁 미표시(v1 scope A) | Manual | ✅ Pass | 세션 #006 F5 (verify/multiroot: rust-app 정상·py-app 미표시·에러 없음). 부수: untrusted 워크스페이스 Run 무한스피너 버그 발견·수정(eb8983a) |
 | TC-04 | 빌드 버튼 → Task 실행, 고의 컴파일 에러 → Problems(matcher), 종료코드 실패 감지 | Manual | ✅ Pass | MS-005 F5 (세션 #004) |
 | TC-05 | 디버그 버튼 → 빌드 실패 시 중단(E5)/성공 시 CodeLLDB 중단점, runArgs 전달 | Manual | ✅ Pass | MS-005 F5 (중단점 정지 확인) |
 | TC-06 | 커스텀 프로파일 + `CARGO_TARGET_DIR` 변경 상태 디버그 → 실행 파일 경로 해석 (DD-05) | Manual | 🟡 Partial | 오버레이 주입·preview 검증(MS-006). 디버그 결합은 재확인 권장 |
 | TC-07 | Cargo.toml 프로파일/feature 추가 저장 → 상태바 자동 갱신(F17), 삭제 → E10 | Manual | ✅ Pass | MS-004 watcher F5 |
 | TC-08 | export → import 라운드트립, 다른 클론에서 import(경로 독립성) | Manual | ✅ Pass | TASK-015 F5 (세션 #005). 다른 클론 import는 미확인 |
-| TC-09 | VSCode 재시작 → workspaceState 복원 (DD-01) | Manual | ⬜ Not Run | 재시작 후 선택 복원 수동 확인 |
+| TC-09 | VSCode 재시작 → workspaceState 복원 (DD-01) | Manual | ✅ Pass | 세션 #006 F5 (verify/features-demo: 칩 선택 Reload 복원). 부수: features 칩 버그 다수 발견·수정(e7b462b — 토글/카운트/none 보존) |
 | TC-10 | cargo 미설치(PATH 제거) → E1 경고 칩 → Doctor 유도 | Manual | 🟡 Partial | Doctor QuickPick 검증(TASK-017). E1 칩은 PATH 조작 필요(worstStatus 단위테스트 커버) |
-| TC-11 | WSL에서 동일 레포 → 시나리오 1~7 동일, Windows 창과 선택 독립 (F18·DD-01) | Manual | ⬜ Not Run | **F18 WSL 스모크 — v0.1 릴리즈 전 수동 권장** |
+| TC-11 | WSL에서 동일 레포 → 시나리오 1~7 동일, Windows 창과 선택 독립 (F18·DD-01) | Manual | ⏸ Deferred | **WSL 내부에 레포 재클론 후 별도 진행 예정**(세션 #006). `/mnt` 경유 회피 |
 | TC-12 | CodeLLDB 온디맨드 설치 → 디버그 이어짐(E7) / 미설치 target 선택 → `rustup target add` (§13.4) | Manual | ✅ Pass | CodeLLDB=MS-005 F5, target add=TASK-018 F5 |
 | TC-13 | Doctor 실행 → 항목별 상태 정확, 1단계 즉시 설치, 2·3단계 안내 (F19) | Manual | ✅ Pass | TASK-017 F5 (cargo/rustup/CodeLLDB ✅+버전) |
 | TC-14 | New Project → Rust → 이름 → `cargo new` → 파일 생성 + **스위처 자동 등장·전환** (F20, OQ-001) | Manual | ✅ Pass | TASK-022·023 F5 (세션 #006) |
@@ -57,8 +57,8 @@
 
 > TC-15~17은 v1 scope A로 스위처엔 미등장(생성만) — 정상. 이름 검증(validateProjectName)·템플릿 순수함수는 단위 테스트(mocha 98) 커버.
 
-**요약**: Auto 3/3 Pass · Manual 11 Pass · 2 Partial(TC-06·TC-10) · 4 Not Run(TC-02·03·09·11).
-릴리즈 전 권장 보강(v0.1 잔여): **TC-11(WSL/F18)**, TC-09(재시작 복원), TC-02/03(workspace·멀티루트).
+**요약**: Auto 3/3 Pass · Manual **14 Pass** · 2 Partial(TC-06·TC-10) · 1 Deferred(TC-11 WSL).
+세션 #006 수동검증에서 TC-02·03·09 Pass 처리, 그 과정에서 features 칩 버그(e7b462b)·untrusted 무한스피너 버그(eb8983a) 발견·수정. TC-11(WSL/F18)은 WSL 내부 재클론 후 별도 진행.
 
 ---
 

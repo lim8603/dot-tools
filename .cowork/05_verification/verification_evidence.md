@@ -42,7 +42,7 @@
 | 영역 | 최근 상태 | 주요 근거 문서 | 마지막 갱신일 | 비고 |
 |------|----------|----------------|--------------|------|
 | Review Evidence | In Progress | 세션 로그 #004·#005, 커밋 이력 | 2026-08-15 | 각 Task F5 통과 후 병합 |
-| Test Execution Evidence | In Progress | `test_case.md`(Auto 3 + Manual 17) | 2026-08-16 | Unit 98·Integration 3 Pass, Manual 11 Pass/2 Partial/4 Not Run (F20 TC-14~17 Pass) |
+| Test Execution Evidence | In Progress | `test_case.md`(Auto 3 + Manual 17) | 2026-08-16 | Unit 99·Integration 3 Pass, Manual 14 Pass/2 Partial/1 Deferred(TC-11 WSL). 세션 #006 수동검증 + 버그수정 2건 |
 | NFR Evidence | Partial | `test_strategy.md` §3 | 2026-08-15 | NFR-002/002a 설계 준수. 성능 NFR 별도 측정 없음 |
 | Release Readiness Evidence | Pass (조건부) | `quality_gate.md`, TASK-021, EV-006 | 2026-08-16 | README·VSIX(021) 완료·설치 스모크 통과 → v0.1.0 확정. 잔여 수동검증(TC-11 WSL·TC-09·TC-02/03)은 문서화된 잔여 리스크(개인용 v0.1 수용) |
 
@@ -56,7 +56,8 @@
 | EV-002 | Integration | 확장 활성화·**11 커맨드**(+newProject) 기여·설정 페이지 오픈. 퍼블리셔 `lim8603` | Pass | Gate 4 | `src/test/integration/extension.test.ts`, `npm run test:integration` (3 passing) | 2026-08-16 | VSCode 호스트 실행 |
 | EV-003 | E2E(Manual) | TC-01·04·05·07·08·12·13 (칩·빌드·디버그·watcher·export/import·target add·Doctor) | Pass | Gate 4 | 세션 로그 #004·#005 F5 | 2026-08-15 | 7 케이스 |
 | EV-004 | E2E(Manual) | TC-06(디버그×오버레이)·TC-10(E1 칩) | Partial | Gate 4 | 세션 #005 | 2026-08-15 | 코어 검증됨, 결합 재확인 권장 |
-| EV-005 | E2E(Manual) | TC-11(WSL/F18)·TC-09(재시작)·TC-02/03(workspace·멀티루트) | Not Run | Gate 5 | — | 2026-08-15 | v0.1 잔여 리스크로 수용(GAP-001~003). 실행 시 근거 보강 |
+| EV-005 | E2E(Manual) | TC-09(재시작 복원)·TC-02(workspace 3멤버)·TC-03(멀티루트) | Pass | Gate 4/5 | 세션 #006 F5 (scratchpad/verify 픽스처) | 2026-08-16 | 검증 중 버그 2건 발견·수정(features e7b462b·untrusted eb8983a) |
+| EV-008 | E2E(Manual) | TC-11(WSL/F18) | Deferred | Gate 5 | — | 2026-08-16 | WSL 내부 재클론 후 별도 진행. GAP-001 유지 |
 | EV-006 | Packaging | `vsce package` → `devswitcher-tools-0.1.0.vsix`(9파일 34.68KB) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.1.0` 인식) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir) | 2026-08-16 | TASK-021. README·LICENSE·CHANGELOG 포함 |
 | EV-007 | E2E(Manual) | F20 시작 마법사 — 4개 언어 생성(TC-14~17): Rust(`cargo new`+자동전환)·C#(`dotnet new`)·C++/Python(workspace.fs 템플릿, `<iostream>` 온전) | Pass | Gate 4 | 세션 #006 F5 (생성 파일 내용 검증) | 2026-08-16 | TASK-022·023. cmake/python은 scope A로 스위처 미등장(생성만) |
 
@@ -75,7 +76,7 @@
 
 | ID | 항목 | 부족한 근거 | 다음 액션 | 상태 |
 |----|------|------------|----------|------|
-| GAP-001 | F18 원격(WSL) 동일 동작 | TC-11 미실행 | WSL 창에서 시나리오 1~7 수동 스모크 | Open (v0.1 잔여 리스크 수용) |
-| GAP-002 | 재시작 후 workspaceState 복원 | TC-09 미실행 | VSCode 재시작 후 선택 복원 확인 | Open |
-| GAP-003 | workspace(멀티멤버)·멀티루트+Python 스텁 회귀 | TC-02·03, 픽스처 부재 | 멀티멤버 픽스처 추가 또는 수동 확인 | Open |
+| GAP-001 | F18 원격(WSL) 동일 동작 | TC-11 미실행 | WSL 내부 재클론 후 시나리오 1~7 수동 스모크 | Deferred (세션 #006, WSL 재클론 후) |
+| ~~GAP-002~~ | **해소(2026-08-16, 세션 #006)** — TC-09 Pass(features-demo 재시작 복원). features 칩 버그 수정 e7b462b | (해소) | 재시작 복원 확인 |
+| ~~GAP-003~~ | **해소(2026-08-16, 세션 #006)** — TC-02(cargo-workspace 3멤버)·TC-03(멀티루트) Pass. untrusted 무한스피너 수정 eb8983a | (해소) | verify 픽스처로 확인 |
 | GAP-004 | 성능 NFR 측정 | 측정치 없음 | v0.1은 규모 작아 정성 판단, 필요 시 측정 | Deferred |

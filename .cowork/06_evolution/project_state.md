@@ -59,7 +59,7 @@
 |---------|------|------|------|---------------|-----------|
 | 없음 | (TASK-001~024 전부 Done) | - | - | 2026-08-16 | 새 작업은 v2 백로그(C-3/C-6/L-1)나 새 Intent 착수 지시 시 |
 
-> **TASK-001~024 전부 Done — MS-001~008 완료.** v0.1.0(vsix)+F20 마법사(4언어). `feature/ms-008-new-project-wizard`(5커밋) 병합 대기. 릴리즈 전 권장 수동검증(TC-11 WSL·TC-09·TC-02/03)은 잔여 리스크로 수용(지시 시).
+> **TASK-001~024 전부 Done — MS-001~008 완료.** v0.1.0(vsix)+F20 마법사(4언어). 수동검증 TC-02/03/09 Pass(검증 중 features 칩·untrusted 무한스피너 버그 수정), **TC-11(WSL) Deferred**. `feature/ms-008-new-project-wizard`(MS-008 + fix e7b462b·eb8983a) 병합 대기.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -69,9 +69,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **`feature/ms-008-new-project-wizard`(5커밋) → main FF 병합 + push** (지시 시). MS-008 완료분 반영.
-2. (선택) **v0.2.0 릴리즈** — F20 포함. version 0.1.0→0.2.0 범프 + `vsce package` + CHANGELOG [Unreleased]→[0.2.0]. 지시 시.
-3. 릴리즈 전 권장 수동검증(잔여 리스크): **TC-11(WSL/F18)**·TC-09(재시작)·TC-02/03 — `test_case.md §2`.
+1. **`feature/ms-008-new-project-wizard` → main FF 병합 + push** (진행 중). MS-008 + 검증 버그수정 2건.
+2. (선택) **v0.2.0 릴리즈** — F20 포함. version 0.1.0→0.2.0 범프 + `vsce package` + CHANGELOG [Unreleased]→[0.2.0].
+3. **TC-11(WSL/F18)** — WSL 내부 재클론 후 별도 진행(Deferred).
 4. 이후: v2 백로그(C-3 캐노니컬 편집·C-6 Run Group·L-1 extra rustflags) 또는 새 Intent.
 
 ---
