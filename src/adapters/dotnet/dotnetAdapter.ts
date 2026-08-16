@@ -1,8 +1,31 @@
-import { LanguageAdapter } from '../../core/types';
+import * as vscode from 'vscode';
+import { LanguageAdapter, NEW_PROJECT_TASK_TYPE, NewProjectTarget } from '../../core/types';
 import { notImplemented } from '../notImplemented';
 
+/** `dotnet new console -o <name>` in the target folder (F20, TASK-023) — the native
+ *  template lands in a `<name>/` sub-folder. ProcessExecution, no shell (NFR-002). */
+function makeDotnetNewTask(target: NewProjectTarget): vscode.Task {
+  const execution = new vscode.ProcessExecution('dotnet', ['new', 'console', '-o', target.projectName], {
+    cwd: target.folderUri.fsPath,
+  });
+  const task = new vscode.Task(
+    { type: NEW_PROJECT_TASK_TYPE, language: 'csharp' },
+    vscode.workspace.getWorkspaceFolder(target.folderUri) ?? vscode.TaskScope.Workspace,
+    `new ${target.projectName}`,
+    'dotnet',
+    execution,
+  );
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
+}
+
 /**
- * C# (.NET) adapter — stub. Declares the interface surface for M1 interface
+ * C# (.NET) adapter — stub for switch/build/debug (v2), but F20 project creation is
+ * real (dotnet new console). Declares the interface surface for M1 interface
  * confirmation (ASM-001/002). Real `-p:` injection (§8) and the full catalog are
  * v2. dotnet is the only language where the output name is injectable
  * (-p:AssemblyName) without editing the project.
@@ -59,7 +82,7 @@ export const dotnetAdapter: LanguageAdapter = {
   createRunTask: (_project, _sel, _config) => notImplemented('DotnetAdapter.createRunTask', 'v2'),
   createDebugConfig: (_project, _sel, _config) => notImplemented('DotnetAdapter.createDebugConfig', 'v2'),
   resolveExecutable: (_project, _sel, _config) => notImplemented('DotnetAdapter.resolveExecutable', 'v2'),
-  createProjectTask: (_target) => notImplemented('DotnetAdapter.createProjectTask', 'MS-008'),
+  createProject: (target) => ({ kind: 'task', task: makeDotnetNewTask(target) }),
   persistSetting: (_project, _key, _value) => notImplemented('DotnetAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('DotnetAdapter.invalidateCache', 'v2'),
   collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet

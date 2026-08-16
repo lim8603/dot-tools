@@ -125,9 +125,26 @@ export interface NewProjectTarget {
   projectName: string;
 }
 
-/** Task type used by every adapter's createProjectTask (F20) — registered in
+/** Task type used by native create tasks (cargo/dotnet, F20) — registered in
  *  package.json contributes.taskDefinitions so it raises no "unknown task type" warning. */
 export const NEW_PROJECT_TASK_TYPE = 'devswitcher-newproject';
+
+/** One template file written for scaffold-by-files creation (path relative to the
+ *  new project folder `<folder>/<name>/`). */
+export interface ProjectFile {
+  relativePath: string;
+  content: string;
+}
+
+/**
+ * How an adapter scaffolds a new project (F20). Native tools return a `task` the
+ * TaskRunner executes (cargo new / dotnet new); languages with no native scaffolder
+ * return `files` the Orchestrator writes via workspace.fs (cmake / python, D-13 —
+ * a documented exception to ADR-010 since no native tool exists for them).
+ */
+export type ProjectCreation =
+  | { kind: 'task'; task: vscode.Task }
+  | { kind: 'files'; files: ProjectFile[] };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // §7. Invocation config overlay (ADR-011)
@@ -258,11 +275,12 @@ export interface LanguageAdapter {
   resolveExecutable(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string>; // resolve path before debug (ADR-005)
 
   /**
-   * F20 — create a default-template project via the native tool (cargo new,
-   * dotnet new console, cmake minimal, python pyproject.toml). Execution is the
-   * TaskRunner's job (ADR-002); ManifestWatcher (F17) picks up the new manifest.
+   * F20 — scaffold a default-template project. Native tools return a `task`
+   * (cargo new / dotnet new console) the TaskRunner runs; languages without a
+   * scaffolder return `files` the Orchestrator writes (cmake / python, D-13).
+   * Either way ManifestWatcher (F17) picks up the new manifest.
    */
-  createProjectTask(target: NewProjectTarget): vscode.Task;
+  createProject(target: NewProjectTarget): ProjectCreation;
 
   /** Local edit of the canonical file (ADR-007). v2 for Cargo.toml (§8.7). */
   persistSetting(project: ProjectInfo, key: string, value: unknown): Promise<void>;

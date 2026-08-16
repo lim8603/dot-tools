@@ -340,7 +340,7 @@ export const cargoAdapter: LanguageAdapter = {
     return executable;
   },
 
-  createProjectTask: (target) => makeCargoNewTask(target),
+  createProject: (target) => ({ kind: 'task', task: makeCargoNewTask(target) }),
   persistSetting: (_project, _key, _value) => notImplemented('CargoAdapter.persistSetting', 'v2'),
 
   invalidateCache: (project) => bridge.invalidateCache(project?.manifestPath),

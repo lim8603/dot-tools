@@ -1,8 +1,11 @@
 import { LanguageAdapter } from '../../core/types';
 import { notImplemented } from '../notImplemented';
+import { pythonProjectFiles } from './pythonTemplate';
 
 /**
  * Python adapter — stub AND the framework litmus (interface_contract §6/§8).
+ * F20 project creation is real (writes pyproject.toml + main.py via the Orchestrator,
+ * D-13) even though switch/build/run stay v2 stubs.
  *
  * actions.build === false, so the settings page must drop compiler/linker/output
  * and keep only env + runArgs (configCategories below). Chips are environment +
@@ -50,7 +53,7 @@ export const pythonAdapter: LanguageAdapter = {
   createRunTask: (_project, _sel, _config) => notImplemented('PythonAdapter.createRunTask', 'v2'),
   createDebugConfig: (_project, _sel, _config) => notImplemented('PythonAdapter.createDebugConfig', 'v2'),
   resolveExecutable: (_project, _sel, _config) => notImplemented('PythonAdapter.resolveExecutable', 'v2'),
-  createProjectTask: (_target) => notImplemented('PythonAdapter.createProjectTask', 'MS-008'),
+  createProject: (target) => ({ kind: 'files', files: pythonProjectFiles(target.projectName) }),
   persistSetting: (_project, _key, _value) => notImplemented('PythonAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('PythonAdapter.invalidateCache', 'v2'),
   collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet

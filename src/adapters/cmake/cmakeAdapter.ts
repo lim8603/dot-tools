@@ -1,8 +1,11 @@
 import { LanguageAdapter } from '../../core/types';
 import { notImplemented } from '../notImplemented';
+import { cmakeProjectFiles } from './cmakeTemplate';
 
 /**
- * C++ (CMake) adapter — stub. Declares the interface surface for M1 interface
+ * C++ (CMake) adapter — stub for switch/build/debug (v2), but F20 project creation is
+ * real: CMake has no native scaffolder, so createProject returns template files the
+ * Orchestrator writes (D-13). Declares the interface surface for M1 interface
  * confirmation (ASM-001/002). Real configure+build (a two-stage injection point,
  * §8) and the full catalog are v2. CMake is the only language where include
  * folders survive as invocation config.
@@ -47,7 +50,7 @@ export const cmakeAdapter: LanguageAdapter = {
   createRunTask: (_project, _sel, _config) => notImplemented('CMakeAdapter.createRunTask', 'v2'),
   createDebugConfig: (_project, _sel, _config) => notImplemented('CMakeAdapter.createDebugConfig', 'v2'),
   resolveExecutable: (_project, _sel, _config) => notImplemented('CMakeAdapter.resolveExecutable', 'v2'),
-  createProjectTask: (_target) => notImplemented('CMakeAdapter.createProjectTask', 'MS-008'),
+  createProject: (target) => ({ kind: 'files', files: cmakeProjectFiles(target.projectName) }),
   persistSetting: (_project, _key, _value) => notImplemented('CMakeAdapter.persistSetting', 'v2'),
   invalidateCache: (_project) => notImplemented('CMakeAdapter.invalidateCache', 'v2'),
   collectDiagnostics: () => Promise.resolve([]), // v2 stub — no real toolchain checks yet

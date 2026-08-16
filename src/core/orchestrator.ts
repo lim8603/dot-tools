@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectInfo } from './types';
+import type { DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { pickChipValue } from '../ui/picks';
 import { pickDiagnostic } from '../ui/doctorPick';
@@ -323,30 +323,29 @@ export class Orchestrator {
     if (!adapter) {
       return;
     }
-    let task: vscode.Task;
-    try {
-      task = adapter.createProjectTask(result.target);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      void vscode.window.showErrorMessage(
-        `DevSwitcher: ${adapter.displayName} project creation isn't available yet — ${message}`,
-      );
-      return;
-    }
-    const lockKey = `new:${result.adapterId}:${result.target.folderUri.fsPath}${sep}${result.target.projectName}`;
-    const run = await this.taskRunner.run(task, lockKey);
-    if (!run.succeeded) {
-      const runDoctor = 'Run Doctor';
-      const choice = await vscode.window.showErrorMessage(
-        `DevSwitcher: project creation failed (exit ${run.exitCode ?? 'unknown'}). Is the ${adapter.displayName} toolchain installed?`,
-        runDoctor,
-      );
-      if (choice === runDoctor) {
-        void this.doctor();
+    const creation = adapter.createProject(result.target);
+    if (creation.kind === 'task') {
+      // Native scaffolder (cargo new / dotnet new) — a missing toolchain fails the
+      // task, so offer Doctor (F19).
+      const lockKey = `new:${result.adapterId}:${result.target.folderUri.fsPath}${sep}${result.target.projectName}`;
+      const run = await this.taskRunner.run(creation.task, lockKey);
+      if (!run.succeeded) {
+        const runDoctor = 'Run Doctor';
+        const choice = await vscode.window.showErrorMessage(
+          `DevSwitcher: project creation failed (exit ${run.exitCode ?? 'unknown'}). Is the ${adapter.displayName} toolchain installed?`,
+          runDoctor,
+        );
+        if (choice === runDoctor) {
+          void this.doctor();
+        }
+        return;
       }
-      return;
+    } else if (!(await this.writeProjectFiles(result.target, creation.files))) {
+      return; // scaffold-by-files write failed (message already shown)
     }
-    // Success — rescan picks up the new manifest; auto-switch to it (OQ-001).
+    // Success — rescan picks up the new manifest and auto-switches to it (OQ-001). In
+    // v1 only Cargo scans, so cmake/dotnet/python are created on disk but appear in
+    // the switcher once their adapter is implemented (v2, scope A).
     await this.refresh();
     const created = this.findCreatedProject(result.target);
     if (created) {
@@ -354,9 +353,28 @@ export class Orchestrator {
       await this.renderActive();
       void vscode.window.showInformationMessage(`DevSwitcher: created and switched to ${created.name}.`);
     } else {
-      void vscode.window.showInformationMessage(
-        `DevSwitcher: created ${result.target.projectName}; it will appear once its manifest is detected.`,
-      );
+      void vscode.window.showInformationMessage(`DevSwitcher: created ${result.target.projectName}.`);
+    }
+  }
+
+  /**
+   * Scaffold-by-files creation (cmake/python, D-13) — write the template into
+   * `<folder>/<name>/` via workspace.fs (no native scaffolder exists for these).
+   * Returns false on failure (message shown).
+   */
+  private async writeProjectFiles(target: NewProjectTarget, files: ProjectFile[]): Promise<boolean> {
+    try {
+      const root = vscode.Uri.joinPath(target.folderUri, target.projectName);
+      await vscode.workspace.fs.createDirectory(root);
+      for (const file of files) {
+        const uri = vscode.Uri.joinPath(root, ...file.relativePath.split('/'));
+        await vscode.workspace.fs.writeFile(uri, Buffer.from(file.content, 'utf8'));
+      }
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: project creation failed — ${message}`);
+      return false;
     }
   }
 
