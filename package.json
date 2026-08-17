@@ -2,8 +2,9 @@
   "name": "devswitcher-tools",
   "displayName": "DevSwitcher Tools",
   "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ / C# / Python)",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "lim8603",
+  "icon": "images/icon-256.png",
   "private": true,
   "license": "MIT",
   "author": "Seunghyun",
@@ -18,6 +19,11 @@
   "keywords": [
     "rust",
     "cargo",
+    "dotnet",
+    "csharp",
+    "python",
+    "cmake",
+    "c++",
     "status bar",
     "build",
     "run",
@@ -35,7 +41,10 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:**/Cargo.toml"
+    "workspaceContains:**/Cargo.toml",
+    "workspaceContains:**/*.csproj",
+    "workspaceContains:**/pyproject.toml",
+    "workspaceContains:**/CMakeLists.txt"
   ],
   "main": "./dist/extension.js",
   "contributes": {

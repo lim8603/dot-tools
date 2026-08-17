@@ -3,6 +3,39 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0] - 2026-08-17
+
+### Added
+
+- **C#, Python, and C++ (CMake) are now fully implemented** — all four languages share the
+  status-bar switcher (switch / build / run / debug), each driven through its own native CLI.
+  - **C# (.NET)** — `dotnet` build & run, coreclr debug, `-p:` option injection, and
+    Configuration / RID / target-framework chips.
+  - **Python** — interpreter run and `debugpy` debugging, with Environment (venv/interpreter)
+    and script-target chips (no build step); `PYTHONPATH` / `PYTHONOPTIMIZE` / env injection.
+  - **C++ (CMake)** — drives `cmake` directly (configure + build), resolves targets and paths
+    from the CMake File API, and auto-selects the debugger from the compiler (MSVC → cppvsdbg,
+    GCC → gdb, Clang → lldb), overridable via `devSwitcher.cmake.debugger`.
+- **CMake presets** — when a project has `CMakePresets.json`, a **Preset** chip replaces the
+  profile/architecture chips and `cmake --preset` drives configure, so you can switch
+  compilers (MSVC / Clang-CL / GCC) by picking a preset.
+- **`DevSwitcher: Rescan Projects`** — force a re-scan when a folder moved or changed outside
+  the editor.
+- An **extension icon**, and an "extra rustflags" free-form option for Rust in the settings page.
+
+### Changed
+
+- The extension now activates for C#, Python, and CMake workspaces too (previously Cargo only).
+- Debug extensions are auto-selected per toolchain and installed on demand.
+
+### Fixed
+
+- Settings page: the Profile tab is now hidden for CMake projects that use presets (matching
+  the status bar), and the profiles section is labeled read-only by design (it no longer
+  implies editing is "planned").
+- Python: duplicate interpreter entries in the Environment chip are de-duplicated by real path.
+- Accessibility: settings-webview form controls now carry aria-labels.
+
 ## [0.2.0] - 2026-08-16
 
 ### Added

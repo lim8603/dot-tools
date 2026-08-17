@@ -37,3 +37,8 @@ GEMINI.md
 devswitcher.profile.json
 images/*.svg
 *.vsix
+
+# Icon masters — the extension ships images/icon-256.png (package.json "icon") only
+images/icon-128.png
+images/icon-512.png
+images/icon-origin.png
