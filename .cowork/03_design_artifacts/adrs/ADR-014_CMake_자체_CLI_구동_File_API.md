@@ -65,6 +65,7 @@ interface_contract §8은 CMake 주입을 이미 규정한다: 구성축=`CMAKE_
 - **디버그 (TASK-035 확정)**: 디버거는 **컴파일러 강결합**이라 File API `toolchains`의 `CMAKE_CXX_COMPILER_ID`로 **자동판별** — MSVC→`cppvsdbg`, GNU→`cppdbg`+gdb, Clang→`cppdbg`+lldb (모두 cpptools). OS 추측 아닌 실 컴파일러 기반이라 **WSL/MinGW/Linux/Mac 자동대응**. 사용자 **override 설정**(`devSwitcher.cmake.debugger`=auto/cpptools/codelldb)으로 CodeLLDB(`lldb`)까지 선택. **CMake Tools 미사용.**
 - **run (TASK-035 확정)**: 단일 명령이 없어 **build-then-exec** — `ActionCapabilities.runRequiresBuild`로 오케스트레이터가 build 후 산출 exe 직접 실행(디버거 무의존, ADR-009). 경로=File API artifact(`peekArtifact` 동기 캐시).
 - **requiredExtensions**: `ms-vscode.cmake-tools` → **`[]`**(빌드/실행 무의존). 디버거 확장은 정적 배열이 아니라 **동적**(판별된 cpptools/CodeLLDB를 `createDebugConfig`가 `ensureExtension`).
+- **CMakePresets.json (TASK-041 확정)**: 실 프로젝트는 컴파일러/제너레이터/빌드타입을 **프리셋**으로 관리한다(GCC/Clang/MSVC 전환). `CMakePresets.json`(+`CMakeUserPresets.json`)의 `configurePresets`를 **읽기 전용**(ADR-013)으로 파싱해 **Preset 칩**으로 노출하고, `cmake --preset <name>`로 configure한다. 프리셋 활성 시 `ChipDescriptor.appliesTo`로 **Preset 칩이 profile/architecture 칩을 대체**(프리셋이 세 축을 인코딩)하며, `--config`를 생략하고 configure는 프리셋의 `binaryDir`(`${sourceDir}`/`${presetName}` 매크로 확장·`inherits` 상속 해소)로 향한다. 프리셋 없으면 현행 `-S -B -D` 폴백. **target 칩·디버거 자동판별(File API)은 프리셋의 binaryDir에서 그대로 재사용.** 프리셋 파싱은 vscode-free 순수 함수(`parseConfigurePresets`/`resolvePresetBinaryDir`), 파일 읽기는 `workspace.fs`(원격 안전, ADR-008). 동기 build/run Task는 `prepareInvocation`이 데운 프리셋 캐시를 peek.
 
 ## Consequences (결과)
 
@@ -85,7 +86,7 @@ interface_contract §8은 CMake 주입을 이미 규정한다: 구성축=`CMAKE_
 | 항목 | 참조 |
 |------|------|
 | 관련 Intent | INT-001 |
-| 관련 Milestone | MS-012 (TASK-033~035) |
+| 관련 Milestone | MS-012 (TASK-033~035·041) |
 | 관련 ADR | ADR-005/KB #8(빌드출력 경로 해석), ADR-013(파일 무편집), ADR-009(의존 온디맨드), ADR-003(선언적 칩) |
 | 관련 계약 | interface_contract.md §8(CMake 주입 매트릭스) |
 | 출처 | 세션 #008 논의 (2026-08-16), Human 승인 |

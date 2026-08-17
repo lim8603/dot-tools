@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-012 C++(CMake)** (C-7 3/3) — TASK-033·034·035 완료(핵심 루프), TASK-041(presets) 남음 |
-| 마지막 갱신일 | 2026-08-16 |
-| 참조 세션 로그 | session_2026-08-16_009.md |
+| 활성 Milestone | **MS-012 C++(CMake)** (C-7 3/3) — TASK-033·034·035·041 **전부 F5 통과**, main 병합 대기 |
+| 마지막 갱신일 | 2026-08-17 |
+| 참조 세션 로그 | session_2026-08-17_010.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-035 | run + debug (컴파일러 자동판별 디버거) | MS-012 | Review | F5 통과(Run+Debug)·커밋 완료 | 없음 |
+| TASK-041 | CMakePresets.json 지원 (Preset 칩) | MS-012 | Done | F5 통과·커밋(feat+docs) | 없음 |
 
-> **TASK-001~035 완료(033·034 F5·커밋, 035 F5 Run+Debug 통과·이 세션 커밋).** CMake 핵심 루프(switch/build/run/debug) 완성. TASK-035: run=build-then-exec(`runRequiresBuild`·`peekArtifact`), debug=File API `toolchains`→`debuggerFor`(MSVC/GNU/Clang→cppvsdbg/cppdbg+gdb/lldb)+override 설정+동적 확장 ensure. unit 165. **다음: TASK-041**(CMakePresets.json — Preset 칩+`--preset`, 실 프로젝트 GCC/Clang/MSVC 전환) → MS-012 F5 → 병합. 브랜치 `feature/ms-012-cmake-adapter`.
+> **TASK-001~035·041 완료.** MS-012 CMake = 전 Task F5 통과(switch/build/run/debug + 프리셋). TASK-041: `ChipDescriptor.appliesTo` 동적 대체(Preset 칩↔profile/arch) + `parseConfigurePresets`/`resolvePresetBinaryDir`(순수) + `cmake --preset` configure(binaryDir·--config 생략) + target/디버거 자동판별 재사용. 프리셋 파일 workspace.fs 읽기전용(ADR-013). unit **172**·실 cmake 프리셋 스모크·**실 F5**(msvc-x64 build/run/debug 중단점). **다음: MS-012 main 병합**(브랜치 `feature/ms-012-cmake-adapter`) → Done(C-7 완주). 이후 C-6(MS-013 Run Group).
 
 ---
 
@@ -38,13 +38,15 @@
 | #006 | 2026-08-16 | **대형 세션 — v0.1.0 릴리즈 + MS-008(F20 마법사) 완주 + 수동검증 + v0.2.0 릴리즈.** ① TASK-021→MS-007 Done→v0.1.0(publisher lim8603·codicon PNG 목업·vsce·설치스모크) ② MS-008 TASK-022~024(마법사 4언어 생성, 계약 `createProject: task\|files`, workspace.fs D-13)→Done ③ 수동검증 TC-02/03/09 Pass·TC-11 Deferred ④ 검증 중 버그 2건 수정(features 칩 e7b462b·untrusted 무한스피너 eb8983a) ⑤ **v0.2.0 릴리즈**(main push). unit 99+통합 3 | MS-007·008 | TASK-021~024 | **MS-001~008 전부 완료·v0.2.0** |
 | #007 | 2026-08-16 | **초대형 세션 — INT-001 완주 로드맵 착수.** ① 로드맵 확정(MS-009~013)+**C-3 폐기**(D-15/ADR-013) ② **MS-009**(L-1 자유 rustflags·persistSetting 계약 제거)→Done·병합 ③ **MS-010 C#**(TASK-027~029: `msbuild -getProperty` 감지·`-p:` 주입·coreclr 디버그·Doctor, **디버그 RID 경로 fix**)→Done·병합·F5 ④ **MS-011 Python** TASK-030(감지+environment/target 칩)Review ⑤ KB #8 승격. unit 128, cargo/dotnet10/py3.12 스모크 | MS-009·010·011 | TASK-025~030 | **MS-009·010 완료·병합 / MS-011 진행(TASK-031부터)** |
 | #008 | 2026-08-16 | **초대형 세션 — MS-011 완주·병합 + MS-012 착수.** ① **MS-011 Python**: TASK-031(실행·resolveExecutable=스크립트경로·PYTHONOPTIMIZE·taskDef)·032(debugpy·collectDiagnostics). F5(Doctor 제외) 통과. F5 유래 3수정: A)Environment 실경로 dedup B)New Project 폴더 선택창 C)`Rescan Projects`(+invalidateAll 스텁 관용 fix). ② 커밋+**main FF 병합·push**(MS-009·010·011 origin 반영). ③ **Edge Tools 경고=이전 세션 스크래치패드**(우리 코드 아님) 규명 + 설정 웹뷰 a11y 수정(`ff2ee13`). ④ **MS-012 착수**: ADR-014(자체 cmake CLI)+TASK-033 Doctor 슬라이스 → **cmake 미설치로 Doctor ❌+E1 실검증 통과**(Human이 cmake 4.4.2 설치). unit **142** | MS-011·012 | TASK-030~033 | **MS-011 Done·병합 / MS-012 진행(TASK-033 계속)** |
+| #009 | 2026-08-16 | **MS-012 CMake 핵심 루프 완성.** TASK-033(listProjects+chips+File API codemodel)·034(prepareInvocation 훅+`cmake --build`+`-D` 주입+resolveExecutable)·035(run build-then-exec + debug 컴파일러 자동판별 cppvsdbg/cppdbg+gdb/lldb+override). 전부 F5 통과·커밋(`8664be9`~`61f6ac3`). unit 165. KB #6/#9 | MS-012 | TASK-033·034·035 | **핵심 루프(switch/build/run/debug) 완성 / TASK-041 남음** |
+| #010 | 2026-08-17 | **TASK-041 CMakePresets.json F5 통과 → MS-012 구현 완료.** `ChipDescriptor.appliesTo` 동적 대체(Preset 칩↔profile/arch, D-17) + `parseConfigurePresets`/`resolvePresetBinaryDir`(순수, inherits/hidden/매크로) + `cmake --preset` configure(binaryDir·--config 생략) + target/디버거 자동판별 재사용. 프리셋 픽스처(msvc-x64/x86/clangcl). unit **172**·실 cmake 스모크·**실 F5**(msvc-x64 build/run/debug 중단점). 커밋(feat+docs)·미병합 | MS-012 | TASK-041 | **MS-012 전 Task F5 통과, main 병합 대기** |
 
 ---
 
 ## 다음 시작점
 
-1. **TASK-041 (신규 세션)** — CMakePresets.json 지원: `configurePresets` 읽어 **Preset 칩** → `cmake --preset`. 프리셋 있으면 profile/arch 대체·없으면 현행 폴백. target 칩·디버거 자동판별 재사용. → MS-012 F5 → main 병합.
-2. **C-6** — MS-013 Run Group(C-7 이후). 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
+1. **MS-012 main 병합** — 브랜치 `feature/ms-012-cmake-adapter`(TASK-033·034·035·041 전부 F5·커밋) FF 병합 → MS-012 Done(C-7 완주 = 4개 언어 전부 스위처 실동작). Human 지시 시.
+2. **C-6** — MS-013 Run Group(C-7 이후, TASK-036~040). 위생: KB 17항목 통합 검토. 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
 
 ---
 
