@@ -132,6 +132,7 @@ the status bar.
 | **Option chips** | Per-language build options (profile/configuration, architecture/target, features, Python environment, CMake preset…). Click to change; a required chip glows until set. |
 | `$(symbol-method)` **Target** | The binary/executable/script to run or debug. |
 | `$(tools)` `$(debug-alt)` `$(play)` | **Build · Debug · Run.** |
+| `$(debug-stop)` **Stop** | Appears while a run/build task or debug session is active — click to stop it. |
 | `$(run-all)` **Groups** | Appears when a run group is defined — click to run, stop, or stop all groups. |
 | `$(gear)` | Open the settings page. |
 | `$(warning) Toolchain` | Appears when a critical tool is missing — click to run Doctor. |

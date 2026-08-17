@@ -215,12 +215,20 @@ export class Orchestrator {
   }
 
   /**
-   * Stop the active project's running DevSwitcher task (F16 companion to Run). A single-
-   * project `run` awaits the process, so a long-lived service (a web server, a watcher) keeps
-   * the task and the busy spinner up until it is stopped. This finds the running task(s) for
-   * the active project by their DevSwitcher task definition and terminates them; ending the
-   * process releases the TaskRunner lock and clears the spinner. Marks the project as
-   * user-stopped so runCargoTask does not surface the termination as a build/run failure.
+   * Stop the active project's running work (F16 companion to Run). Two kinds of work can be
+   * live and are stopped here:
+   *
+   * 1. **A running task** (`run`/`build`) — a single-project `run` awaits the process, so a
+   *    long-lived service (a web server, a watcher) keeps the task and the busy spinner up
+   *    until stopped. We find the task(s) for the active project by their DevSwitcher task
+   *    definition and terminate them; ending the process releases the TaskRunner lock and
+   *    clears the spinner. The project is flagged user-stopped so runCargoTask does not
+   *    surface the termination as a build/run failure.
+   * 2. **An active debug session** — debug sessions are NOT tasks (they don't appear in
+   *    `vscode.tasks.taskExecutions`), so a `Debug` started with Ctrl+Alt+D would otherwise
+   *    report "nothing running". We stop the active debug session when it is ours: every
+   *    adapter names its config `Debug <project name>` and we launch it in the project's
+   *    workspace folder, so match on that.
    */
   async stop(): Promise<void> {
     const activeId = this.store.activeProjectId;
@@ -229,17 +237,35 @@ export class Orchestrator {
       void vscode.window.showInformationMessage('DevSwitcher: no active project to stop.');
       return;
     }
+    let stopped = false;
+
     const executions = vscode.tasks.taskExecutions.filter((execution) => {
       const def = execution.task.definition as { type?: string; projectId?: string };
       return typeof def.type === 'string' && def.type.startsWith('devSwitcher.') && def.projectId === activeId;
     });
-    if (executions.length === 0) {
-      void vscode.window.showInformationMessage(`DevSwitcher: nothing running for ${project.name}.`);
-      return;
+    if (executions.length > 0) {
+      this.stopping.add(activeId); // suppress the run-failed toast for this user-initiated stop
+      for (const execution of executions) {
+        execution.terminate();
+      }
+      stopped = true;
     }
-    this.stopping.add(activeId); // suppress the run-failed toast for this user-initiated stop
-    for (const execution of executions) {
-      execution.terminate();
+
+    // Debug sessions live outside the task system — stop ours (named `Debug <project name>`,
+    // or any `Debug …` session launched in this project's folder) if one is active.
+    const session = vscode.debug.activeDebugSession;
+    if (
+      session &&
+      session.name.startsWith('Debug ') &&
+      (session.name === `Debug ${project.name}` ||
+        session.workspaceFolder?.uri.toString() === project.workspaceFolder.uri.toString())
+    ) {
+      await vscode.debug.stopDebugging(session);
+      stopped = true;
+    }
+
+    if (!stopped) {
+      void vscode.window.showInformationMessage(`DevSwitcher: nothing running for ${project.name}.`);
     }
   }
 
@@ -284,6 +310,7 @@ export class Orchestrator {
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
     this.statusBar.markActionBusy('debug');
+    this.statusBar.setStopVisible(true); // stoppable from the start; renderActive/debug events recompute
     try {
       // Two-stage adapters (CMake) configure with the overlay before the build (§7.4).
       await adapter.prepareInvocation?.(project, selection, config);
@@ -490,6 +517,7 @@ export class Orchestrator {
     const config = this.activeConfig(project);
 
     this.statusBar.markActionBusy(action);
+    this.statusBar.setStopVisible(true); // stoppable while the task runs; the finally recomputes
     try {
       // Two-stage adapters (CMake) configure with the overlay here, before the build task
       // (which is a single `cmake --build`). A configure failure aborts the invocation.
@@ -611,7 +639,32 @@ export class Orchestrator {
     this.hiddenChips = await this.resolveHiddenChips(project, adapter);
     await this.applyDefaults(project, adapter);
     this.renderBar(adapter, project);
+    this.refreshStopButton();
     this.viewSync();
+  }
+
+  /**
+   * Drive the status-bar Stop button from the active project's running state: a live
+   * `run`/`build` task, or an active debug session that is ours (named `Debug <project>` or
+   * launched in the project's folder). Called on renders, at action start, and on debug
+   * session start/end (wired in extension.ts) so the button appears only while something can
+   * be stopped.
+   */
+  refreshStopButton(): void {
+    const activeId = this.store.activeProjectId;
+    const project = activeId ? this.registry.project(activeId) : undefined;
+    if (!project) {
+      this.statusBar.setStopVisible(false);
+      return;
+    }
+    const taskRunning = this.taskRunner.isRunning(project.id);
+    const session = vscode.debug.activeDebugSession;
+    const debugRunning =
+      session !== undefined &&
+      session.name.startsWith('Debug ') &&
+      (session.name === `Debug ${project.name}` ||
+        session.workspaceFolder?.uri.toString() === project.workspaceFolder.uri.toString());
+    this.statusBar.setStopVisible(taskRunning || debugRunning);
   }
 
   /** Render the status bar for the active project honouring the resolved chip visibility. */

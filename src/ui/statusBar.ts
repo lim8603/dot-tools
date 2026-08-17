@@ -6,6 +6,7 @@ const PROJECT_CHIP = 'project';
 const SETTINGS_CHIP = 'settings';
 const TOOLCHAIN_CHIP = 'toolchain';
 const GROUP_CHIP = 'group';
+const STOP_CHIP = 'stop';
 const ACTION_CHIPS = ['build', 'debug', 'run'] as const;
 
 /**
@@ -14,7 +15,7 @@ const ACTION_CHIPS = ['build', 'debug', 'run'] as const;
  * higher priority = further left). Sequence: build · debug · run · group · settings. The
  * group launcher (managed independently by setGroups) slots between run and the gear.
  */
-const TRAILING_ORDER = { build: 900, debug: 901, run: 902, group: 903, settings: 904 } as const;
+const TRAILING_ORDER = { build: 900, debug: 901, run: 902, stop: 903, group: 904, settings: 905 } as const;
 
 /** Options that colour special states on top of a normal render (F6 / §5.4). */
 export interface RenderOptions {
@@ -120,6 +121,7 @@ export class StatusBarController {
       SETTINGS_CHIP,
       TOOLCHAIN_CHIP,
       GROUP_CHIP,
+      STOP_CHIP, // owned by setStopVisible (running state), not this sweep
       ...shownChipIds,
       ...ACTION_CHIPS,
     ]);
@@ -162,6 +164,21 @@ export class StatusBarController {
         : 'DevSwitcher: run groups';
     const text = running > 0 ? `$(run-all) ${running}` : '$(run-all)';
     const item = this.upsert(GROUP_CHIP, text, tooltip, 'devSwitcher.groups', undefined, TRAILING_ORDER.group);
+    item.show();
+  }
+
+  /**
+   * Show or hide the Stop button (F16 companion to Run). Independent of render() — the
+   * orchestrator drives it from the active project's running state (a live `run`/`build`
+   * task or an active debug session), so it appears only while there is something to stop,
+   * sitting just after Run. Clicking it runs devSwitcher.stop.
+   */
+  setStopVisible(show: boolean): void {
+    if (!show) {
+      this.items.get(STOP_CHIP)?.hide();
+      return;
+    }
+    const item = this.upsert(STOP_CHIP, '$(debug-stop)', 'DevSwitcher: Stop', 'devSwitcher.stop', undefined, TRAILING_ORDER.stop);
     item.show();
   }
 
