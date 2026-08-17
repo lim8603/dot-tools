@@ -47,9 +47,8 @@
 
 ## 다음 시작점
 
-1. (선행, Human 확인 후) **v0.5.0 main FF 병합 + `v0.5.0` 태그 + origin push** → 브랜치 삭제.
-2. **MS-016 — Node/TS 어댑터 (v0.6.0) 착수**: 착수 시 Task 분해 — 감지(`package.json`)·npm/pnpm scripts·`tsc`·node `--inspect` 디버그. 6번째 언어(완료 시 6개 언어 완성).
-3. 이후 로드맵: MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → MS-014 v1.0.0. 별도 트랙: TC-11(WSL, Deferred).
+1. **MS-016 — Node/TS 어댑터 (v0.6.0) 착수**: 착수 시 Task 분해 — 감지(`package.json`)·npm/pnpm scripts·`tsc`·node `--inspect` 디버그. 6번째 언어(완료 시 6개 언어 완성). ※ v0.5.0(Go)은 main 병합·`v0.5.0` 태그·origin push 완료.
+2. 이후 로드맵: MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → MS-014 v1.0.0. 별도 트랙: TC-11(WSL, Deferred).
 
 ---
 
