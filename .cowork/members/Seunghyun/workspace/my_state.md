@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — MS-018 준비 감지 Done·**v0.8.0 배포**. **v1.0.0 로드맵 4개 MINOR 전부 완료.** 다음: **MS-014 v1.0.0 최종점검+게시** (Human 완주 선언) |
+| 활성 Milestone | **없음** — **🏁 v1.0.0 완주(세션 #015)·INT-001 Closed.** MS-001~018·MS-014 전부 Done. 다음 사이클은 Human 결정(INT-002·B-3·TC-11) |
 | 마지막 갱신일 | 2026-08-17 |
-| 참조 세션 로그 | session_2026-08-17_014.md |
+| 참조 세션 로그 | session_2026-08-17_015.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-042 | v1.0.0 완주 결정 (게이트) | MS-014 | In Progress | Human 선언 대기 | 로드맵 4개 MINOR 완료 — 완주 선언 시 MS-014 착수 |
+| (없음) | TASK-001~055 전부 Done — v1.0.0 완주 | — | — | — | 다음 Task는 Human 결정 후 등록 |
 
-> **v1.0.0 완주 로드맵 확정(D-21, 세션 #012).** TASK-042 추가 기능·논의 → **v1.0.0 = 4개 MINOR**: MS-015 Go(v0.5.0)·MS-016 Node/TS(v0.6.0, 6개 언어 완성)·MS-017 키보드 단축키(v0.7.0, General 탭 기본+변경)·MS-018 준비감지(v0.8.0, TASK-039 승격) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**. 버전 사다리 0.4.0→0.5~0.8→1.0.0(중간은 vsix+태그, 게시는 1.0.0만). **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0로 재스케줄**(Deferred, v1.1.0/v1.2.0 후보, 설계서 §16 원래 v2+ 위치). **다음: MS-015(Go) 착수**(Task 미분해). 원격/크로스·단축키 구현방식은 착수 시 ADR. 직전 세션 #011 = MS-013 Run Group 완주·v0.4.0 배포.
+> **🏁 v1.0.0 완주(D-23, 세션 #015) — INT-001 Closed.** Human 완주 선언 → MS-014: 최종점검(EV-019)·TC-11=Known Issue·**docs/ 공식 산출물 13종**·Gate 5 Pass → `v1.0.0` 태그 → **repo public**(+기여 차단: PR 자동닫기·Issues 유지) → **GitHub Release**(vsix) → **Marketplace 게시**(`lim8603.devswitcher-tools`). 버전 이력: v0.1.0→…→v0.8.0→**v1.0.0**(첫 공개 배포). 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft).
 
 ---
 
@@ -44,13 +44,14 @@
 | #012 | 2026-08-17 | **TASK-042 추가 기능·논의 → v1.0.0 완주 로드맵 확정(D-21).** v1.0.0 = MS-015 Go·MS-016 Node/TS·MS-017 단축키·MS-018 준비감지(0.5~0.8) → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 단위 커 post-1.0 재스케줄**(v1.1.0/v1.2.0 후보). registry 반영 | MS-014~020 | TASK-042 | 로드맵 확정+재스케줄. 다음: MS-015(Go) 착수 |
 | #013 | 2026-08-17 | **MS-016 Node/TS(v0.6.0)+MS-017 키보드 단축키(v0.7.0) 완주.** MS-016: script+packageManager 칩·**배열형 ShellExecution**(ADR-016/NFR-002b·Node24 `.cmd` EINVAL 실측)·js-debug·`.vscode-test` 스캔제외 fix. MS-017: 정적 키바인딩(Ctrl+Alt+B/R/S/D/P/G/,·`when:hasProjects`)·General 탭 딥링크(**ADR-017**·내장키 불간섭)·F5 유래 `devSwitcher.stop`(태스크+디버그세션)·상태바 Stop 버튼(세션 Map 추적·stale 버그 fix). **F5 전부 통과.** unit 235·통합 16커맨드. main FF·`v0.6.0`/`v0.7.0` 태그·push | MS-016·017 | TASK-046~050 | 완료·배포. 다음: MS-018 준비감지 |
 | #014 | 2026-08-17 | **B-2 Project 카드 + MS-018 준비 감지(v0.8.0) 완주 + README 스크린샷 리프레시.** B-2: 어댑터 무지 카드(툴체인 ✅/❌·칩 요약)·순수 `projectCard.ts`. MS-018(**ADR-018**): 포트 open/HTTP 상태코드 게이트·순수 `readiness.ts`+I/O `readinessProbe.ts`·타임아웃/취소=abort+teardown·**취소 가능**·Run Groups UI 재설계(멤버 카드·Add 드롭다운)·seedMemberDefaults. F5(svc-a→svc-b 포트 게이트 4s 대기). README: SIX 히어로·Go/Node 신규·clean triple. unit 268·통합 3·`v0.8.0.vsix` 스모크. **main FF·`v0.8.0` 태그·push.** KB 패턴#10·안티패턴#10. **v1.0.0 로드맵 4개 MINOR 전부 완료** | B-2·MS-018 | 051·052·053 | 완료·배포. 다음: 품질점검→MS-014 |
+| #015 | 2026-08-17 | **🏁 MS-014 v1.0.0 완주 — INT-001 Closed·첫 Marketplace 게시.** Human 완주 선언(D-23·TC-11=Known Issue). 최종 재검증(EV-019)·v1.0.0 스탬프·**docs/ 공식 산출물 13종**(에이전트 12기 병렬·소스 승격 2종)·Gate 5 Pass → `v1.0.0` 태그·**repo public**(+기여 차단: PR 자동닫기·CONTRIBUTING·Issues 유지)·**GitHub Release**(vsix)·Human 온보딩(aex 직행·PAT·publisher) 후 **`vsce publish` DONE**. 트러블슈팅: README 이미지=GitHub 전역 장애(레포 정상)·리스팅 404=검증 지연(→200). KB 패턴#11 | MS-014 | TASK-042·054·055 | **v1.0.0 완주.** 다음: Human 결정(INT-002·B-3·TC-11) |
 
 ---
 
 ## 다음 시작점
 
-1. **품질 점검**(Human 지시: "다음 세션에서 품질 점검") → **MS-014 v1.0.0 최종점검 + Marketplace 게시 + GitHub Release**. 잔여: 수동검증(TC-11 WSL 등) 정리 + `vsce publish` + GitHub Release. **Human의 v1.0.0 완주 선언**(TASK-042 게이트, D-19)이 착수 조건. ※ v0.8.0(준비 감지·B-2)은 main 병합·`v0.8.0` 태그·origin push 완료.
-2. 백로그: ~~B-2(Project 탭)~~ 해소(v0.8.0) · B-3(언어별 enable, 저우선). 별도 트랙: TC-11(WSL, Deferred). 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002.
+1. **다음 사이클 결정(Human)**: ① **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② B-3(언어별 enable, 저우선) ③ TC-11(WSL) 검증으로 Known Issue 해소. 급하지 않음 — Marketplace 반응 보며 결정.
+2. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.0.x·기능 v1.x.0. GitHub 장애(2026-08-17, raw 콘텐츠) 해소 후 README 이미지 정상 표시 확인.
 
 ---
 
