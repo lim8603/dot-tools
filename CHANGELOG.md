@@ -3,6 +3,34 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.8.0] - 2026-08-17
+
+### Added
+
+- **Run-group readiness gates** — each run-group member can now declare when it counts as
+  "ready" for its dependents, in the **Run Groups** tab's per-member **Ready when** control:
+  - **process start** (default, unchanged) — ready as soon as the process launches.
+  - **port open** — ready once a TCP connection to `localhost:<port>` succeeds.
+  - **HTTP status** — ready once `GET <url>` returns the expected status (default `200`).
+
+  Gates poll until they pass or the member's **timeout** elapses. A member that never becomes
+  ready aborts the group start and tears the already-started members back down, and a long
+  readiness wait can be **cancelled** from the progress notification. Members without a gate
+  keep the previous process-launch behaviour, so existing groups are unaffected.
+
+### Changed
+
+- **Run Groups tab, tidied up** — members are now shown as cards (ordered by stage) with their
+  stage, readiness gate, and a **Remove** button; projects are added from an **Add a project**
+  dropdown instead of a full checkbox list. Group members also seed their default chip values
+  on run (e.g. the Node **Script** → `start`), so a member that was never the active project
+  no longer has to be configured by hand first.
+- **Project tab, richer** — the settings page's **Project** tab now shows each detected project
+  as a card with its adapter, manifest path, toolchain status (✅/❌ from Doctor), active
+  profile, and a per-chip summary with option counts. Click a card to switch to that project.
+- **Docs** — refreshed the README status-bar screenshots for the full six-language line-up
+  (added Go and Node.js/TypeScript, updated the hero image).
+
 ## [0.7.0] - 2026-08-17
 
 ### Added

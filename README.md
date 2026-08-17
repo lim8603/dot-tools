@@ -46,8 +46,9 @@ paths from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt
   the fix; a warning chip lights up when something critical is missing.
 - **Run groups.** Start several projects together in dependency order — e.g. `auth → api →
   web` — from one click. Each member runs in a **stage**; same stage starts in parallel, a
-  higher stage waits until the previous stage's processes have launched. Stop them all with
-  one command.
+  higher stage waits until the previous stage is **ready**. "Ready" is the process launching by
+  default, or — per member — a **port opening** or an **HTTP health check** passing (with a
+  timeout). Stop them all with one command.
 - **Profiles export / import.** Share your chip selections and per-config overlays as a
   portable `devswitcher.profile.json`.
 - **New Project wizard.** `DevSwitcher: New Project…` scaffolds a starter project in any
@@ -93,9 +94,11 @@ you use.
 
 **Go** — project · package (the module's `main` package to build, run, or debug)
 
-<br>
+![Go status bar](images/status-bar-go.png)
 
 **Node.js / TypeScript** — project · script (the npm script to run/debug) · package manager (npm/pnpm/yarn, auto-detected)
+
+![Node.js / TypeScript status bar](images/status-bar-node.png)
 
 </details>
 
@@ -114,7 +117,7 @@ Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's miss
 This extension is distributed as a `.vsix`:
 
 ```bash
-code --install-extension devswitcher-tools-0.6.0.vsix
+code --install-extension devswitcher-tools-0.8.0.vsix
 ```
 
 Or in VS Code: **Extensions** view → `⋯` menu → **Install from VSIX…** → pick the file.
@@ -188,16 +191,26 @@ canonical build files stay untouched (profiles are read-only here by design).
 
 ### Run groups
 
-Open the settings page → **Run Groups** tab to define a group: name it, check the projects to
-include, and give each a **Stage** number. Members with the same stage start together; a higher
-stage waits until every lower stage's process has launched — so `auth (1) → api (2) → web (3)`
-starts each service in order, while two members sharing a stage run in parallel.
+Open the settings page → **Run Groups** tab to define a group: name it, then **add projects**
+from the dropdown. Each member is a card with a **Stage** number and a **Ready when** gate.
+Members with the same stage start together; a higher stage waits until every lower stage is
+ready — so `auth (1) → api (2) → web (3)` starts each service in order, while two members
+sharing a stage run in parallel.
+
+**Ready when** decides what counts as "ready" for a member's dependents:
+
+- **process start** (default) — ready as soon as the member's process launches (fast, no setup).
+- **port open** — ready once a TCP connection to `localhost:<port>` succeeds.
+- **HTTP status** — ready once `GET <url>` returns the expected status (default `200`).
+
+Port/HTTP gates poll until they pass or the member's **timeout** elapses; a member that never
+becomes ready aborts the group start and tears the started members back down. A long readiness
+wait can be **cancelled** from the progress notification.
 
 Run or stop a group from the group's **Run**/**Stop** button, the status-bar `$(run-all)`
 launcher, or **`DevSwitcher: Run Groups…`** (which also offers **Stop all**). A member that is
 already running — individually or in another group — is treated as ready and skipped, so the
-rest of the group still starts. Readiness in this release means the member's process has
-launched; port/health-check readiness is planned.
+rest of the group still starts.
 
 ## Extension settings
 
