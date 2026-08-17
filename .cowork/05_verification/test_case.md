@@ -59,7 +59,7 @@
 | TC-20 | 상태바 `$(run-all)` 런처(아이콘, Run 뒤) → 통합 메뉴 Run/Stop/**Stop all** (C-6, TASK-038/D-20) | Manual | ✅ Pass | 세션 #011 F5 (아이콘·위치·메뉴 확인) |
 | TC-21 | Go 모듈(`go.mod`) → 스위처 등장·**target 칩**(main 패키지 자동선택)·`go build`/`go run`·**delve 디버그**(중단점)·Doctor(go/golang.go) (MS-015, v0.5.0) | Manual | ✅ Pass | 세션 #012 F5 — Doctor 슬라이스(go 미설치 시 ❌+E1) → 설치 후 build/run + delve 중단점 정지(`dlv.exe` 자동설치) |
 | TC-22 | Node 프로젝트(`package.json`) → 스위처 등장·**script 칩**(npm scripts)·**packageManager 칩**(lockfile 자동감지)·`<pm> run <script>`/`<pm> run build`(배열형 ShellExecution, `$tsc` 매처)·**js-debug 디버그**(중단점, 확장 불요)·Doctor(node) (MS-016, v0.6.0) | Manual | ✅ Pass | 세션 #013 F5 — `.vscode-test` 제외로 감지 정리·2칩·`npm run start` 출력·js-debug **중단점 정지**(index.js:2, 확장 프롬프트 없음). 실 node 24 셸 스모크(start·runArgs `--`·build·NODE_OPTIONS) |
-| TC-23 | 키보드 단축키 — 활성 프로젝트에서 `Ctrl+Alt+B/R/D/P/,` → Build/Run/Debug/Switch/Settings 동작(프로젝트 없으면 무동작, `when:hasProjects`). 설정 General 탭 "Keyboard shortcuts" 목록 + "Open Keyboard Shortcuts" 딥링크(확장 필터) + 행별 Edit… (MS-017, v0.7.0) | Manual | ⏳ Pending F5 | `buildShortcutList` 단위 4·설정 웹뷰 스크립트 회귀 가드 통과. F5 대기: 단축키 발동·General 탭 렌더·네이티브 편집기 딥링크 |
+| TC-23 | 키보드 단축키 — 활성 프로젝트에서 `Ctrl+Alt+B/R/S/D/P/G/,` → Build/Run/**Stop**/Debug/Switch/**Groups**/Settings 동작(프로젝트 없으면 무동작, `when:hasProjects`). **Stop**=실행 중 태스크 종료. 설정 General 탭 "Keyboard shortcuts" 목록 + "Open Keyboard Shortcuts" 딥링크(확장 필터) + 행별 Edit… (MS-017, v0.7.0) | Manual | 🟡 부분 Pass | 세션 #013 F5 — B/R/D/P/, 발동·General 탭·딥링크 확인. **Stop(Ctrl+Alt+S)·Groups(Ctrl+Alt+G)는 재-F5 대기**(F5 피드백으로 추가) |
 
 > TC-15~17은 v1 scope A로 스위처엔 미등장(생성만) — 정상. 이름 검증·템플릿·**Run Group 계획/검증/스테이지·시퀀서**·Node(`parseScripts`·`assembleNodeArgs`·`buildNodeDebugConfig`)는 단위 테스트(mocha **231**) 커버. Run Group 준비 감지(포트/헬스체크)는 후속 마이너.
 

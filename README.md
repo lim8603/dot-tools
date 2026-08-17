@@ -144,6 +144,7 @@ All commands live under **`DevSwitcher:`** in the Command Palette (`Ctrl/Cmd+Shi
 | --- | --- |
 | **Switch Project** | Change the active project. |
 | **Build** / **Run** / **Debug** | Run the action on the active project. |
+| **Stop** | Terminate the active project's running task (e.g. a long-lived `run`). |
 | **Open Settings** | Open the settings page. |
 | **Doctor (environment diagnostics)** | Diagnose toolchains and debug extensions. |
 | **Rescan Projects** | Force a re-scan when a folder moved or changed outside the editor. |
@@ -161,9 +162,14 @@ present, so they never clash in unrelated workspaces):
 | --- | --- | --- |
 | Build | `Ctrl+Alt+B` | `Cmd+Alt+B` |
 | Run | `Ctrl+Alt+R` | `Cmd+Alt+R` |
+| Stop | `Ctrl+Alt+S` | `Cmd+Alt+S` |
 | Debug | `Ctrl+Alt+D` | `Cmd+Alt+D` |
 | Switch Project | `Ctrl+Alt+P` | `Cmd+Alt+P` |
+| Run Groups | `Ctrl+Alt+G` | `Cmd+Alt+G` |
 | Open Settings | `Ctrl+Alt+,` | `Cmd+Alt+,` |
+
+**Stop** terminates the active project's running task (handy for a long-lived `run` — a dev
+server or watcher). **Run Groups** opens the group menu (run / stop / stop all).
 
 Change any of them in VS Code's **Keyboard Shortcuts** editor — the settings page's **General**
 tab lists them and links straight there (filtered to DevSwitcher). VS Code's built-in keys

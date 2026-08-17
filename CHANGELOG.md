@@ -8,12 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - **Keyboard shortcuts** — the core actions now have default keybindings: **Build**
-  `Ctrl/Cmd+Alt+B`, **Run** `Ctrl/Cmd+Alt+R`, **Debug** `Ctrl/Cmd+Alt+D`, **Switch Project**
-  `Ctrl/Cmd+Alt+P`, **Open Settings** `Ctrl/Cmd+Alt+,`. They are scoped to when a DevSwitcher
-  project is present (`when: devSwitcher.hasProjects`), so they stay inert in unrelated
-  workspaces. The settings page's **General** tab lists them and links straight to VS Code's
-  Keyboard Shortcuts editor (filtered to DevSwitcher) for customization. VS Code's built-in
-  keys (`F5`, `Ctrl+Shift+B`) are intentionally left untouched.
+  `Ctrl/Cmd+Alt+B`, **Run** `Ctrl/Cmd+Alt+R`, **Stop** `Ctrl/Cmd+Alt+S`, **Debug**
+  `Ctrl/Cmd+Alt+D`, **Switch Project** `Ctrl/Cmd+Alt+P`, **Run Groups** `Ctrl/Cmd+Alt+G`,
+  **Open Settings** `Ctrl/Cmd+Alt+,`. They are scoped to when a DevSwitcher project is present
+  (`when: devSwitcher.hasProjects`), so they stay inert in unrelated workspaces. The settings
+  page's **General** tab lists them and links straight to VS Code's Keyboard Shortcuts editor
+  (filtered to DevSwitcher) for customization. VS Code's built-in keys (`F5`, `Ctrl+Shift+B`)
+  are intentionally left untouched.
+- **Stop command** — `DevSwitcher: Stop` (`Ctrl/Cmd+Alt+S`) terminates the active project's
+  running task, so a long-lived `run` (a dev server or watcher) can be stopped from the same
+  cockpit that started it.
 
 ## [0.6.0] - 2026-08-17
 
