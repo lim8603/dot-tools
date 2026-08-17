@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — MS-015 Go Done·**v0.5.0 배포**. 다음: **MS-016 Node/TS(v0.6.0)** |
+| 활성 Milestone | **없음** — MS-016 Node/TS Done·**v0.6.0 배포**(6개 언어 완성). 다음: **MS-017 키보드 단축키(v0.7.0)** |
 | 마지막 갱신일 | 2026-08-17 |
-| 참조 세션 로그 | session_2026-08-17_012.md |
+| 참조 세션 로그 | session_2026-08-17_013.md |
 
 ---
 
@@ -20,7 +20,7 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| MS-016 | Node/TS 어댑터 (v0.6.0) | MS-016 | Planned | 다음 착수 | 없음 |
+| MS-017 | 키보드 단축키 설정 (v0.7.0) | MS-017 | Planned | 다음 착수 | 없음 (구현방식 착수 시 ADR) |
 
 > **v1.0.0 완주 로드맵 확정(D-21, 세션 #012).** TASK-042 추가 기능·논의 → **v1.0.0 = 4개 MINOR**: MS-015 Go(v0.5.0)·MS-016 Node/TS(v0.6.0, 6개 언어 완성)·MS-017 키보드 단축키(v0.7.0, General 탭 기본+변경)·MS-018 준비감지(v0.8.0, TASK-039 승격) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**. 버전 사다리 0.4.0→0.5~0.8→1.0.0(중간은 vsix+태그, 게시는 1.0.0만). **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0로 재스케줄**(Deferred, v1.1.0/v1.2.0 후보, 설계서 §16 원래 v2+ 위치). **다음: MS-015(Go) 착수**(Task 미분해). 원격/크로스·단축키 구현방식은 착수 시 ADR. 직전 세션 #011 = MS-013 Run Group 완주·v0.4.0 배포.
 
@@ -42,13 +42,14 @@
 | #010 | 2026-08-17 | **TASK-041 CMakePresets.json F5 통과 → MS-012 구현 완료.** `ChipDescriptor.appliesTo` 동적 대체(Preset 칩↔profile/arch, D-17) + `parseConfigurePresets`/`resolvePresetBinaryDir`(순수, inherits/hidden/매크로) + `cmake --preset` configure(binaryDir·--config 생략) + target/디버거 자동판별 재사용. 프리셋 픽스처(msvc-x64/x86/clangcl). unit **172**·실 cmake 스모크·**실 F5**(msvc-x64 build/run/debug 중단점). 커밋(feat+docs)·미병합 | MS-012 | TASK-041 | **MS-012 전 Task F5 통과, main 병합 대기** |
 | #011 | 2026-08-17 | **MS-013 Run Group: TASK-036·037·038 완료 + 버전 정책 반전.** Human 결정(준비=프로세스 시작·Run 전용) + **D-19**(v1.0.0 자동 안 함·v0.x.x 유지·TASK-042 게이트) + **ADR-015** + **036**(모델·저장·순수 계획) + **037**(TaskRunner.start·sequencer·GroupOrchestrator·커맨드) + **038**(설정 페이지 Run Groups 탭·상태바 런처·순수 편집). **TASK-042/MS-014** 신설. unit **196**·prod 99.3kb·미커밋 | MS-013 | TASK-036·037·038 | **엔진+UI 완료(Review), 다음: 전체 F5 → TASK-040(v0.4.0)** |
 | #012 | 2026-08-17 | **TASK-042 추가 기능·논의 → v1.0.0 완주 로드맵 확정(D-21).** v1.0.0 = MS-015 Go·MS-016 Node/TS·MS-017 단축키·MS-018 준비감지(0.5~0.8) → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 단위 커 post-1.0 재스케줄**(v1.1.0/v1.2.0 후보). registry 반영 | MS-014~020 | TASK-042 | 로드맵 확정+재스케줄. 다음: MS-015(Go) 착수 |
+| #013 | 2026-08-17 | **MS-016 Node/TS 어댑터 완주·v0.6.0 배포(6개 언어 완성).** 설계 3결정(Human): script+packageManager 칩·Build 버튼 有·디버그=npm 스크립트. TASK-046(감지·2칩·createProject·Doctor)·047(build/run·**배열형 ShellExecution**·**ADR-016/NFR-002b**[npm=.cmd 심·Node24 EINVAL 실측])·048(js-debug·`debugRequiresBuild:false`). F5 유래 fix: `.vscode-test` 스캔 제외. **F5 전부 통과**(중단점 정지). unit 231·통합 3·vsix 스모크. main FF·`v0.6.0` 태그·push | MS-016 | TASK-046·047·048 | 완료·배포. 다음: MS-017 단축키 |
 
 ---
 
 ## 다음 시작점
 
-1. **MS-016 — Node/TS 어댑터 (v0.6.0) 착수**: 착수 시 Task 분해 — 감지(`package.json`)·npm/pnpm scripts·`tsc`·node `--inspect` 디버그. 6번째 언어(완료 시 6개 언어 완성). ※ v0.5.0(Go)은 main 병합·`v0.5.0` 태그·origin push 완료.
-2. 이후 로드맵: MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → MS-014 v1.0.0. 별도 트랙: TC-11(WSL, Deferred).
+1. **MS-017 — 키보드 단축키 설정 (v0.7.0) 착수**: 착수 시 Task 분해 — 설정 페이지 General 탭 기본 단축키+변경. 6개 언어 명령 세트 확정 후. **구현방식(네이티브 Keyboard Shortcuts 필터 vs 인페이지 캡처)은 착수 시 ADR 채번.** ※ v0.6.0(Node/TS)은 main 병합·`v0.6.0` 태그·origin push 완료.
+2. 이후 로드맵: MS-018 준비감지(v0.8.0, TASK-039 승격) → MS-014 v1.0.0 최종점검+게시. 별도 트랙: TC-11(WSL, Deferred).
 
 ---
 

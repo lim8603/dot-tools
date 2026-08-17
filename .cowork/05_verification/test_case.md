@@ -58,11 +58,11 @@
 | TC-19 | 그룹 Run → **Stage 순서대로 계층 기동**(프로세스 시작 시점 전진), 같은 Stage 병렬. 이미 실행 중 멤버는 **skip** (C-6, ADR-015/D-20) | Manual | ✅ Pass | 세션 #011 F5 (preset-demo→test-python 순차 실행 확인) |
 | TC-20 | 상태바 `$(run-all)` 런처(아이콘, Run 뒤) → 통합 메뉴 Run/Stop/**Stop all** (C-6, TASK-038/D-20) | Manual | ✅ Pass | 세션 #011 F5 (아이콘·위치·메뉴 확인) |
 | TC-21 | Go 모듈(`go.mod`) → 스위처 등장·**target 칩**(main 패키지 자동선택)·`go build`/`go run`·**delve 디버그**(중단점)·Doctor(go/golang.go) (MS-015, v0.5.0) | Manual | ✅ Pass | 세션 #012 F5 — Doctor 슬라이스(go 미설치 시 ❌+E1) → 설치 후 build/run + delve 중단점 정지(`dlv.exe` 자동설치) |
-| TC-22 | Node 프로젝트(`package.json`) → 스위처 등장·**script 칩**(npm scripts)·**packageManager 칩**(lockfile 자동감지)·`<pm> run <script>`/`<pm> run build`(배열형 ShellExecution, `$tsc` 매처)·**js-debug 디버그**(중단점, 확장 불요)·Doctor(node) (MS-016, v0.6.0) | Manual | ⏳ Pending F5 | 실 node 24 셸 스모크 통과(start·runArgs `--`·build·NODE_OPTIONS). F5 대기: 감지·2칩·build/run·js-debug 중단점·Doctor |
+| TC-22 | Node 프로젝트(`package.json`) → 스위처 등장·**script 칩**(npm scripts)·**packageManager 칩**(lockfile 자동감지)·`<pm> run <script>`/`<pm> run build`(배열형 ShellExecution, `$tsc` 매처)·**js-debug 디버그**(중단점, 확장 불요)·Doctor(node) (MS-016, v0.6.0) | Manual | ✅ Pass | 세션 #013 F5 — `.vscode-test` 제외로 감지 정리·2칩·`npm run start` 출력·js-debug **중단점 정지**(index.js:2, 확장 프롬프트 없음). 실 node 24 셸 스모크(start·runArgs `--`·build·NODE_OPTIONS) |
 
 > TC-15~17은 v1 scope A로 스위처엔 미등장(생성만) — 정상. 이름 검증·템플릿·**Run Group 계획/검증/스테이지·시퀀서**·Node(`parseScripts`·`assembleNodeArgs`·`buildNodeDebugConfig`)는 단위 테스트(mocha **231**) 커버. Run Group 준비 감지(포트/헬스체크)는 후속 마이너.
 
-**요약**: Auto 3/3 Pass · Manual **18 Pass** · 2 Partial(TC-06·TC-10) · 1 Deferred(TC-11 WSL) · **1 Pending F5(TC-22 Node)**. 세션 #012 추가: TC-21(Go) Pass. 세션 #013 추가: TC-22(Node) — 코드 완료·통합 F5 대기.
+**요약**: Auto 3/3 Pass · Manual **19 Pass** · 2 Partial(TC-06·TC-10) · 1 Deferred(TC-11 WSL). 세션 #012 추가: TC-21(Go) Pass. 세션 #013 추가: TC-22(Node 감지·2칩·run/build·js-debug 중단점·Doctor) Pass.
 세션 #011 추가: TC-18~20(Run Group 정의·계층 기동·skip·상태바 통합 메뉴) Pass. 그 과정에서 설정 페이지 공백 버그(webview 스크립트 아포스트로피, 세션 #010 유입) 발견·수정 + 회귀 가드 단위 테스트 추가. TC-11(WSL/F18)은 WSL 내부 재클론 후 별도 진행.
 
 ---
