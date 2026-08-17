@@ -99,4 +99,31 @@ describe('sequenceGroup', () => {
     assert.deepEqual(outcome.started, ['a']);
     assert.ok(h.events.includes('term:a')); // already-started member rolled back
   });
+
+  // MS-018 / ADR-018: a cancel between layers stops before the next layer starts, and the
+  // members started so far are torn down.
+  it('does not start the next layer when the signal aborts, and tears down (MS-018)', async () => {
+    const h = harness();
+    const signal = { aborted: false };
+    const run = sequenceGroup([['a'], ['b']], h.startMember, signal);
+    await settle();
+    assert.deepEqual(h.events, ['start:a']);
+
+    signal.aborted = true; // user cancels while a is ready-waiting
+    h.gates.get('a')!.resolve({ started: true });
+
+    const outcome = await run;
+    assert.equal(outcome.aborted, true);
+    assert.deepEqual(outcome.started, ['a']);
+    assert.ok(!h.events.includes('start:b'), 'the next layer must not start after cancel');
+    assert.ok(h.events.includes('term:a')); // started member rolled back on cancel
+  });
+
+  it('aborts before starting anything when the signal is already aborted (MS-018)', async () => {
+    const h = harness();
+    const outcome = await sequenceGroup([['a']], h.startMember, { aborted: true });
+    assert.equal(outcome.aborted, true);
+    assert.deepEqual(outcome.started, []);
+    assert.deepEqual(h.events, []); // nothing started
+  });
 });

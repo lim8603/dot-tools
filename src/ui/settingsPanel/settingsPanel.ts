@@ -3,8 +3,9 @@ import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
 import type { GroupOrchestrator } from '../../core/groupOrchestrator';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
-import { memberStages, validateGroup, withMember, withMemberStage } from '../../core/runGroupPlan';
-import type { ChipItem, ChipValue, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, RunGroup } from '../../core/types';
+import { memberStages, validateGroup, withMember, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
+import type { ChipDescriptor, ChipItem, ChipValue, DiagnosticProbe, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, ReadinessProbe, RunGroup } from '../../core/types';
+import { deriveToolchain, formatChipValue, ToolchainStatus } from './projectCard';
 import { getSettingsHtml } from './html';
 import { RawCommand, RawKeybinding, ShortcutRow, buildShortcutList } from './shortcuts';
 
@@ -26,15 +27,48 @@ export interface ChipView {
 export interface GroupView {
   id: string;
   name: string;
-  /** Members with their 1-based stage (order); same stage = parallel. */
-  members: Array<{ projectId: string; stage: number }>;
+  /** Members with their 1-based stage (order; same stage = parallel) and optional readiness
+   *  gate (MS-018). readiness omitted = process-spawn readiness. */
+  members: Array<{ projectId: string; stage: number; readiness?: ReadinessProbe }>;
   running: boolean;
   problems: string[];
+}
+
+/** One chip's summary on a project card (B-2): its label, current formatted value, and how
+ *  many items the adapter detected for it (bin / script / target count). Adapter-agnostic —
+ *  built from ChipDescriptor + stored value only, never from language knowledge (INV-2). */
+export interface CardChip {
+  id: string;
+  label: string;
+  /** Formatted current value; undefined when nothing is stored (shown as "—"). */
+  value?: string;
+  /** Available items detected for this chip (e.g. Cargo bins, npm scripts, Go targets). */
+  count: number;
+}
+
+/** An enriched project entry the Project tab renders as a card (B-2). Every field derives
+ *  from declarative adapter data (displayName, chips, Doctor probes), so the UI adds no
+ *  language knowledge and adapters need no change here (INV-2). */
+export interface ProjectCard {
+  id: string;
+  name: string;
+  adapterId: string;
+  displayName: string;
+  /** Manifest path relative to the workspace (multi-root aware). */
+  manifestPath: string;
+  active: boolean;
+  /** Effective active profile (the 'profile' chip's value/default), when the adapter has one. */
+  profile?: string;
+  /** Per-chip summary, excluding the profile chip (surfaced separately as `profile`). */
+  chips: CardChip[];
+  toolchain: ToolchainStatus;
 }
 
 /** The full state the webview renders (rebuilt and re-sent after every change). */
 export interface SettingsState {
   projects: Array<{ id: string; name: string; adapterId: string }>;
+  /** Enriched per-project cards for the Project tab (B-2). */
+  projectCards: ProjectCard[];
   activeProjectId?: string;
   displayName?: string;
   profile: string;
@@ -68,6 +102,8 @@ type InMessage =
   | { type: 'deleteGroup'; groupId: string }
   | { type: 'setGroupMember'; groupId: string; projectId: string; member: boolean }
   | { type: 'setMemberStage'; groupId: string; projectId: string; stage: number }
+  // Per-member readiness gate (MS-018) — undefined clears it back to process-spawn readiness.
+  | { type: 'setMemberReadiness'; groupId: string; projectId: string; readiness: ReadinessProbe | undefined }
   | { type: 'runGroup'; groupId: string }
   | { type: 'stopGroup'; groupId: string };
 
@@ -83,6 +119,14 @@ type InMessage =
 export class SettingsPanel {
   private panel: vscode.WebviewPanel | undefined;
   private disposables: vscode.Disposable[] = [];
+  /**
+   * Toolchain probe results cached per adapter for the panel's lifetime (B-2). buildState
+   * reruns on every in-panel edit (setOption → onChanged → renderActive → viewSync →
+   * refresh), and collectDiagnostics spawns subprocesses (cargo --version, node --version …);
+   * caching keeps option-editing snappy. Cleared when the panel closes — a toolchain
+   * installed mid-session (via Doctor) shows after reopening Settings.
+   */
+  private toolchainCache = new Map<string, ToolchainStatus>();
 
   constructor(
     private readonly registry: AdapterRegistry,
@@ -225,6 +269,12 @@ export class SettingsPanel {
         );
         return true;
       }
+      case 'setMemberReadiness': {
+        await this.editGroup(message.groupId, (group) =>
+          withMemberReadiness(group, message.projectId, message.readiness),
+        );
+        return true;
+      }
       case 'runGroup':
         await this.groups.runGroup(message.groupId);
         return true;
@@ -286,11 +336,13 @@ export class SettingsPanel {
     const groups = this.buildGroupViews();
 
     const activeId = this.store.activeProjectId;
+    const projectCards = await this.buildProjectCards(activeId);
     const project = activeId ? this.registry.project(activeId) : undefined;
     const adapter = project ? this.registry.adapterFor(project) : undefined;
     if (!project || !adapter) {
       return {
         projects,
+        projectCards,
         profile: 'dev',
         actionsBuild: false,
         chips: [],
@@ -334,6 +386,7 @@ export class SettingsPanel {
     const invocation = this.store.getInvocation(project.id, profile);
     return {
       projects,
+      projectCards,
       activeProjectId: project.id,
       displayName: adapter.displayName,
       profile,
@@ -349,14 +402,106 @@ export class SettingsPanel {
     };
   }
 
-  /** The stored run groups annotated with each member's stage + running/validation state (C-6). */
+  /**
+   * Build the enriched Project-tab cards (B-2). For each detected project it pulls the
+   * adapter's display name, the manifest path, the effective profile, a per-chip summary
+   * (formatted value + detected item count), and a toolchain ✅/❌ from Doctor probes —
+   * all from declarative adapter data, so the Project tab stays language-agnostic (INV-2).
+   */
+  private async buildProjectCards(activeId: string | undefined): Promise<ProjectCard[]> {
+    const cards: ProjectCard[] = [];
+    for (const project of this.registry.getProjects()) {
+      const adapter = this.registry.adapterFor(project);
+      const toolchain = await this.toolchainStatus(adapter);
+      const chips: CardChip[] = [];
+      let profile: string | undefined;
+      if (adapter) {
+        for (const chip of adapter.chips) {
+          // Respect the same per-project visibility as the status bar (TASK-041): a chip
+          // that doesn't apply (e.g. profile when a CMake preset is active) is skipped.
+          if (chip.appliesTo && !(await chip.appliesTo(project))) {
+            continue;
+          }
+          let count = 0;
+          try {
+            // Count readily-available items only: `secondary` items (e.g. cargo's ~100
+            // not-installed rustup targets, hidden behind the QuickPick toggle) would
+            // otherwise inflate the architecture count into the hundreds.
+            const items = await chip.listItems(project);
+            count = items.filter((it) => !it.secondary).length;
+          } catch {
+            // metadata/toolchain unavailable — leave the count at 0
+          }
+          const raw = this.store.getValue(project.id, chip.id);
+          // The active profile gets its own card line (not a chip row); fall back to the
+          // chip's default so an unset-but-effective profile still shows.
+          if (chip.id === 'profile') {
+            const value = raw ?? (await this.chipDefault(chip, project));
+            if (value !== undefined) {
+              profile = formatChipValue(chip, value);
+            }
+            continue;
+          }
+          const value = raw === undefined ? undefined : formatChipValue(chip, raw);
+          chips.push({ id: chip.id, label: chip.label, value, count });
+        }
+      }
+      cards.push({
+        id: project.id,
+        name: project.name,
+        adapterId: project.adapterId,
+        displayName: adapter?.displayName ?? project.adapterId,
+        manifestPath: vscode.workspace.asRelativePath(project.manifestPath),
+        active: project.id === activeId,
+        profile,
+        chips,
+        toolchain,
+      });
+    }
+    return cards;
+  }
+
+  /** A chip's default value, or undefined when it declares none or throws (B-2). */
+  private async chipDefault(chip: ChipDescriptor, project: ProjectInfo): Promise<ChipValue | undefined> {
+    try {
+      return chip.defaultValue ? await chip.defaultValue(project) : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Toolchain indicator for a project card, cached per adapter for the panel's lifetime (B-2). */
+  private async toolchainStatus(adapter: LanguageAdapter | undefined): Promise<ToolchainStatus> {
+    if (!adapter) {
+      return { status: 'unknown', label: 'unknown adapter' };
+    }
+    const cached = this.toolchainCache.get(adapter.id);
+    if (cached) {
+      return cached;
+    }
+    let probes: DiagnosticProbe[] = [];
+    try {
+      probes = await adapter.collectDiagnostics();
+    } catch {
+      // Probing failed unexpectedly — report unknown rather than break the card.
+    }
+    const status = deriveToolchain(adapter, probes);
+    this.toolchainCache.set(adapter.id, status);
+    return status;
+  }
+
+  /** The stored run groups annotated with each member's stage + readiness + running/validation state (C-6). */
   private buildGroupViews(): GroupView[] {
     return this.store.getGroups().map((group) => {
       const stages = memberStages(group);
       return {
         id: group.id,
         name: group.name,
-        members: group.members.map((m) => ({ projectId: m.projectId, stage: stages.get(m.projectId) ?? 1 })),
+        members: group.members.map((m) => ({
+          projectId: m.projectId,
+          stage: stages.get(m.projectId) ?? 1,
+          readiness: m.readiness,
+        })),
         running: this.groups.isRunning(group.id),
         problems: validateGroup(group),
       };
@@ -434,6 +579,7 @@ export class SettingsPanel {
 
   private disposePanel(): void {
     this.panel = undefined;
+    this.toolchainCache.clear();
     while (this.disposables.length > 0) {
       this.disposables.pop()?.dispose();
     }

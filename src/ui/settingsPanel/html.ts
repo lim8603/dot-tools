@@ -93,11 +93,44 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   .preview { background: var(--vscode-textCodeBlock-background); padding: 10px 12px;
     border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
   h4.cat { margin: 16px 0 4px; font-size: .9em; opacity: .85; }
-  .member-row { gap: 6px; }
-  .member-label { display: inline-flex; align-items: center; gap: 4px; min-width: 260px; }
   .stage-lbl { margin-left: 4px; }
   .group-stage { width: 56px; }
   #new-group-name { min-width: 220px; }
+  /* Run-group member cards: one card per member, sorted by Stage (MS-018 tidy-up). */
+  .mcard { border: 1px solid var(--vscode-panel-border); border-radius: 6px; padding: 9px 12px; margin: 7px 0; }
+  .mcard-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mcard-head b { font-size: 1.0em; }
+  .mcard-spacer { flex: 1 1 24px; }
+  .mcard-remove { padding: 2px 10px; }
+  .mcard-empty { padding: 6px 0; }
+  .mcard-hint { margin-top: 12px; line-height: 1.5; }
+  .add-member-row { margin-top: 12px; gap: 8px; }
+  #add-member { min-width: 260px; }
+  /* Per-member readiness gate (MS-018), shown inside the member card. */
+  .readiness { gap: 6px; flex-wrap: wrap; padding: 8px 0 0; align-items: center;
+    margin-top: 8px; border-top: 1px solid var(--vscode-panel-border); }
+  .rd-lbl { min-width: 84px; }
+  .rd-kind { min-width: 130px; }
+  .rd-url { flex: 1 1 240px; min-width: 220px; max-width: 460px; }
+  .rd-port, .rd-status, .rd-timeout { width: 76px; }
+  .rd-to-lbl { margin-left: 4px; }
+  /* Project cards (B-2): one detected project per card, click to switch. */
+  .card { border: 1px solid var(--vscode-panel-border); border-radius: 6px;
+    padding: 10px 12px; margin: 8px 0; cursor: pointer; }
+  .card:hover { background: var(--vscode-list-hoverBackground); }
+  .card.active { border-color: var(--vscode-focusBorder);
+    background: var(--vscode-list-inactiveSelectionBackground); }
+  .card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card-head b { font-size: 1.02em; }
+  .card-manifest { margin: 4px 0 6px; }
+  .card-line { padding: 1px 0; }
+  .card-chips { display: flex; flex-wrap: wrap; gap: 3px 16px; margin-top: 6px; }
+  .card-chip { font-size: .92em; }
+  .tc { font-weight: 600; margin-right: 2px; }
+  .tc.ok { color: var(--vscode-testing-iconPassed, #3fb950); }
+  .tc.error { color: var(--vscode-testing-iconFailed, #f85149); }
+  .tc.warn { color: var(--vscode-testing-iconQueued, #cca700); }
+  .tc.unknown { opacity: .6; }
 </style>
 </head>
 <body>
@@ -160,13 +193,15 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   }
 
   function renderDetail() {
-    // Run Groups is workspace-level — it renders even with no active project.
+    // Run Groups and the Project list are workspace-level — they render even with no
+    // active project (the Project cards let you pick one).
     if (activeTab === 'groups') return renderGroups();
+    if (activeTab === 'project') return renderProjects();
     if (!state.activeProjectId) {
-      return '<div class="empty">No project detected. Open a folder with a Cargo.toml.</div>';
+      return '<div class="empty">No project selected. Pick one from the Project tab, ' +
+        'or open a folder with a project manifest.</div>';
     }
     switch (activeTab) {
-      case 'project': return renderProjects();
       case 'features': return renderFeatures();
       case 'profile': return renderProfile();
       case 'invocation': return renderInvocation();
@@ -174,12 +209,38 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     }
   }
 
+  function tcClass(s) { return s === 'ok' ? 'ok' : s === 'error' ? 'error' : s === 'warn' ? 'warn' : 'unknown'; }
+  function tcGlyph(s) { return s === 'ok' ? '✓' : s === 'error' ? '✗' : s === 'warn' ? '!' : '?'; }
+
+  // Project tab (B-2): one card per detected project — adapter, manifest, toolchain
+  // health, active profile, and a per-chip summary (value + available count). Clicking a
+  // card switches to that project (same as the old rows). Rendered purely from
+  // state.projectCards, which the extension builds from declarative adapter data.
   function renderProjects() {
-    const rows = state.projects.map((p) =>
-      '<div class="row item' + (p.id === state.activeProjectId ? ' active' : '') +
-      '" data-action="switch-project" data-project-id="' + esc(p.id) + '">' +
-      esc(p.name) + '<span class="badge">' + esc(p.adapterId) + '</span></div>').join('');
-    return '<h2>Detected projects</h2>' + (rows || '<div class="muted">None.</div>');
+    const cards = state.projectCards || [];
+    if (!cards.length) {
+      return '<h2>Detected projects</h2><div class="muted">None detected. ' +
+        'Open a folder with a project manifest (Cargo.toml, package.json, …).</div>';
+    }
+    const html = cards.map((c) => {
+      const tc = c.toolchain || { status: 'unknown', label: '' };
+      const chipRows = (c.chips || []).map((ch) =>
+        '<span class="card-chip"><span class="muted">' + esc(ch.label) + ':</span> ' +
+        (ch.value ? esc(ch.value) : '<span class="muted">—</span>') +
+        ' <span class="badge" title="options available">' + esc(ch.count) + '</span></span>').join('');
+      return '<div class="card' + (c.active ? ' active' : '') +
+        '" data-action="switch-project" data-project-id="' + esc(c.id) + '">' +
+        '<div class="card-head"><b>' + esc(c.name) + '</b>' +
+        '<span class="badge">' + esc(c.displayName) + '</span>' +
+        (c.active ? '<span class="badge">active</span>' : '') + '</div>' +
+        '<div class="muted card-manifest"><code>' + esc(c.manifestPath) + '</code></div>' +
+        '<div class="card-line"><span class="tc ' + tcClass(tc.status) + '">' + tcGlyph(tc.status) +
+        '</span> <span class="muted">toolchain</span> ' + esc(tc.label) + '</div>' +
+        (c.profile ? '<div class="card-line"><span class="muted">profile</span> ' + esc(c.profile) + '</div>' : '') +
+        (chipRows ? '<div class="card-chips">' + chipRows + '</div>' : '') +
+        '</div>';
+    }).join('');
+    return '<h2>Detected projects</h2>' + html;
   }
 
   function renderFeatures() {
@@ -316,10 +377,78 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     return html + (selected ? renderGroupEditor(selected) : '');
   }
 
+  // Per-member readiness gate editor (MS-018): pick process-start / port / HTTP, then fill
+  // the port or URL (+ optional status) and a timeout. Changes assemble a ReadinessProbe and
+  // post setMemberReadiness; the whole page re-renders from the stored group.
+  function readinessEditor(gid, pid, rd) {
+    const kind = rd ? rd.kind : 'process';
+    const timeoutS = rd ? Math.round(rd.timeoutMs / 1000) : 30;
+    let fields = '';
+    if (kind === 'port') {
+      fields = '<input type="number" class="rd-port" aria-label="Readiness port" placeholder="port" min="1" max="65535" value="' +
+        esc(rd.port) + '" />';
+    } else if (kind === 'http') {
+      fields = '<input type="text" class="rd-url" aria-label="Readiness URL" placeholder="http://localhost:3000/health" value="' +
+        esc(rd.url) + '" />' +
+        '<input type="number" class="rd-status" aria-label="Expected HTTP status" placeholder="200" value="' +
+        esc(rd.expectStatus === undefined ? '' : rd.expectStatus) + '" />';
+    }
+    const timeoutCtl = kind === 'process' ? '' :
+      '<span class="muted rd-to-lbl">timeout(s)</span>' +
+      '<input type="number" class="rd-timeout" aria-label="Readiness timeout (seconds)" min="1" value="' + esc(timeoutS) + '" />';
+    return '<div class="row readiness" data-group-id="' + esc(gid) + '" data-project-id="' + esc(pid) + '">' +
+      '<span class="muted rd-lbl">Ready when</span>' +
+      '<select class="rd-kind" aria-label="Readiness type">' +
+      '<option value="process"' + (kind === 'process' ? ' selected' : '') + '>process start</option>' +
+      '<option value="port"' + (kind === 'port' ? ' selected' : '') + '>port open</option>' +
+      '<option value="http"' + (kind === 'http' ? ' selected' : '') + '>HTTP status</option>' +
+      '</select>' + fields + timeoutCtl + '</div>';
+  }
+
+  // Assemble a ReadinessProbe from a member's readiness controls (or undefined for process
+  // start). Left-as-typed values (a blank port / URL) round-trip and surface as a validation
+  // warning, so the user sees what to fix rather than a silently dropped gate.
+  function readReadiness(box) {
+    const kind = box.querySelector('.rd-kind').value;
+    if (kind === 'process') return undefined;
+    const toEl = box.querySelector('.rd-timeout');
+    const secs = Number(toEl && toEl.value);
+    const timeoutMs = secs > 0 ? Math.round(secs * 1000) : 30000;
+    if (kind === 'port') {
+      const portEl = box.querySelector('.rd-port');
+      return { kind: 'port', port: Number(portEl && portEl.value) || 0, timeoutMs: timeoutMs };
+    }
+    const urlEl = box.querySelector('.rd-url');
+    const statusEl = box.querySelector('.rd-status');
+    const readiness = { kind: 'http', url: (urlEl && urlEl.value) || '', timeoutMs: timeoutMs };
+    const status = statusEl && statusEl.value;
+    if (status) readiness.expectStatus = Number(status);
+    return readiness;
+  }
+
+  // Look up a member's display name + adapter (falls back to the id for a stale member).
+  function projectMeta(pid) {
+    return (state.projects || []).find((p) => p.id === pid) || { id: pid, name: pid, adapterId: '?' };
+  }
+
+  // One member as a card: name + adapter, its Stage, a Remove button, and the readiness gate.
+  function memberCard(g, m) {
+    const p = projectMeta(m.projectId);
+    return '<div class="mcard">' +
+      '<div class="mcard-head">' +
+      '<b>' + esc(p.name) + '</b><span class="badge">' + esc(p.adapterId) + '</span>' +
+      '<span class="mcard-spacer"></span>' +
+      '<span class="muted stage-lbl">Stage</span>' +
+      '<input type="number" class="group-stage" min="1" aria-label="Stage for ' + esc(p.name) + '" ' +
+      'data-group-id="' + esc(g.id) + '" data-project-id="' + esc(m.projectId) + '" value="' + esc(m.stage) + '" />' +
+      '<button class="secondary mcard-remove" data-action="remove-member" data-group-id="' + esc(g.id) +
+      '" data-project-id="' + esc(m.projectId) + '">Remove</button>' +
+      '</div>' +
+      readinessEditor(g.id, m.projectId, m.readiness) +
+      '</div>';
+  }
+
   function renderGroupEditor(g) {
-    const stageOf = {};
-    g.members.forEach((m) => { stageOf[m.projectId] = m.stage; });
-    const memberIds = new Set(g.members.map((m) => m.projectId));
     let html = '<h3 class="cat">Editing: ' + esc(g.name) + '</h3>';
     html += '<div class="row">' +
       '<input type="text" class="group-rename" data-group-id="' + esc(g.id) + '" aria-label="Group name" value="' + esc(g.name) + '" />' +
@@ -332,24 +461,33 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       html += '<div class="muted">⚠ ' + g.problems.map(esc).join(' &nbsp;·&nbsp; ') + '</div>';
     }
 
-    // Members: check to include, and set each member's Stage (order). Same stage number
-    // runs in parallel; a higher stage starts after every lower stage is ready.
-    html += '<h4 class="cat">Members <span class="muted">(check to include · Stage sets order — same number runs together)</span></h4>';
-    html += state.projects.length
-      ? state.projects.map((p) => {
-          const isMember = memberIds.has(p.id);
-          return '<div class="row member-row">' +
-            '<label class="member-label"><input type="checkbox" class="group-member" data-group-id="' + esc(g.id) +
-            '" data-project-id="' + esc(p.id) + '"' + (isMember ? ' checked' : '') + ' /> ' +
-            esc(p.name) + '<span class="badge">' + esc(p.adapterId) + '</span></label>' +
-            (isMember
-              ? '<span class="muted stage-lbl">Stage</span><input type="number" class="group-stage" min="1" ' +
-                'aria-label="Stage for ' + esc(p.name) + '" data-group-id="' + esc(g.id) + '" data-project-id="' + esc(p.id) +
-                '" value="' + esc(stageOf[p.id]) + '" />'
-              : '') +
-            '</div>';
-        }).join('')
-      : '<div class="muted">No projects detected.</div>';
+    // Members are cards, sorted by Stage (their execution order). Each card carries its
+    // Stage, a Remove button, and its "Ready when" gate (MS-018). Projects not yet in the
+    // group are added from the dropdown below, so the list stays uncluttered.
+    html += '<h4 class="cat">Members <span class="badge">' + g.members.length + '</span></h4>';
+    if (g.members.length) {
+      const ordered = g.members.slice().sort((a, b) =>
+        (a.stage - b.stage) || projectMeta(a.projectId).name.localeCompare(projectMeta(b.projectId).name));
+      html += ordered.map((m) => memberCard(g, m)).join('');
+    } else {
+      html += '<div class="muted mcard-empty">No members yet — add a project below.</div>';
+    }
+
+    const inGroup = new Set(g.members.map((m) => m.projectId));
+    const available = (state.projects || []).filter((p) => !inGroup.has(p.id));
+    if (available.length) {
+      html += '<div class="row add-member-row"><span class="muted">Add a project</span>' +
+        '<select id="add-member" data-group-id="' + esc(g.id) + '" aria-label="Add a project to the group">' +
+        '<option value="">Select…</option>' +
+        available.map((p) =>
+          '<option value="' + esc(p.id) + '">' + esc(p.name) + ' (' + esc(p.adapterId) + ')</option>').join('') +
+        '</select></div>';
+    } else if (!state.projects || !state.projects.length) {
+      html += '<div class="muted">No projects detected.</div>';
+    }
+    html += '<p class="muted mcard-hint">Same Stage runs in parallel; a higher Stage starts after every ' +
+      'lower Stage is ready. <b>Ready when</b> sets what counts as ready — the process launching, ' +
+      'or a port / HTTP health check.</p>';
     return html;
   }
 
@@ -390,6 +528,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'createGroup', name: input ? input.value : '' });
     }
     else if (action === 'delete-group') { post({ type: 'deleteGroup', groupId: el.dataset.groupId }); }
+    else if (action === 'remove-member') { post({ type: 'setGroupMember', groupId: el.dataset.groupId, projectId: el.dataset.projectId, member: false }); }
     else if (action === 'run-group') { post({ type: 'runGroup', groupId: el.dataset.groupId }); }
     else if (action === 'stop-group') { post({ type: 'stopGroup', groupId: el.dataset.groupId }); }
     else if (action === 'open-keybindings') { post({ type: 'openKeybindings', query: el.dataset.query || undefined }); }
@@ -415,10 +554,22 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'setStatusBarPref', key: 'selectedOnly', value: el.checked });
     } else if (el.classList.contains('group-rename')) {
       post({ type: 'renameGroup', groupId: el.dataset.groupId, name: el.value });
-    } else if (el.classList.contains('group-member')) {
-      post({ type: 'setGroupMember', groupId: el.dataset.groupId, projectId: el.dataset.projectId, member: el.checked });
+    } else if (el.id === 'add-member') {
+      if (el.value) post({ type: 'setGroupMember', groupId: el.dataset.groupId, projectId: el.value, member: true });
     } else if (el.classList.contains('group-stage')) {
       post({ type: 'setMemberStage', groupId: el.dataset.groupId, projectId: el.dataset.projectId, stage: Number(el.value) });
+    } else if (el.classList.contains('rd-kind')) {
+      // Switching type seeds sensible defaults so the inputs appear pre-filled and valid.
+      const box = el.closest('.readiness');
+      let readiness;
+      if (el.value === 'port') readiness = { kind: 'port', port: 3000, timeoutMs: 30000 };
+      else if (el.value === 'http') readiness = { kind: 'http', url: 'http://localhost:3000/health', timeoutMs: 30000 };
+      else readiness = undefined; // process start
+      post({ type: 'setMemberReadiness', groupId: box.dataset.groupId, projectId: box.dataset.projectId, readiness: readiness });
+    } else if (el.classList.contains('rd-port') || el.classList.contains('rd-url') ||
+               el.classList.contains('rd-status') || el.classList.contains('rd-timeout')) {
+      const box = el.closest('.readiness');
+      post({ type: 'setMemberReadiness', groupId: box.dataset.groupId, projectId: box.dataset.projectId, readiness: readReadiness(box) });
     } else if (el.dataset && el.dataset.action === 'set-option') {
       const id = el.dataset.optionId;
       const type = el.dataset.type;

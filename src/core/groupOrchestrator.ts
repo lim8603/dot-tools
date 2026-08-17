@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
 import { DevSwitcherError } from './errors';
+import { describeReadiness } from './readiness';
+import { waitForReadiness } from './readinessProbe';
 import { planGroupExecution, validateGroup } from './runGroupPlan';
 import { sequenceGroup, type MemberHandle } from './groupSequencer';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { InvocationConfig, LanguageAdapter, ProjectInfo, RunGroup, StartedTask } from './types';
+import type { InvocationConfig, LanguageAdapter, ProjectInfo, ReadinessProbe, RunGroup, StartedTask } from './types';
 
 /**
  * GroupOrchestrator — starts and stops run groups (TASK-037, C-6 / MS-013 / ADR-015).
@@ -177,13 +179,25 @@ export class GroupOrchestrator {
     this.running.set(groupId, tracked);
     this.onChange();
 
+    // Cancellation (MS-018 / ADR-018): the progress notification's cancel button aborts a
+    // (possibly long) readiness wait; the token drives an AbortSignal threaded into the
+    // sequencer and each member's readiness probe.
+    const controller = new AbortController();
     const outcome = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
         title: `DevSwitcher: starting run group "${group.name}"…`,
-        cancellable: false,
+        cancellable: true,
       },
-      () => sequenceGroup(plan.layers, (projectId) => this.startMember(projectId, groupId, tracked)),
+      (progress, token) => {
+        token.onCancellationRequested(() => controller.abort());
+        const report = (message: string): void => progress.report({ message });
+        return sequenceGroup(
+          plan.layers,
+          (projectId) => this.startMember(projectId, group, tracked, controller.signal, report),
+          controller.signal,
+        );
+      },
     );
 
     if (outcome.aborted) {
@@ -191,9 +205,18 @@ export class GroupOrchestrator {
       // (the terminated tasks' done handlers also prune, but be explicit for state).
       this.running.delete(groupId);
       this.onChange();
-      void vscode.window.showErrorMessage(
-        `DevSwitcher: run group "${group.name}" aborted — started members were stopped.`,
-      );
+      if (controller.signal.aborted) {
+        void vscode.window.showWarningMessage(
+          `DevSwitcher: run group "${group.name}" cancelled — started members were stopped.`,
+        );
+      } else {
+        // Name the member that failed/timed out its readiness gate, so the fix is obvious.
+        const failedName = outcome.failed ? this.registry.project(outcome.failed)?.name ?? outcome.failed : undefined;
+        const why = failedName ? ` — "${failedName}" did not become ready` : '';
+        void vscode.window.showErrorMessage(
+          `DevSwitcher: run group "${group.name}" aborted${why}; started members were stopped.`,
+        );
+      }
       return;
     }
 
@@ -231,9 +254,17 @@ export class GroupOrchestrator {
    * Start one member: resolve project + adapter, guard required chips, prepare + build
    * if needed, then start the long-lived run task. The started task is tracked (and
    * pruned when it exits) so the group can be torn down. A failure surfaces its reason
-   * and throws so sequenceGroup aborts + tears down.
+   * and throws so sequenceGroup aborts + tears down. When the member declares a readiness
+   * gate (MS-018 / ADR-018), its `ready` waits for the port/HTTP probe (honouring `signal`)
+   * before reporting ready, so dependents start only once the service actually responds.
    */
-  private async startMember(projectId: string, groupId: string, tracked: StartedTask[]): Promise<MemberHandle> {
+  private async startMember(
+    projectId: string,
+    group: RunGroup,
+    tracked: StartedTask[],
+    signal: AbortSignal,
+    report: (message: string) => void,
+  ): Promise<MemberHandle> {
     // Already running — an individual Run, or another group — so its per-project lock is
     // held elsewhere. Treat it as ready and don't start or track it: the dependency chain
     // proceeds and teardown won't stop a task this group didn't launch (skip semantics).
@@ -249,6 +280,10 @@ export class GroupOrchestrator {
       if (!adapter) {
         throw new DevSwitcherError('GROUP_MEMBER_NO_ADAPTER', `No adapter for ${project.name}.`);
       }
+      // Seed defaultable chips (e.g. node Script → 'start', profile → 'dev') the way
+      // activation does, so a member that was never the active project still runs; then
+      // block only on a required chip that has no default (genuinely ambiguous).
+      await this.seedMemberDefaults(project, adapter);
       await this.assertConfigured(project, adapter);
 
       const selection = this.store.getSelection(projectId);
@@ -271,14 +306,41 @@ export class GroupOrchestrator {
       const startedTask = await this.taskRunner.start(adapter.createRunTask(project, selection, config), projectId);
       tracked.push(startedTask);
       // Prune when the member exits on its own (crash / one-shot) so `running` reflects reality.
-      void startedTask.done.then(() => this.prune(groupId, tracked, startedTask));
+      void startedTask.done.then(() => this.prune(group.id, tracked, startedTask));
 
-      return { ready: startedTask.ready, terminate: () => startedTask.terminate() };
+      const readiness = group.members.find((m) => m.projectId === projectId)?.readiness;
+      return {
+        ready: this.gateReadiness(startedTask.ready, readiness, project.name, signal, report),
+        terminate: () => startedTask.terminate(),
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       void vscode.window.showErrorMessage(`DevSwitcher: ${message}`);
       throw error;
     }
+  }
+
+  /**
+   * Extend a member's process-spawn readiness with its optional port/HTTP probe (MS-018 /
+   * ADR-018). No probe → the spawn signal is the readiness. With a probe, once the process
+   * has spawned it waits for the port to open / HTTP status to match within the timeout;
+   * a timeout (or cancel via `signal`) resolves `started:false` so the group aborts + tears
+   * down. If the process never spawned (started:false) the probe is skipped.
+   */
+  private async gateReadiness(
+    spawn: Promise<{ started: boolean }>,
+    readiness: ReadinessProbe | undefined,
+    projectName: string,
+    signal: AbortSignal,
+    report: (message: string) => void,
+  ): Promise<{ started: boolean }> {
+    const spawned = await spawn;
+    if (!spawned.started || !readiness) {
+      return spawned;
+    }
+    report(`waiting for ${projectName} (${describeReadiness(readiness)})…`);
+    const { ready } = await waitForReadiness(readiness, signal);
+    return { started: ready };
   }
 
   /** Remove a finished member; when a group has no members left, drop it from `running`. */
@@ -291,6 +353,33 @@ export class GroupOrchestrator {
       this.running.delete(groupId);
     }
     this.onChange();
+  }
+
+  /**
+   * Seed a member's unset chips from their defaultValue before a group run, mirroring the
+   * orchestrator's applyDefaults for the activation path. A group member may never have been
+   * the active project, so without this its defaultable chips (node Script → 'start',
+   * profile → 'dev', a sole build target …) stay unset and assertConfigured would block a
+   * run that an individual Run would have seeded and allowed. Only genuinely-required chips
+   * with no default remain for assertConfigured to catch.
+   */
+  private async seedMemberDefaults(project: ProjectInfo, adapter: LanguageAdapter): Promise<void> {
+    for (const chip of adapter.chips) {
+      if (chip.appliesTo && !(await chip.appliesTo(project))) {
+        continue; // a chip this project doesn't show (e.g. profile under a CMake preset)
+      }
+      if (!chip.defaultValue || this.store.getValue(project.id, chip.id) !== undefined) {
+        continue;
+      }
+      try {
+        const value = await chip.defaultValue(project);
+        if (value !== undefined) {
+          await this.store.setValue(project.id, chip.id, value);
+        }
+      } catch {
+        // default unavailable (metadata/toolchain) — assertConfigured surfaces it if required
+      }
+    }
   }
 
   /** E4-style guard: a required (and applicable) chip must be set before a group run —

@@ -367,6 +367,17 @@ export interface LanguageAdapter {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * A member's readiness gate (MS-018 / ADR-018). When set, the member counts as "ready"
+ * for its dependents only after this probe passes within `timeoutMs` — not merely when its
+ * process spawned. Omitted `readiness` = process-spawn readiness (ADR-015 default, backward
+ * compatible). Adapter/UI stay language-agnostic: the UI edits this schema only; the probe
+ * runs in the pure orchestration layer (INV-2 / BR-003).
+ */
+export type ReadinessProbe =
+  | { kind: 'port'; port: number; timeoutMs: number } // ready when a TCP connect to 127.0.0.1:port succeeds
+  | { kind: 'http'; url: string; expectStatus?: number; timeoutMs: number }; // ready when GET url returns expectStatus (default 200)
+
+/**
  * One member of a run group — a detected project started as part of the group.
  * Members are `run` only (v1); a prior build is handled by the adapter's own
  * runRequiresBuild, not modelled here.
@@ -380,6 +391,12 @@ export interface RunGroupMember {
    * dangling reference, or a cycle is rejected by validateGroup (core/runGroupPlan.ts).
    */
   dependsOn: string[];
+  /**
+   * Optional readiness gate (MS-018 / ADR-018). Absent = ready on process spawn (ADR-015).
+   * Present = a dependent starts only after this port/HTTP probe passes within its timeout;
+   * a probe that times out aborts the group start (like a failed start).
+   */
+  readiness?: ReadinessProbe;
 }
 
 /** A named set of projects started together in dependency order (C-6, ADR-015). */

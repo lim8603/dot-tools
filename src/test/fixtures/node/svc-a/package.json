@@ -1,0 +1,10 @@
+{
+  "name": "svc-a",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DevSwitcher readiness test fixture (MS-018) — slow-booting HTTP service on port 7801",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}

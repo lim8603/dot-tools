@@ -16,4 +16,21 @@ describe('getSettingsHtml', () => {
     // new Function parses (but does not run) the body — it throws on a syntax error.
     assert.doesNotThrow(() => new Function(match![1]));
   });
+
+  it('renders the Project tab from projectCards (B-2 card view)', () => {
+    const html = getSettingsHtml(webview, 'TESTNONCE');
+    // The Project tab reads the enriched cards and renders toolchain glyphs — guard that
+    // the card renderer (not the old flat row list) survives future edits.
+    assert.match(html, /state\.projectCards/);
+    assert.match(html, /function renderProjects/);
+    assert.match(html, /class="card/);
+  });
+
+  it('renders the per-member readiness editor (MS-018)', () => {
+    const html = getSettingsHtml(webview, 'TESTNONCE');
+    // The Run Groups tab lets each member pick a readiness gate and posts setMemberReadiness.
+    assert.match(html, /function readinessEditor/);
+    assert.match(html, /setMemberReadiness/);
+    assert.match(html, /rd-kind/);
+  });
 });

@@ -1,0 +1,10 @@
+{
+  "name": "svc-b",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DevSwitcher readiness test fixture (MS-018) — downstream HTTP service on port 7802",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}

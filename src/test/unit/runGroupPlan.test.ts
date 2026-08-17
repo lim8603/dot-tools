@@ -5,6 +5,7 @@ import {
   validateGroup,
   withMember,
   withMemberDependencies,
+  withMemberReadiness,
   withMemberStage,
 } from '../../core/runGroupPlan';
 import type { RunGroup, RunGroupMember } from '../../core/types';
@@ -107,6 +108,57 @@ describe('validateGroup', () => {
     };
     const problems = validateGroup(dup);
     assert.ok(problems.some((p) => p.includes('Duplicate member')));
+  });
+
+  it('accepts a well-formed readiness gate (MS-018)', () => {
+    const g: RunGroup = {
+      id: 'group:r',
+      name: 'r',
+      members: [{ projectId: 'api', dependsOn: [], readiness: { kind: 'port', port: 8080, timeoutMs: 30000 } }],
+    };
+    assert.deepEqual(validateGroup(g), []);
+  });
+
+  it('flags a malformed readiness gate (MS-018)', () => {
+    const g: RunGroup = {
+      id: 'group:r',
+      name: 'r',
+      members: [{ projectId: 'api', dependsOn: [], readiness: { kind: 'port', port: 0, timeoutMs: 30000 } }],
+    };
+    assert.ok(validateGroup(g).some((p) => p.includes('readiness port')));
+  });
+});
+
+// ── withMemberReadiness (MS-018 readiness editor) ─────────────────────────────
+
+describe('withMemberReadiness', () => {
+  it('sets a member readiness gate', () => {
+    const next = withMemberReadiness(group({ a: [], b: [] }), 'b', { kind: 'port', port: 8080, timeoutMs: 30000 });
+    assert.deepEqual(next.members.find((m) => m.projectId === 'b')?.readiness, {
+      kind: 'port',
+      port: 8080,
+      timeoutMs: 30000,
+    });
+    // Other members are untouched and have no readiness.
+    assert.equal(next.members.find((m) => m.projectId === 'a')?.readiness, undefined);
+  });
+
+  it('clears a member readiness gate back to process-spawn readiness', () => {
+    const withGate = withMemberReadiness(group({ a: [] }), 'a', { kind: 'http', url: 'http://x.test', timeoutMs: 5000 });
+    const cleared = withMemberReadiness(withGate, 'a', undefined);
+    const a = cleared.members.find((m) => m.projectId === 'a');
+    assert.equal(a?.readiness, undefined);
+    assert.ok(!('readiness' in (a ?? {})), 'readiness field should be removed, not left undefined');
+  });
+
+  it('is a no-op for a non-member', () => {
+    const g = group({ a: [] });
+    assert.deepEqual(withMemberReadiness(g, 'ghost', { kind: 'port', port: 1, timeoutMs: 1 }).members, g.members);
+  });
+
+  it('preserves dependsOn when setting readiness', () => {
+    const next = withMemberReadiness(group({ a: [], b: ['a'] }), 'b', { kind: 'port', port: 9000, timeoutMs: 10000 });
+    assert.deepEqual(next.members.find((m) => m.projectId === 'b')?.dependsOn, ['a']);
   });
 });
 

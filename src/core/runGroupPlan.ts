@@ -1,4 +1,5 @@
-import type { RunGroup, RunGroupMember } from './types';
+import { readinessProblems } from './readiness';
+import type { ReadinessProbe, RunGroup, RunGroupMember } from './types';
 
 /**
  * runGroupPlan — pure (vscode-free) derivation of a run group's execution plan
@@ -106,6 +107,11 @@ export function validateGroup(group: RunGroup): string[] {
         problems.push(`${member.projectId} depends on ${dep}, which is not a member of the group.`);
       }
     }
+    // Readiness gate, if set, must be well-formed (MS-018 / ADR-018) or the run would
+    // hang / never become ready.
+    if (member.readiness) {
+      problems.push(...readinessProblems(member.projectId, member.readiness));
+    }
   }
 
   if (planGroupExecution(group).cycle) {
@@ -139,6 +145,28 @@ export function withMemberDependencies(group: RunGroup, projectId: string, depen
   const memberIds = new Set(group.members.map((m) => m.projectId));
   const cleaned = dependsOn.filter((d) => d !== projectId && memberIds.has(d));
   const members = group.members.map((m) => (m.projectId === projectId ? { ...m, dependsOn: cleaned } : m));
+  return { ...group, members };
+}
+
+/**
+ * Set (or clear) one member's readiness gate (MS-018 / ADR-018, pure). Passing `undefined`
+ * removes the field so the member falls back to process-spawn readiness. A no-op for a
+ * non-member. The stored probe is not validated here — validateGroup surfaces problems.
+ */
+export function withMemberReadiness(
+  group: RunGroup,
+  projectId: string,
+  readiness: ReadinessProbe | undefined,
+): RunGroup {
+  const members = group.members.map((member) => {
+    if (member.projectId !== projectId) {
+      return member;
+    }
+    // Rebuild without `readiness` so clearing falls back to process-spawn readiness.
+    return readiness === undefined
+      ? { projectId: member.projectId, dependsOn: member.dependsOn }
+      : { ...member, readiness };
+  });
   return { ...group, members };
 }
 
