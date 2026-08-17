@@ -44,6 +44,7 @@
 | NFR-001 | 성능(응답성) | 칩 클릭은 메타데이터 캐시로 즉시 반응 | `cargo metadata` 지연과 무관한 칩 응답 | 캐시 히트 시 체감 지연 없음 |
 | NFR-002 | 보안 | Webview는 외부 리소스 금지, 프로세스 인자는 셸 이스케이프 차단 | CSP `default-src 'none'`, `ProcessExecution`(배열 인자) | 외부 fetch 0, 셸 인젝션 불가 |
 | NFR-002a | 보안(예외) | 빌드 전/후 이벤트(F21)는 사용자 자유 명령이라 `ShellExecution` 허용 — NFR-002의 문서화된 예외 | 사용자 본인 워크스페이스 명령에 한정, 외부 입력 미주입 | 명시적 사용자 설정만 실행 |
+| NFR-002b | 보안(예외) | Node/TS(MS-016) build/run/debug는 패키지 매니저가 Windows에서 `.cmd` 심이라 **배열형 `ShellExecution`** 허용 — NFR-002의 문서화된 예외(ADR-016) | 인자를 배열로 개별 전달해 VSCode가 인용 → 셸 인젝션 차단(NFR-002 보안 목표 유지). raw 명령줄 문자열 금지 | 인젝션 불가(배열 인용). Node 24 셸-less `.cmd` spawn=EINVAL 실측 |
 | NFR-003 | 견고성 | 없는 도구가 있어도 확장이 죽지 않고 해당 기능만 비활성화 | Graceful Degradation(F19) | 툴체인 부재 시 경고 칩+복구 경로 |
 | NFR-004 | 이식성 | 로컬/원격(WSL·컨테이너·SSH) 무관하게 동작 | Uri 기반 경로, cargo가 산출물 경로 해석 | OS 경로 가정 0 |
 | NFR-005 | 확장성 | 새 언어 어댑터 추가 시 UI/오케스트레이터 코드 무변경 | 칩 배열 순회 구조(DD-03) | 어댑터 = 디스크립터+메서드 추가만 |
