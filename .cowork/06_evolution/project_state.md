@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-001~016 Done · **v0.6.0 배포** / **v1.0.0 로드맵 D-21** — MS-017~018 → MS-014; MS-019/020 INT-002) |
+| 현재 Phase | Build (MS-001~017 Done · **v0.7.0 배포** / **v1.0.0 로드맵 D-21** — MS-018 → MS-014; MS-019/020 INT-002) |
 | 활성 Intent | INT-001 (Approved — 등록 조건 C-7+C-6 충족. v1.0.0은 로드맵 D-21 완주 후 Human 선언, D-19) |
-| 활성 Milestone | **없음** — MS-016 Done·v0.6.0(6개 언어 완성). 다음: **MS-017 키보드 단축키(v0.7.0)** (v1.0.0 로드맵 D-21) |
-| 활성 Task | **없음** — 다음: **MS-017 착수 시 Task 분해**(구현방식 ADR). TASK-042(v1.0.0 완주 결정)는 로드맵(MS-018) 완료 후 |
+| 활성 Milestone | **없음** — MS-017 Done·v0.7.0(키보드 단축키). 다음: **MS-018 준비 감지(v0.8.0)** (v1.0.0 로드맵 마지막 기능) |
+| 활성 Task | **없음** — 다음: **MS-018 착수 시 Task 분해**(TASK-039 승격=포트/헬스체크). TASK-042(v1.0.0 완주 결정)는 MS-018 완료 후 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -27,7 +27,7 @@
 | 마지막 갱신일 | 2026-08-17 |
 | 마지막 갱신자 | AI |
 | 참조 세션 로그 | session_2026-08-17_013.md |
-| 최신 배포 | **v0.6.0** (`devswitcher-tools-0.6.0.vsix`, Node/TS·MS-016) — 다음 v0.7.0(단축키) |
+| 최신 배포 | **v0.7.0** (`devswitcher-tools-0.7.0.vsix`, 키보드 단축키·MS-017) — 다음 v0.8.0(준비 감지) |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -43,14 +43,14 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **MS-001~016 Done · v0.6.0 배포**(Node/TS 어댑터, 세션 #013 — **6개 언어 완성**). INT-001 등록 조건 C-7+C-6 충족. **v1.0.0 로드맵(D-21)**: MS-015 Go(v0.5.0 ✅) → MS-016 Node/TS(v0.6.0 ✅) → MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → MS-014 v1.0.0 최종점검+게시(Human 선언, D-19). **원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002**(D-22). **다음: MS-017(키보드 단축키) 착수**(구현방식 ADR). **C-3 폐기**(D-15).
+- **MS-001~017 Done · v0.7.0 배포**(키보드 단축키, 세션 #013). INT-001 등록 조건 C-7+C-6 충족. **v1.0.0 로드맵(D-21)**: MS-015 Go(v0.5.0 ✅) → MS-016 Node/TS(v0.6.0 ✅) → MS-017 단축키(v0.7.0 ✅) → **MS-018 준비감지(v0.8.0, 다음·마지막 기능)** → MS-014 v1.0.0 최종점검+게시(Human 선언, D-19). **원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002**(D-22). **다음: MS-018(준비 감지) 착수**(TASK-039 승격). **C-3 폐기**(D-15).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- **완료(세션 #013)**: **MS-016 Node/TS 어댑터 → v0.6.0 배포(6개 언어 완성).** TASK-046(감지 `package.json`·**script+packageManager 칩**·createProject·Doctor)·047(build/run·`assembleNodeArgs`·**배열형 ShellExecution**·`$tsc` 매처·옵션 NODE_ENV/OPTIONS/PATH)·048(js-debug `buildNodeDebugConfig`·`debugRequiresBuild:false`). **핵심 결정 ADR-016/NFR-002b**: npm/pnpm/yarn=`.cmd` 심 → 셸-less spawn 불가(Node 24 EINVAL 실측) → 배열형 ShellExecution(인자 인용으로 인젝션 차단). **F5 전부 통과**(`.vscode-test` 제외로 감지 정리·2칩·run/build·**js-debug 중단점 정지**). unit **231**·통합 3·`devswitcher-tools-0.6.0.vsix`(13파일 239.61KB) 스모크.
-- **완료(세션 #012)**: MS-015 Go 어댑터 → v0.5.0 배포(TASK-043~045, delve 디버그, unit 219, `v0.5.0` 태그 push). + TASK-042 v1.0.0 로드맵 확정(D-21). 상세는 아래 핸드오프 메모·state_archive.
-- **다음**: **MS-017 키보드 단축키(v0.7.0) 착수** — 설정 페이지 General 탭 기본 단축키+변경. 6개 언어 명령 세트 확정 후. **구현방식(네이티브 Keyboard Shortcuts 필터 vs 인페이지 캡처)은 착수 시 ADR**. 별도 트랙: TC-11(WSL, Deferred).
+- **완료(세션 #013)**: **MS-017 키보드 단축키 → v0.7.0 배포** + **MS-016 Node/TS → v0.6.0**(6개 언어 완성). MS-017: 정적 `contributes.keybindings`(Ctrl+Alt+B/R/S/D/P/G/,·`when:hasProjects`)·General 탭 딥링크(**ADR-017**: 런타임 재바인딩 API 부재→네이티브 편집기·내장키 불간섭)·F5 유래 **`devSwitcher.stop`**(태스크+디버그세션 종료)·**상태바 Stop 버튼**(실행 중일 때만·세션 Map 추적). **F5 전부 통과**. unit **235**·통합 16커맨드·`v0.7.0.vsix`(13파일 241.55KB) 스모크. MS-016 상세는 아래 핸드오프.
+- **완료(세션 #012)**: MS-015 Go 어댑터 → v0.5.0 배포(TASK-043~045, delve 디버그, unit 219). + TASK-042 v1.0.0 로드맵 확정(D-21). 상세는 핸드오프·state_archive.
+- **다음**: **MS-018 준비 감지(v0.8.0) 착수** — Run Group 준비 신호를 포트/헬스체크로(TASK-039 승격). v1.0.0 로드맵 **마지막 기능**. 이후 MS-014 v1.0.0 최종점검+Marketplace 게시. 별도 트랙: TC-11(WSL, Deferred). 백로그 B-2(Project 탭 강화)·B-3(언어별 enable).
 
 ---
 
@@ -59,11 +59,10 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| MS-017 | 키보드 단축키 설정 (v0.7.0) — 로드맵 3단계 | AI | Planned | 2026-08-17 | **다음 착수** — 착수 시 Task 분해. 설정 페이지 General 탭 기본 단축키+변경. **구현방식 착수 시 ADR**(네이티브 필터 vs 인페이지 캡처) |
-| TASK-039 | 준비 감지 (포트/헬스체크) | AI | Planned | 2026-08-17 | **MS-018(v0.8.0)로 승격**(D-21). 로드맵 순서상 단축키(MS-017) 후 |
+| TASK-039 | 준비 감지 (포트/헬스체크) — MS-018 | AI | Planned | 2026-08-17 | **다음 착수(MS-018, v0.8.0)** — Run Group 준비 신호를 프로세스 시작 → 포트 open/HTTP 200으로. 멤버별 준비 조건 UI. 착수 시 Task 분해. v1.0.0 로드맵 마지막 기능 |
 | TASK-042 | 추가 기능·논의 + v1.0.0 완주 결정 | Human | In Progress | 2026-08-17 | 추가 논의 완료 → 로드맵 D-21 확정. 잔여 = MS-018 후 **v1.0.0 완주 선언**(MS-014) |
 
-> **TASK-001~048 Done(039 제외)·MS-016 Node/TS 완료·v0.6.0 배포**(세션 #013, unit **231**, 6개 언어 완성). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → **MS-017 단축키(다음)** → MS-018 준비감지 → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). Node Task(046~048) 상세는 session #013, Go(043~045)는 #012. C-3 폐기(D-15). TC-11(WSL) Deferred.
+> **TASK-001~050 Done(039 제외)·MS-017 키보드 단축키 완료·v0.7.0 배포**(세션 #013, unit **235**, 통합 16커맨드). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → MS-017 단축키(✅ v0.7.0) → **MS-018 준비감지(TASK-039, 다음)** → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). MS-017 상세(단축키·stop·Stop버튼)는 session #013. C-3 폐기(D-15). TC-11(WSL) Deferred. 백로그 B-2·B-3.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -73,8 +72,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-017 — 키보드 단축키 설정 (v0.7.0) 착수**: 착수 시 Task 분해 — 설정 페이지 General 탭에 기본 단축키 제공 + 변경 가능. 6개 언어 명령 세트 확정 후. **구현방식(네이티브 Keyboard Shortcuts 필터 vs 인페이지 캡처)은 착수 시 ADR 채번.** ※ v0.6.0(Node/TS)은 main 병합·태그·push 완료.
-2. 이후 로드맵 순차: MS-018 준비감지(v0.8.0, TASK-039 승격) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**(Human 완주 선언). 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002. 별도 트랙: TC-11(WSL, Deferred, GAP-001).
+1. **MS-018 — Run Group 준비 감지 (v0.8.0) 착수**: 착수 시 Task 분해(TASK-039 승격) — 준비 신호를 프로세스 시작 → **포트 open/HTTP 200**으로. 멤버별 준비 조건(포트·URL·타임아웃) 설정 UI. v1.0.0 로드맵 **마지막 기능**. 구현방식 착수 시 ADR. ※ v0.7.0(단축키)은 main 병합·태그·push 완료.
+2. 이후: **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**(Human 완주 선언, D-19). 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002. 별도 트랙: TC-11(WSL, Deferred). 백로그: B-2(Project 탭 강화)·B-3(언어별 enable) — MS-014 폴리시 후보.
 
 ---
 
@@ -114,6 +113,7 @@
 > 다음 세션이 바로 이어받는 데 필요한 핵심만 2~5줄로 남긴다.
 
 - DevSwitcher Tools = 다언어(Rust·C++·C#·Python·Go·Node/TS) 통합 상태바 UX VSCode 확장. 핵심 설계는 `LanguageAdapter` + `ChipDescriptor[]`(ADR-003), SSOT 파사드(ADR-007), workspaceState 저장(ADR-001), Task API 실행(ADR-002), cargo가 실행 경로 해석(ADR-005).
+- **세션 #013 (계속) — MS-017 키보드 단축키 완주·v0.7.0 배포**: 정적 `contributes.keybindings`(Build/Run/Stop/Debug/Switch/Groups/Settings=Ctrl+Alt+B/R/S/D/P/G/,·mac 변형·`when:devSwitcher.hasProjects`)·orchestrator `refresh` setContext·General 탭 "Keyboard shortcuts"(확장 packageJSON을 SSOT로 `buildShortcutList` 나열 + `openGlobalKeybindings` 딥링크 + 행별 Edit + 리맵 안내). **ADR-017**: VSCode 런타임 키바인딩 API 부재→정적+네이티브 편집기, 내장키(F5/Ctrl+Shift+B) 불간섭·리맵 안내만(Human). **F5 유래 추가**: ① **`devSwitcher.stop`**(Ctrl+Alt+S)=활성 프로젝트 태스크(`devSwitcher.*` taskDef+projectId 매칭 terminate)+**디버그 세션** 종료·user-stop은 실패토스트 억제 ② **Run Groups**=Ctrl+Alt+G ③ **상태바 Stop 버튼**(`$(debug-stop)`·Run 뒤·실행 중일 때만). **버그 fix**: `onDidTerminateDebugSession`에서 `activeDebugSession`이 stale→Stop 버튼 잔존 → 디버그 세션을 Map(`session.id→project`)으로 명시 추적(start/end 이벤트, extension.ts). F5 전부 통과(단축키·stop[run+디버그]·상태바 버튼 토글). unit **235**·통합 **16커맨드**·`v0.7.0.vsix`(13파일 241.55KB) 스모크. **main FF 병합·`v0.7.0` 태그·origin push·브랜치 삭제 완료.** 다음=MS-018 준비 감지(v0.8.0). 백로그 B-2(Project 탭)·B-3(언어별 enable).
 - **세션 #013 — MS-016 Node/TS 어댑터 완주·v0.6.0 배포(6개 언어 완성)**: `nodeBridge`(순수 `parseScripts`·`nodeProjectName`·`packageManagerFromLockfile` + I/O `checkToolchain`·DI·vscode-free)·`nodeAdapter`·`nodeTemplate`(F20). 감지(`package.json`·`.vscode-test`/node_modules 제외)·**script 칩**(npm scripts·start/dev/serve 기본)·**packageManager 칩**(npm/pnpm/yarn·lockfile 자동감지)·`<pm> run <script>`/`<pm> run build`·**js-debug 디버그**(`buildNodeDebugConfig`·`runtimeExecutable:<pm>`·확장 불요)·Doctor(node). **ADR-016/NFR-002b**(핵심): 구현 중 Node 24가 셸 없이 `npm.cmd` spawn을 `EINVAL`로 거부함을 실측 → **배열형 `ShellExecution`**(인자 인용=인젝션 차단, NFR-002 목표 유지). 나머지 5언어는 ProcessExecution 유지. **코어 신규 `ActionCapabilities.debugRequiresBuild`**(Node=false: 디버그 전 강제 build 스킵·npm prestart/prebuild가 처리·build 스크립트 없는 JS도 디버그 가능; 기본=build-first로 5언어 보존). **F5 유래 fix**: `**/package.json`이 `.vscode-test`(통합테스트 VSCode 다운로드·내장확장·`node_modules.asar`) 수백 개를 잡아 스위처 범람 → 공유 `EXCLUDE_GLOB`에 `.vscode-test` 추가(스캔 제외·속도↑). **F5 전부 통과**(감지 정리·2칩·`npm run start`·js-debug 중단점 index.js:2 정지·확장 프롬프트 없음). unit **231**·통합 3·실 node24 셸 스모크·`devswitcher-tools-0.6.0.vsix`(13파일 239.61KB) 스모크. 커밋 7개(046 feat/docs·047 feat/docs·048 feat/docs·`.vscode-test` fix). **main FF 병합·`v0.6.0` 태그·origin push·브랜치 삭제 완료.** 다음=MS-017 키보드 단축키(v0.7.0).
 - 상세설계서 §16 로드맵 M0~M6이 사실상의 Milestone 후보. v1 실구현 대상은 CargoAdapter(Rust) 단독.
 - **세션 #002~#005 완료 서사**: [state_archive.md](state_archive.md) `#002~#005 이관분` 참조 (R1 다이어트, 세션 #008 마무리 이관). 요지: ADR-011·012(오버레이·설정페이지) → MS-001~006(스캐폴드·types·CargoBridge/Adapter·상태바/저장/감시·실행/디버그·설정페이지+export/import) → MS-007(Doctor·E1칩·rustup·pre/postBuild·통합테스트) 전부 Done·병합.
@@ -183,6 +183,7 @@
 | D-21 | **v1.0.0 완주 로드맵 확정 + 재스케줄** — TASK-042 추가 기능·논의 결과. **v1.0.0 = 4개 MINOR**: MS-015 Go(v0.5.0) → MS-016 Node/TS(v0.6.0, 6개 언어 완성) → MS-017 키보드 단축키(v0.7.0, General 탭 기본+변경) → MS-018 준비감지(v0.8.0, TASK-039 승격) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**. **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0로 재스케줄**(v1.1.0/v1.2.0 후보; 설계서 §16 원래 "v2+ 백로그" 위치로 복귀). 중간 릴리즈(0.5~0.8)는 vsix+태그만·게시는 v1.0.0에서만. 원격/크로스·단축키 구현방식은 착수 시 ADR. D-19 연장 | `milestone_registry.md`, `task_registry.md`, 세션 #012 | 2026-08-17 |
 | ADR-015 | **Run Group 실행 모델** — 준비 신호=**프로세스 시작**(`onDidStartTaskProcess`, 종료 아님)·**Run 전용**·**계층적 위상정렬**(병렬/순차)·teardown=`TaskExecution.terminate`·저장=`workspaceState.groups`(ADR-001·additive). 헬스체크(TASK-039)는 후속 마이너 분리. TaskRunner 프로젝트별 락 재사용 | `adrs/ADR-015_Run_Group_실행_모델.md` | 2026-08-17 |
 | ADR-016 | **Node 스크립트=배열형 ShellExecution**(NFR-002b 예외) — npm/pnpm/yarn=Windows `.cmd` 심 → 셸-less spawn 불가(**Node 24 EINVAL 실측**, CVE-2024-27980). 배열형 ShellExecution은 인자 개별 인용으로 셸 인젝션 차단(NFR-002 보안 목표 유지). 나머지 5언어는 ProcessExecution 유지. `debugRequiresBuild:false`(Node)로 디버그 전 강제 build 스킵(npm prestart/prebuild가 처리) | `adrs/ADR-016_Node_스크립트_ShellExecution_배열형_실행.md`, NFR-002b | 2026-08-17 |
+| ADR-017 | **키보드 단축키=정적 기본값+네이티브 편집기 딥링크** — VSCode 런타임 키바인딩 등록 API 부재 → 정적 `contributes.keybindings`(Ctrl+Alt+글자·`when:hasProjects`) + General 탭에서 `openGlobalKeybindings` 딥링크(확장 필터). 인페이지 재바인딩/keybindings.json 편집 비채택(취약·ADR-013 반함). **내장 키(F5/Ctrl+Shift+B) 불간섭 + 리맵 안내만**(Human) | `adrs/ADR-017_키보드_단축키_정적_기본값_네이티브_편집기.md` | 2026-08-17 |
 | D-15 | **C-3 폐기(Won't Do)** — 오버레이를 캐노니컬 파일에 영구 편집/승격하는 기능을 v2 백로그에서 제거. 근거: ①ADR-011 근간이 "파일 무편집" ②영속화·공유는 프로파일 export/import(F12)가 이미 해결 ③TOML 손상·머지충돌 리스크. 후속: `LanguageAdapter.persistSetting` 계약 제거(TASK-026). "파일 무편집 = 영구 불변식"을 ADR-013으로 기록. **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정, 완주 로드맵 MS-009~013 착수 | `ADR-013`, `milestone_registry.md` | 2026-08-16 |
 
 ---
@@ -255,13 +256,14 @@
 | Milestone | MS-014 | v1.0.0 완주 — 최종 점검 + 게시 | Planned | **로드맵 최종(D-21)**. 통합 테스트 보강 + Marketplace 게시 + GitHub Release → v1.0.0 완주 선언(Human, D-19). 실행 순서상 MS-015~018 이후 |
 | Milestone | MS-015 | Go 어댑터 (v0.5.0) | Done | **완료·v0.5.0 배포**(세션 #012). 감지·target 칩·build/run·delve 디버그·Doctor·F20. F5 통과·unit 219 |
 | Milestone | MS-016 | Node/TS 어댑터 (v0.6.0) | Done | **완료·v0.6.0 배포**(세션 #013). 감지·script+packageManager 칩·`<pm> run`/build(배열형 ShellExecution·ADR-016)·js-debug 디버그·Doctor. F5 통과·unit 231. **6개 언어 완성** |
-| Milestone | MS-017 | 키보드 단축키 설정 (v0.7.0) | Planned | D-21 3단계. General 탭 기본 단축키+변경. 구현방식 착수 시 ADR |
+| Milestone | MS-017 | 키보드 단축키 설정 (v0.7.0) | Done | **완료·v0.7.0 배포**(세션 #013). ADR-017(정적 키바인딩+네이티브 딥링크·내장키 불간섭). Ctrl+Alt+B/R/S/D/P/G/,·General 탭 목록·`devSwitcher.stop`(태스크+디버그세션)·상태바 Stop 버튼. F5 통과·unit 235 |
 | Milestone | MS-018 | Run Group 준비 감지 (v0.8.0) | Planned | D-21 4단계(v1.0.0 마지막 기능). TASK-039 승격(포트/헬스체크) |
 | Milestone | MS-019 | 원격 디버그 타깃 (INT-002) | Deferred | **INT-002 소속(D-22)·v1.0.0 이후** — v1.1.0 후보. 로컬 빌드+원격 실행/어태치. 착수 시 ADR |
 | Milestone | MS-020 | 크로스 컴파일 (도커) (INT-002) | Deferred | **INT-002 소속(D-22)·v1.0.0 이후** — v1.2.0 후보. 아키텍처 칩 확장·도커 타깃 빌드. 착수 시 ADR |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
 | Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Superseded | F20 마법사 + features/untrusted 수정 |
-| Release | v0.6.0 | `devswitcher-tools-0.6.0.vsix` | Done | **Node/TS 어댑터(MS-016)** — 감지·script+packageManager 칩·`<pm> run`/build(배열형 ShellExecution)·js-debug 디버그·Doctor·F20 생성. 13파일 239.61KB. 설치 스모크 통과(`@0.6.0`). F5 통과·unit 231. main FF·`v0.6.0` 태그·origin push·브랜치 삭제 |
+| Release | v0.7.0 | `devswitcher-tools-0.7.0.vsix` | Done | **키보드 단축키(MS-017)** — Ctrl+Alt+B/R/S/D/P/G/, 기본 키·General 탭 딥링크·`devSwitcher.stop`(태스크+디버그세션)·상태바 Stop 버튼. 13파일 241.55KB. 설치 스모크(`@0.7.0`). F5 통과·unit 235·통합 16커맨드. main FF·`v0.7.0` 태그·origin push·브랜치 삭제 |
+| Release | v0.6.0 | `devswitcher-tools-0.6.0.vsix` | Superseded | **Node/TS 어댑터(MS-016)** — script+packageManager 칩·배열형 ShellExecution·js-debug. 13파일 239.61KB. main FF·`v0.6.0` 태그·push |
 | Release | v0.5.0 | `devswitcher-tools-0.5.0.vsix` | Superseded | **Go 어댑터(MS-015)** — target 칩·`go build`/`go run`·delve 디버그. 13파일 237.64KB. main FF·`v0.5.0` 태그·push |
 | Release | v0.4.0 | `devswitcher-tools-0.4.0.vsix` | Superseded | **Run Group(C-6)** — 계층 기동·스테이지 순서·병렬·skip·상태바 통합 메뉴 + 설정 페이지 공백 버그 fix. 13파일 235.6KB. 설치 스모크 통과(`@0.4.0`). main FF·`v0.4.0` 태그·origin push |
 | Release | v0.3.0 | `devswitcher-tools-0.3.0.vsix` | Superseded | **C-7 3언어 실구현 번들**(C#/Python/C++·CMake presets·Rescan·다언어 activation·아이콘). **README 전면 영문 재작성** + 실사용 상태바 이미지(hero + 언어별 4). 13파일 230KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.3.0`) |
