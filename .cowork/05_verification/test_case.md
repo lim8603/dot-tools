@@ -24,7 +24,7 @@
 | TC | 항목 | 기대 결과 | 결과 | 실행일 |
 | --- | --- | --- | --- | --- |
 | TC-A1 | 확장 활성화 | `lim8603.devswitcher-tools` present + activate | ✅ Pass | 2026-08-16 |
-| TC-A2 | 커맨드 기여 | 11개 커맨드(switchProject·pickChip·build·run·debug·openSettings·export/importProfile·doctor·toggleCompact·**newProject**) 등록 | ✅ Pass | 2026-08-16 |
+| TC-A2 | 커맨드 기여 | **15개 커맨드**(switchProject·pickChip·build·run·debug·openSettings·export/importProfile·doctor·rescan·newProject·toggleCompact·**groups·runGroup·stopGroup**) 등록 | ✅ Pass | 2026-08-17 |
 | TC-A3 | 설정 페이지 오픈 | `devSwitcher.openSettings` 예외 없이 실행 | ✅ Pass | 2026-08-16 |
 
 > 단위 테스트(mocha 98, `out/test/unit`)는 순수 코어 전담 — `test_strategy.md` §1 참조.
@@ -54,14 +54,17 @@
 | TC-15 | New Project → C# → `dotnet new console -o` → `<name>/<name>.csproj`+Program.cs 생성 (도구 부재 시 Doctor) | Manual | ✅ Pass | TASK-023 F5 (dotnet SDK 존재, restore까지) |
 | TC-16 | New Project → C++ → **workspace.fs** 작성 `<name>/CMakeLists.txt`+`main.cpp`(툴체인 불필요, `<iostream>` 온전) (F20, D-13) | Manual | ✅ Pass | TASK-023 F5 (생성 파일 내용 검증) |
 | TC-17 | New Project → Python → **workspace.fs** 작성 `<name>/pyproject.toml`+`main.py` (F20, D-13) | Manual | ✅ Pass | TASK-023 F5 (생성 파일 내용 검증) |
+| TC-18 | 설정 → **Run Groups 탭** → 그룹 생성·멤버 체크·멤버별 **Stage** 지정 → workspaceState 저장·재오픈 유지 (C-6, TASK-038) | Manual | ✅ Pass | 세션 #011 F5 (6멤버, Stage 1~5 지정·같은 Stage 병렬) |
+| TC-19 | 그룹 Run → **Stage 순서대로 계층 기동**(프로세스 시작 시점 전진), 같은 Stage 병렬. 이미 실행 중 멤버는 **skip** (C-6, ADR-015/D-20) | Manual | ✅ Pass | 세션 #011 F5 (preset-demo→test-python 순차 실행 확인) |
+| TC-20 | 상태바 `$(run-all)` 런처(아이콘, Run 뒤) → 통합 메뉴 Run/Stop/**Stop all** (C-6, TASK-038/D-20) | Manual | ✅ Pass | 세션 #011 F5 (아이콘·위치·메뉴 확인) |
 
-> TC-15~17은 v1 scope A로 스위처엔 미등장(생성만) — 정상. 이름 검증(validateProjectName)·템플릿 순수함수는 단위 테스트(mocha 98) 커버.
+> TC-15~17은 v1 scope A로 스위처엔 미등장(생성만) — 정상. 이름 검증·템플릿·**Run Group 계획/검증/스테이지·시퀀서**는 단위 테스트(mocha **203**) 커버. Run Group 준비 감지(포트/헬스체크)는 후속 마이너.
 
-**요약**: Auto 3/3 Pass · Manual **14 Pass** · 2 Partial(TC-06·TC-10) · 1 Deferred(TC-11 WSL).
-세션 #006 수동검증에서 TC-02·03·09 Pass 처리, 그 과정에서 features 칩 버그(e7b462b)·untrusted 무한스피너 버그(eb8983a) 발견·수정. TC-11(WSL/F18)은 WSL 내부 재클론 후 별도 진행.
+**요약**: Auto 3/3 Pass · Manual **17 Pass** · 2 Partial(TC-06·TC-10) · 1 Deferred(TC-11 WSL).
+세션 #011 추가: TC-18~20(Run Group 정의·계층 기동·skip·상태바 통합 메뉴) Pass. 그 과정에서 설정 페이지 공백 버그(webview 스크립트 아포스트로피, 세션 #010 유입) 발견·수정 + 회귀 가드 단위 테스트 추가. TC-11(WSL/F18)은 WSL 내부 재클론 후 별도 진행.
 
 ---
 
 ## 3. 분할 승격 판단
 
-- 실질 케이스 20개(A1~A3 + 01~17)로 12개 초과 — 다만 대부분 §15.2 원본 1:1 매핑 + F20(14~17)이라 **현 단일 문서 유지**가 추적에 유리. Milestone별 반복 참조가 생기면 `test_cases/` 승격 검토(§분할 기준).
+- 실질 케이스 23개(A1~A3 + 01~20)로 12개 초과 — 다만 대부분 §15.2 원본 1:1 매핑 + F20(14~17) + Run Group(18~20)이라 **현 단일 문서 유지**가 추적에 유리. Milestone별 반복 참조가 생기면 `test_cases/` 승격 검토(§분할 기준).
