@@ -52,7 +52,7 @@
 
 | EV ID | 유형 | 검증 대상 / 범위 | 판정 | 관련 Gate | 원본 근거 위치 | 마지막 갱신일 | 비고 |
 |-------|------|------------------|------|-----------|----------------|--------------|------|
-| EV-001 | Unit | 순수 코어 **219 케이스**(파서·reconcile·오버레이·export·진단·argsLine·이름검증·템플릿·Run Group 계획/검증/스테이지·시퀀서·webview 스크립트 문법 가드·**Go 브리지: 모듈/main 파서·빌드 플래그·assembleGoArgs·delve config**) | Pass | Gate 4 | `out/test/unit`, `npm run test:unit` | 2026-08-17 | CI 가능. 세션 #012 +Go(+16) |
+| EV-001 | Unit | 순수 코어 **231 케이스**(파서·reconcile·오버레이·export·진단·argsLine·이름검증·템플릿·Run Group 계획/검증/스테이지·시퀀서·webview 스크립트 문법 가드·Go 브리지·**Node 브리지: parseScripts·nodeProjectName·packageManager·assembleNodeArgs·buildNodeDebugConfig·nodeProjectFiles**) | Pass | Gate 4 | `out/test/unit`, `npm run test:unit` | 2026-08-17 | CI 가능. 세션 #013 +Node(+12) |
 | EV-002 | Integration | 확장 활성화·**15 커맨드**(+newProject·+rescan·+groups/runGroup/stopGroup)·설정 페이지 오픈. 퍼블리셔 `lim8603` | Pass | Gate 4 | `src/test/integration/extension.test.ts`, `npm run test:integration` (3 passing) | 2026-08-17 | VSCode 호스트 실행. 세션 #011 Run Group 커맨드 추가 |
 | EV-003 | E2E(Manual) | TC-01·04·05·07·08·12·13 (칩·빌드·디버그·watcher·export/import·target add·Doctor) | Pass | Gate 4 | 세션 로그 #004·#005 F5 | 2026-08-15 | 7 케이스 |
 | EV-004 | E2E(Manual) | TC-06(디버그×오버레이)·TC-10(E1 칩) | Partial | Gate 4 | 세션 #005 | 2026-08-15 | 코어 검증됨, 결합 재확인 권장 |
@@ -64,6 +64,8 @@
 | EV-011 | E2E(Manual) | **Go 어댑터(MS-015, v0.5.0)** — TC-21: 감지(`go.mod`)·target 칩(main 패키지 자동선택)·`go build`/`go run`·delve 디버그(중단점)·Doctor 슬라이스(go 미설치 ❌+E1 → 설치 후 ✓) | Pass | Gate 4 | 세션 #012 F5 (`dlv.exe` 자동설치·중단점 정지) + 실 go1.26.6 스모크(go list/build/run) | 2026-08-17 | TASK-043·044·045 |
 | EV-012 | Packaging/Release | **v0.5.0** `devswitcher-tools-0.5.0.vsix`(13파일 237.64KB, prod 107.3kb) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.5.0` 인식) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir) | 2026-08-17 | TASK-045. Go(MS-015) 번들 |
 | EV-009 | E2E(Manual) + Unit | **Run Group(C-6, MS-013)** — TC-18~20: 설정 Run Groups 탭 그룹 정의·멤버별 Stage(같은 Stage 병렬)·Stage 순서 계층 기동(프로세스 시작 시점 전진)·이미 실행 중 skip·상태바 통합 메뉴(Run/Stop/Stop all). 순수 계획/검증/스테이지/시퀀서 단위 커버 | Pass | Gate 4 | 세션 #011 F5 (6멤버·Stage 1~5, preset-demo→test-python 순차) + `runGroupPlan.test.ts`·`groupSequencer.test.ts` | 2026-08-17 | ADR-015·D-20. 준비 감지(포트/헬스체크)=후속 마이너(TASK-039) |
+| EV-013 | E2E(Manual) + Unit | **Node/TS 어댑터(MS-016, v0.6.0)** — TC-22: 감지(`package.json`)·script 칩(npm scripts)·packageManager 칩(lockfile 자동감지)·`<pm> run <script>`/`build`(배열형 ShellExecution·`$tsc`)·js-debug 디버그(중단점·확장 불요)·Doctor(node). 순수 파서/인자/디버그config 단위 커버 | ⏳ Pending F5 | Gate 4 | 실 node 24 셸 스모크(start·runArgs `--`·build·NODE_OPTIONS) + `nodeBridge.test.ts` | 2026-08-17 | TASK-046·047·048. ADR-016(ShellExecution 배열형). 통합 F5 대기 |
+| EV-014 | Packaging/Release | **v0.6.0** `devswitcher-tools-0.6.0.vsix`(13파일 239.6KB, prod 113.07kb) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.6.0` 인식) + 통합 3 passing(활성화·15 커맨드) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir), `npm run test:integration` | 2026-08-17 | TASK-048. Node/TS(MS-016) 번들. **main 병합·태그·push는 F5 통과 후** |
 
 ---
 

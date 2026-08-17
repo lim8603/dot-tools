@@ -4,11 +4,11 @@
 
 # DevSwitcher Tools
 
-**Switch, build, run, and debug Rust, C#, Python, C++, and Go projects from a single status bar — each through its own native toolchain, without editing a single build file.**
+**Switch, build, run, and debug Rust, C#, Python, C++, Go, and Node.js/TypeScript projects from a single status bar — each through its own native toolchain, without editing a single build file.**
 
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.90%2B-007ACC?logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
-![Languages](https://img.shields.io/badge/Rust%20%C2%B7%20C%23%20%C2%B7%20Python%20%C2%B7%20C%2B%2B%20%C2%B7%20Go-supported-success)
+![Languages](https://img.shields.io/badge/Rust%20%C2%B7%20C%23%20%C2%B7%20Python%20%C2%B7%20C%2B%2B%20%C2%B7%20Go%20%C2%B7%20Node-supported-success)
 
 </div>
 
@@ -17,23 +17,24 @@
 DevSwitcher Tools turns the VS Code status bar into a project cockpit. Pick the active
 project, build profile, target, and other options as **chips**; then **Build**, **Run**, or
 **Debug** with a click. It's the same workflow whether the project is Cargo, .NET, Python,
-CMake, or Go — under the hood the extension drives each toolchain's own CLI and resolves paths
-from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`, `pyproject.toml`,
-and `go.mod` are never touched.**
+CMake, Go, or Node — under the hood the extension drives each toolchain's own CLI and resolves
+paths from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`,
+`pyproject.toml`, `go.mod`, and `package.json` are never touched.**
 
 ---
 
 ## Features
 
-- **Five languages, one UX.** Rust (Cargo), C# (.NET), Python, C++ (CMake), and Go all appear
-  in the same switcher. Adding a language is an adapter — the UI never learns which language
-  it's showing.
+- **Six languages, one UX.** Rust (Cargo), C# (.NET), Python, C++ (CMake), Go, and
+  Node.js/TypeScript all appear in the same switcher. Adding a language is an adapter — the UI
+  never learns which language it's showing.
 - **Chips instead of commands.** The active project and its build options (profile, target,
-  architecture, features, interpreter, CMake preset…) are status-bar chips you click to
-  change — no memorizing per-toolchain flags.
+  architecture, features, interpreter, CMake preset, npm script, package manager…) are
+  status-bar chips you click to change — no memorizing per-toolchain flags.
 - **Build / Run / Debug buttons.** One click each. Debug auto-selects the right debugger for
   the toolchain (e.g. CodeLLDB for Rust, `cppvsdbg`/`gdb`/`lldb` for CMake by compiler, coreclr
-  for .NET, debugpy for Python, delve for Go) and installs the needed extension on demand.
+  for .NET, debugpy for Python, delve for Go, the built-in js-debug for Node/TypeScript) and
+  installs the needed extension on demand.
 - **Per-config settings, zero file edits.** A settings page lets you set compiler flags,
   linker flags, output dirs, environment variables, and pre/post-build commands. They're
   stored per _(project × profile)_ and injected at invocation time (`--config`, `-p:`, `-D`,
@@ -49,8 +50,8 @@ and `go.mod` are never touched.**
   one command.
 - **Profiles export / import.** Share your chip selections and per-config overlays as a
   portable `devswitcher.profile.json`.
-- **New Project wizard.** `DevSwitcher: New Project…` scaffolds a starter project in any of
-  the four languages (folder → language → name).
+- **New Project wizard.** `DevSwitcher: New Project…` scaffolds a starter project in any
+  supported language (folder → language → name).
 
 ## Supported languages
 
@@ -61,9 +62,13 @@ and `go.mod` are never touched.**
 | **Python** | `pyproject.toml` | — | ✅ | ✅ | Python interpreter · Python extension (debugpy) |
 | **C++ (CMake)** | `CMakeLists.txt` | ✅ | ✅ | ✅ | `cmake` + a C++ compiler · C/C++ (auto) or CodeLLDB |
 | **Go** | `go.mod` | ✅ | ✅ | ✅ | Go toolchain · Go extension (delve) |
+| **Node.js / TypeScript** | `package.json` | ✅ | ✅ | ✅ | Node.js · built-in js-debug (no extension) |
 
-Python has no build step — it runs the interpreter directly. Debug extensions are prompted
-for on demand the first time you debug; you only need the toolchains for languages you use.
+Python has no build step — it runs the interpreter directly. Node.js runs your **npm scripts**
+(`<pm> run <script>`), so its debugger and build step come from the scripts themselves — and
+its debugger (js-debug) ships with VS Code, so no extension install is needed. Debug extensions
+are prompted for on demand the first time you debug; you only need the toolchains for languages
+you use.
 
 <details>
 <summary><b>See each language's status bar</b></summary>
@@ -88,6 +93,10 @@ for on demand the first time you debug; you only need the toolchains for languag
 
 **Go** — project · package (the module's `main` package to build, run, or debug)
 
+<br>
+
+**Node.js / TypeScript** — project · script (the npm script to run/debug) · package manager (npm/pnpm/yarn, auto-detected)
+
 </details>
 
 ## Requirements
@@ -95,7 +104,8 @@ for on demand the first time you debug; you only need the toolchains for languag
 - **VS Code 1.90+**
 - Per language, on your `PATH`: **Rust** → `rustup`/`cargo`; **C#** → the .NET SDK;
   **Python** → a Python interpreter; **C++** → `cmake` plus a compiler (MSVC, GCC, or Clang);
-  **Go** → the Go toolchain (`go`).
+  **Go** → the Go toolchain (`go`); **Node.js/TypeScript** → Node.js (and your package manager:
+  npm, pnpm, or yarn).
 
 Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's missing.
 
@@ -104,7 +114,7 @@ Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's miss
 This extension is distributed as a `.vsix`:
 
 ```bash
-code --install-extension devswitcher-tools-0.5.0.vsix
+code --install-extension devswitcher-tools-0.6.0.vsix
 ```
 
 Or in VS Code: **Extensions** view → `⋯` menu → **Install from VSIX…** → pick the file.

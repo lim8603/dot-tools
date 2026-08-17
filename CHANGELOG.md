@@ -3,6 +3,21 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.6.0] - 2026-08-17
+
+### Added
+
+- **Node.js / TypeScript is now supported** — `package.json` projects join the switcher with
+  build, run, and debug (the sixth language). The **Script** chip lists the project's npm
+  `scripts` (the run target; `start`/`dev`/`serve` preferred by default), and the **Package
+  Manager** chip auto-detects npm / pnpm / yarn from the lockfile and lets you override it.
+  **Run** executes `<pm> run <script>` and **Build** runs `<pm> run build`; run args are
+  forwarded after `--`. **Debug** launches the selected script under VS Code's built-in
+  **js-debug** — no extension to install. Compile options live in your `tsconfig.json` (never
+  edited); `NODE_ENV`, `NODE_OPTIONS`, and `NODE_PATH` are settings-page options injected as
+  env. `DevSwitcher: New Project…` scaffolds a Node project (`package.json` + `index.js`). The
+  extension never edits your `package.json`.
+
 ## [0.5.0] - 2026-08-17
 
 ### Added
