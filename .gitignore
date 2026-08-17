@@ -30,6 +30,10 @@ src/test/fixtures/**/*.pyc
 # ─── CMake test-fixture build output ───
 src/test/fixtures/**/build/
 
+# ─── Go test-fixture build output (go build drops the binary in the module dir) ───
+src/test/fixtures/go/**/*.exe
+src/test/fixtures/go/hello/hello
+
 # ─── Member personal session logs ───
 .cowork/members/*/workspace/session_logs/*.md
 !.cowork/members/*/workspace/session_logs/.gitkeep
