@@ -179,6 +179,24 @@
             "column": 3
           }
         ]
+      },
+      {
+        "name": "devswitcher-go",
+        "owner": "go",
+        "source": "go",
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^(.+?):(\\d+):(\\d+): (.+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        ]
       }
     ],
     "taskDefinitions": [
@@ -227,6 +245,19 @@
           "action": {
             "type": "string",
             "description": "The DevSwitcher action this task runs (build)."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The DevSwitcher project id the task belongs to."
+          }
+        }
+      },
+      {
+        "type": "devSwitcher.go",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The DevSwitcher action this task runs (build or run)."
           },
           "projectId": {
             "type": "string",

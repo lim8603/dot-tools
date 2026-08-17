@@ -1,9 +1,16 @@
 import * as vscode from 'vscode';
 import { dirname } from 'node:path';
-import { DiagnosticProbe, LanguageAdapter, ProjectInfo } from '../../core/types';
+import {
+  DevSwitcherError,
+  DiagnosticProbe,
+  InvocationConfig,
+  LanguageAdapter,
+  ProjectInfo,
+  Selection,
+} from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import { goProjectFiles } from './goTemplate';
-import { GoBridge, goProjectName, parseModulePath } from './goBridge';
+import { GoBridge, assembleGoArgs, goProjectName, parseModulePath } from './goBridge';
 
 const bridge = new GoBridge();
 
@@ -11,9 +18,53 @@ const bridge = new GoBridge();
 const EXTENSION_LABELS: Record<string, string> = { 'golang.go': 'Go' };
 const extensionLabel = (id: string): string => EXTENSION_LABELS[id] ?? id;
 
+const GO_TASK_TYPE = 'devSwitcher.go';
+
 /** The module directory a `go` command runs in — the folder holding go.mod. */
 function moduleDirOf(project: ProjectInfo): string {
   return dirname(project.manifestPath);
+}
+
+/** The selected target main-package import path, defaulting to the module root (`.`). */
+function targetOf(sel: Selection): string {
+  return typeof sel.values.target === 'string' && sel.values.target.length > 0 ? sel.values.target : '.';
+}
+
+/**
+ * The invocation overlay's env for a Task. Go has no outputDir/RUSTFLAGS analogue — every
+ * env-category option (CGO_ENABLED, GOFLAGS, …) is already an env var (§8), so this just
+ * surfaces config.env when non-empty. Mirrors dotnet/python taskEnv.
+ */
+function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
+  const env: Record<string, string> = { ...(config.env ?? {}) };
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+/** Build a ProcessExecution-backed `go build`/`go run` Task (no shell, array args — NFR-002). */
+function makeGoTask(action: 'build' | 'run', project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
+  const args = assembleGoArgs(action, targetOf(sel), config);
+  const execution = new vscode.ProcessExecution('go', args, {
+    cwd: moduleDirOf(project),
+    env: taskEnv(config),
+  });
+  const definition: vscode.TaskDefinition = { type: GO_TASK_TYPE, action, projectId: project.id };
+  const task = new vscode.Task(
+    definition,
+    project.workspaceFolder,
+    `${action} ${project.name}`,
+    'go',
+    execution,
+    action === 'build' ? ['$devswitcher-go'] : undefined, // owned matcher (package.json), no extension needed
+  );
+  if (action === 'build') {
+    task.group = vscode.TaskGroup.Build;
+  }
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
 }
 
 /** Read + parse the go.mod module path (remote-safe via workspace.fs, ADR-008). */
@@ -41,8 +92,78 @@ export const goAdapter: LanguageAdapter = {
   manifestGlobs: ['**/go.mod'],
   requiredExtensions: ['golang.go'],
   canCreateProject: true,
-  optionCatalog: [], // build-flag catalog (-ldflags/-tags/-race/env) lands in TASK-044
-  configCategories: [], // TASK-044
+  configCategories: ['compiler', 'env', 'runArgs'], // no linker/output in idiomatic Go
+  // Go injects build flags on the command line (§8). Compiler options are keyed by id
+  // (goBuildFlags); the env option is keyed by its label = the variable name (like python).
+  optionCatalog: [
+    {
+      id: 'ldflags',
+      category: 'compiler',
+      label: 'Linker flags (-ldflags)',
+      description: 'Flags passed to the Go linker. Common: "-s -w" strips the symbol table and DWARF for a smaller binary.',
+      example: '-s -w',
+      injectsAs: 'go build -ldflags "<value>"',
+      docUrl: 'https://pkg.go.dev/cmd/link',
+      type: 'string',
+      injection: 'flag',
+    },
+    {
+      id: 'gcflags',
+      category: 'compiler',
+      label: 'Compiler flags (-gcflags)',
+      description: 'Flags passed to the Go compiler. Common: "all=-N -l" disables optimizations and inlining for a smoother debug experience.',
+      example: 'all=-N -l',
+      injectsAs: 'go build -gcflags "<value>"',
+      docUrl: 'https://pkg.go.dev/cmd/compile',
+      type: 'string',
+      injection: 'flag',
+    },
+    {
+      id: 'tags',
+      category: 'compiler',
+      label: 'Build tags (-tags)',
+      description: 'Comma-separated build constraints that select tagged files (e.g. dev, integration).',
+      example: 'dev,integration',
+      injectsAs: 'go build -tags <value>',
+      docUrl: 'https://pkg.go.dev/go/build#hdr-Build_Constraints',
+      type: 'string',
+      injection: 'flag',
+    },
+    {
+      id: 'race',
+      category: 'compiler',
+      label: 'Race detector (-race)',
+      description: 'Builds with the data-race detector enabled. Slower, but catches concurrent access bugs.',
+      example: 'true',
+      injectsAs: 'go build -race',
+      docUrl: 'https://go.dev/doc/articles/race_detector',
+      type: 'bool',
+      defaultValue: false,
+      injection: 'flag',
+    },
+    {
+      id: 'trimpath',
+      category: 'compiler',
+      label: 'Trim paths (-trimpath)',
+      description: 'Removes local filesystem paths from the compiled binary for reproducible builds.',
+      example: 'true',
+      injectsAs: 'go build -trimpath',
+      type: 'bool',
+      defaultValue: false,
+      injection: 'flag',
+    },
+    {
+      id: 'cgo',
+      category: 'env',
+      // env options are keyed by `label` (applyOption), so the label IS the variable name.
+      label: 'CGO_ENABLED',
+      description: 'Set to 0 for a pure-Go static build (no C toolchain); 1 to enable cgo.',
+      example: '0',
+      injectsAs: 'CGO_ENABLED=<value>',
+      type: 'string',
+      injection: 'env',
+    },
+  ],
 
   chips: [
     {
@@ -92,11 +213,32 @@ export const goAdapter: LanguageAdapter = {
     return projects;
   },
 
-  // build/run injection lands in TASK-044; debug (delve) in TASK-045.
-  createBuildTask: (_project, _sel, _config) => notImplemented('GoAdapter.createBuildTask', 'TASK-044'),
-  createRunTask: (_project, _sel, _config) => notImplemented('GoAdapter.createRunTask', 'TASK-044'),
+  createBuildTask(project, sel, config) {
+    return makeGoTask('build', project, sel, config);
+  },
+
+  createRunTask(project, sel, config) {
+    // `go run` compiles and runs in one command (single-command run, no runRequiresBuild).
+    return makeGoTask('run', project, sel, config);
+  },
+
+  // Debug (delve) lands in TASK-045.
   createDebugConfig: (_project, _sel, _config) => notImplemented('GoAdapter.createDebugConfig', 'TASK-045'),
-  resolveExecutable: (_project, _sel, _config) => notImplemented('GoAdapter.resolveExecutable', 'TASK-044'),
+
+  async resolveExecutable(project, sel, _config) {
+    // For delve `mode: debug` the "program" is the target package's directory (delve builds
+    // it), not a pre-built binary — so resolve the selected main package's dir from `go list`.
+    const target = typeof sel.values.target === 'string' ? sel.values.target : undefined;
+    if (!target) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `No target package selected for ${project.name}.`); // E6
+    }
+    const pkgs = await bridge.listMainPackages(moduleDirOf(project));
+    const pkg = pkgs.find((p) => p.importPath === target);
+    if (!pkg) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `Target package not found: ${target}.`); // E6
+    }
+    return pkg.dir;
+  },
 
   createProject: (target) => ({ kind: 'files', files: goProjectFiles(target.projectName) }),
   invalidateCache: (project) => bridge.invalidateCache(project ? moduleDirOf(project) : undefined),

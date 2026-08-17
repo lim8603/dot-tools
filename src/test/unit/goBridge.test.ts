@@ -1,5 +1,11 @@
 import { strict as assert } from 'node:assert';
-import { goProjectName, parseMainPackages, parseModulePath } from '../../adapters/go/goBridge';
+import {
+  assembleGoArgs,
+  goBuildFlags,
+  goProjectName,
+  parseMainPackages,
+  parseModulePath,
+} from '../../adapters/go/goBridge';
 
 describe('parseModulePath', () => {
   it('reads the module path from the module directive', () => {
@@ -49,5 +55,38 @@ describe('parseMainPackages', () => {
 
   it('returns [] for empty output', () => {
     assert.deepEqual(parseMainPackages('   \n\n'), []);
+  });
+});
+
+describe('goBuildFlags', () => {
+  it('maps value flags and boolean switches in a stable order', () => {
+    assert.deepEqual(
+      goBuildFlags({ ldflags: '-s -w', gcflags: 'all=-N -l', tags: 'dev', race: true, trimpath: true }),
+      ['-ldflags', '-s -w', '-gcflags', 'all=-N -l', '-tags', 'dev', '-race', '-trimpath'],
+    );
+  });
+
+  it('drops blank strings and false/omitted booleans', () => {
+    assert.deepEqual(goBuildFlags({ ldflags: '   ', race: false }), []);
+    assert.deepEqual(goBuildFlags({}), []);
+  });
+});
+
+describe('assembleGoArgs', () => {
+  it('build puts flags before the target package', () => {
+    assert.deepEqual(assembleGoArgs('build', './cmd/api', { compiler: { race: true } }), [
+      'build', '-race', './cmd/api',
+    ]);
+  });
+
+  it('run puts runArgs after the package (go run has no --)', () => {
+    assert.deepEqual(
+      assembleGoArgs('run', 'example.com/app', { compiler: { tags: 'dev' }, runArgs: ['--verbose', 'x'] }),
+      ['run', '-tags', 'dev', 'example.com/app', '--verbose', 'x'],
+    );
+  });
+
+  it('build with an empty overlay is just build + target', () => {
+    assert.deepEqual(assembleGoArgs('build', '.', {}), ['build', '.']);
   });
 });

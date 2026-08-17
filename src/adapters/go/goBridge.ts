@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { DevSwitcherError } from '../../core/errors';
+import type { InvocationConfig, OptionValue } from '../../core/types';
 
 /**
  * GoBridge — the `go` CLI boundary layer for the Go adapter (MS-015, v0.5.0).
@@ -74,6 +75,69 @@ export function parseMainPackages(stdout: string): GoMainPackage[] {
     }
   }
   return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Argument assembly + overlay injection (interface_contract §8). Go injects the
+// compiler overlay as `go build`/`go run` flags; env options ride in the task env.
+// Pure and testable.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A non-empty trimmed string from an option value, else undefined. */
+function optString(v: OptionValue | undefined): string | undefined {
+  if (typeof v === 'string') {
+    const t = v.trim();
+    return t.length > 0 ? t : undefined;
+  }
+  return undefined;
+}
+
+/** A boolean option value (settings store bools; imported profiles may carry 'true'). */
+function optBool(v: OptionValue | undefined): boolean {
+  return v === true || v === 'true';
+}
+
+/**
+ * Map the compiler overlay to `go build`/`go run` flags (§8). Keyed by catalog id:
+ * ldflags/gcflags/tags take a value; race/trimpath are boolean switches. Order is stable
+ * so tests and command previews are deterministic.
+ */
+export function goBuildFlags(compiler: Record<string, OptionValue>): string[] {
+  const args: string[] = [];
+  const ldflags = optString(compiler.ldflags);
+  if (ldflags) {
+    args.push('-ldflags', ldflags);
+  }
+  const gcflags = optString(compiler.gcflags);
+  if (gcflags) {
+    args.push('-gcflags', gcflags);
+  }
+  const tags = optString(compiler.tags);
+  if (tags) {
+    args.push('-tags', tags);
+  }
+  if (optBool(compiler.race)) {
+    args.push('-race');
+  }
+  if (optBool(compiler.trimpath)) {
+    args.push('-trimpath');
+  }
+  return args;
+}
+
+/**
+ * Assemble `go` CLI args for a build or run. `target` is the selected main package's import
+ * path. Build flags (goBuildFlags) come before the package; for `go run`, runArgs follow the
+ * package and are passed to the program (F16 — `go run` takes program args directly, no `--`).
+ * `go build` without `-o` writes the binary to the module dir named after the package.
+ */
+export function assembleGoArgs(action: 'build' | 'run', target: string, config: InvocationConfig): string[] {
+  const flags = goBuildFlags(config.compiler ?? {});
+  if (action === 'build') {
+    return ['build', ...flags, target];
+  }
+  const runArgs = config.runArgs ?? [];
+  return ['run', ...flags, target, ...runArgs];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
