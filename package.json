@@ -134,6 +134,38 @@
         "category": "DevSwitcher"
       }
     ],
+    "keybindings": [
+      {
+        "command": "devSwitcher.build",
+        "key": "ctrl+alt+b",
+        "mac": "cmd+alt+b",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
+        "command": "devSwitcher.run",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
+        "command": "devSwitcher.debug",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
+        "command": "devSwitcher.switchProject",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
+        "command": "devSwitcher.openSettings",
+        "key": "ctrl+alt+,",
+        "mac": "cmd+alt+,",
+        "when": "devSwitcher.hasProjects"
+      }
+    ],
     "configuration": {
       "title": "DevSwitcher",
       "properties": {

@@ -126,6 +126,9 @@ export class Orchestrator {
   /** Rescan and re-render — invoked on activation and on every debounced manifest change. */
   async refresh(): Promise<void> {
     const projects = await this.registry.scan();
+    // Scope the DevSwitcher keybindings (ADR-017): they only fire when a project is present,
+    // so the Ctrl+Alt+* defaults stay inert (no conflict) in workspaces with no DevSwitcher project.
+    void vscode.commands.executeCommand('setContext', 'devSwitcher.hasProjects', projects.length > 0);
     const validItems = await this.gatherValidItems(projects);
     const removed = await this.store.reconcile(
       projects.map((p) => p.id),

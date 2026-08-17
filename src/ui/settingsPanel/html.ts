@@ -355,6 +355,11 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
 
   function renderGeneral() {
     const sb = state.statusBar || {};
+    const shortcuts = state.shortcuts || [];
+    const rows = shortcuts.map((s) =>
+      '<div class="row"><code>' + esc(s.key) + '</code><span>' + esc(s.title) + '</span>' +
+      '<button class="secondary" data-action="open-keybindings" data-query="' + esc(s.command) +
+      '">Edit…</button></div>').join('');
     return '<h2>General</h2>' +
       '<h3 class="cat">Status bar</h3>' +
       '<label class="row"><input type="checkbox" id="sb-compact"' + (sb.compact ? ' checked' : '') +
@@ -362,6 +367,12 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       '<label class="row"><input type="checkbox" id="sb-selectedonly"' + (sb.selectedOnly ? ' checked' : '') +
       ' /> Selected chips only — hide unselected optional chips</label>' +
       '<div class="muted">Also editable in VSCode Settings › DevSwitcher.</div>' +
+      '<h3 class="cat">Keyboard shortcuts</h3>' +
+      (rows || '<p class="muted">No default shortcuts.</p>') +
+      '<div class="row"><button data-action="open-keybindings">Open Keyboard Shortcuts…</button></div>' +
+      '<p class="muted">These are the defaults — change any of them in the VSCode Keyboard Shortcuts editor. ' +
+      'Built-in keys (F5, Ctrl+Shift+B) are left untouched; to drive DevSwitcher with them, bind ' +
+      '<code>devSwitcher.debug</code> to F5 or <code>devSwitcher.build</code> to Ctrl+Shift+B there.</p>' +
       '<h3 class="cat">Profile</h3>' +
       '<p class="muted">Export / import a profile (F12) from the Command Palette: ' +
       '<code>DevSwitcher: Export Profile</code> · <code>DevSwitcher: Import Profile</code>.</p>';
@@ -381,6 +392,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     else if (action === 'delete-group') { post({ type: 'deleteGroup', groupId: el.dataset.groupId }); }
     else if (action === 'run-group') { post({ type: 'runGroup', groupId: el.dataset.groupId }); }
     else if (action === 'stop-group') { post({ type: 'stopGroup', groupId: el.dataset.groupId }); }
+    else if (action === 'open-keybindings') { post({ type: 'openKeybindings', query: el.dataset.query || undefined }); }
   });
 
   document.addEventListener('change', (e) => {

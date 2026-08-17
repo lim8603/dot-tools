@@ -6,6 +6,10 @@ import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invo
 import { memberStages, validateGroup, withMember, withMemberStage } from '../../core/runGroupPlan';
 import type { ChipItem, ChipValue, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, RunGroup } from '../../core/types';
 import { getSettingsHtml } from './html';
+import { RawCommand, RawKeybinding, ShortcutRow, buildShortcutList } from './shortcuts';
+
+/** This extension's id (publisher.name) — used to deep-link the native Keyboard Shortcuts editor. */
+const EXTENSION_ID = 'lim8603.devswitcher-tools';
 
 /** One chip rendered in the settings page (options + current value). */
 export interface ChipView {
@@ -42,6 +46,8 @@ export interface SettingsState {
   commandPreview: string;
   statusBar: { compact: boolean; selectedOnly: boolean };
   groups: GroupView[];
+  /** Default keyboard shortcuts (MS-017 / ADR-017) shown in the General tab. */
+  shortcuts: ShortcutRow[];
 }
 
 /** Messages the webview sends to the extension (상세설계서 §10.3). */
@@ -54,6 +60,8 @@ type InMessage =
   | { type: 'setRunArgs'; line: string }
   | { type: 'setBuildEvent'; event: 'preBuild' | 'postBuild'; text: string }
   | { type: 'setStatusBarPref'; key: 'compact' | 'selectedOnly'; value: boolean }
+  // Keyboard shortcuts (MS-017) — deep-link the native editor (optionally filtered).
+  | { type: 'openKeybindings'; query?: string }
   // Run groups (C-6 / MS-013) — workspace-level, independent of the active project.
   | { type: 'createGroup'; name: string }
   | { type: 'renameGroup'; groupId: string; name: string }
@@ -118,6 +126,17 @@ export class SettingsPanel {
   private async onMessage(message: InMessage): Promise<void> {
     if (message.type === 'ready') {
       await this.postState();
+      return;
+    }
+
+    if (message.type === 'openKeybindings') {
+      // Delegate customization to VSCode's native Keyboard Shortcuts editor (ADR-017): the
+      // query pre-filters it (default = all DevSwitcher commands via @ext:, or a single
+      // command id for a per-row edit link). No state change, so no re-post.
+      await vscode.commands.executeCommand(
+        'workbench.action.openGlobalKeybindings',
+        message.query ?? `@ext:${EXTENSION_ID}`,
+      );
       return;
     }
 
@@ -281,6 +300,7 @@ export class SettingsPanel {
         commandPreview: '',
         statusBar: this.statusBarPrefs(),
         groups,
+        shortcuts: this.shortcuts(),
       };
     }
 
@@ -325,6 +345,7 @@ export class SettingsPanel {
       commandPreview: this.commandPreview(adapter, project, invocation),
       statusBar: this.statusBarPrefs(),
       groups,
+      shortcuts: this.shortcuts(),
     };
   }
 
@@ -340,6 +361,18 @@ export class SettingsPanel {
         problems: validateGroup(group),
       };
     });
+  }
+
+  /**
+   * Default keyboard shortcuts for the General tab (MS-017 / ADR-017), read from this
+   * extension's own contributed keybindings + command titles — SSOT, no drift. Resolved for
+   * the current platform. Empty if the extension can't be located (never throws).
+   */
+  private shortcuts(): ShortcutRow[] {
+    const contributes = vscode.extensions.getExtension(EXTENSION_ID)?.packageJSON?.contributes as
+      | { keybindings?: RawKeybinding[]; commands?: RawCommand[] }
+      | undefined;
+    return buildShortcutList(contributes?.keybindings ?? [], contributes?.commands ?? [], process.platform);
   }
 
   /** Current global status-bar display prefs (the same VSCode config the native UI edits). */
