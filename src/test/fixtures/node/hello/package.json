@@ -1,0 +1,12 @@
+{
+  "name": "example-hello",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DevSwitcher Node/TS adapter F5 fixture",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js --dev",
+    "build": "node -e \"console.log('built example-hello')\""
+  }
+}

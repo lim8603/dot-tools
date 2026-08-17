@@ -34,6 +34,9 @@ src/test/fixtures/**/build/
 src/test/fixtures/go/**/*.exe
 src/test/fixtures/go/hello/hello
 
+# ─── Node test-fixture dependencies (if npm install is run during F5) ───
+src/test/fixtures/node/**/node_modules/
+
 # ─── Member personal session logs ───
 .cowork/members/*/workspace/session_logs/*.md
 !.cowork/members/*/workspace/session_logs/.gitkeep

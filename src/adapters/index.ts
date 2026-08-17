@@ -3,9 +3,10 @@ import { cargoAdapter } from './cargo/cargoAdapter';
 import { cmakeAdapter } from './cmake/cmakeAdapter';
 import { dotnetAdapter } from './dotnet/dotnetAdapter';
 import { goAdapter } from './go/goAdapter';
+import { nodeAdapter } from './node/nodeAdapter';
 import { pythonAdapter } from './python/pythonAdapter';
 
-export { cargoAdapter, cmakeAdapter, dotnetAdapter, goAdapter, pythonAdapter };
+export { cargoAdapter, cmakeAdapter, dotnetAdapter, goAdapter, nodeAdapter, pythonAdapter };
 
 /**
  * All language adapters. TASK-003 uses this as the interface-confirmation set
@@ -14,4 +15,4 @@ export { cargoAdapter, cmakeAdapter, dotnetAdapter, goAdapter, pythonAdapter };
  * including the Python litmus. The AdapterRegistry (ADR-006) consumes this in a
  * later milestone.
  */
-export const ALL_ADAPTERS: LanguageAdapter[] = [cargoAdapter, cmakeAdapter, dotnetAdapter, goAdapter, pythonAdapter];
+export const ALL_ADAPTERS: LanguageAdapter[] = [cargoAdapter, cmakeAdapter, dotnetAdapter, goAdapter, nodeAdapter, pythonAdapter];

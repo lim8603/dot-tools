@@ -47,7 +47,8 @@
     "workspaceContains:**/*.csproj",
     "workspaceContains:**/pyproject.toml",
     "workspaceContains:**/CMakeLists.txt",
-    "workspaceContains:**/go.mod"
+    "workspaceContains:**/go.mod",
+    "workspaceContains:**/package.json"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -256,6 +257,19 @@
       },
       {
         "type": "devSwitcher.go",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The DevSwitcher action this task runs (build or run)."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The DevSwitcher project id the task belongs to."
+          }
+        }
+      },
+      {
+        "type": "devSwitcher.node",
         "properties": {
           "action": {
             "type": "string",

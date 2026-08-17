@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { cmakeProjectFiles } from '../../adapters/cmake/cmakeTemplate';
 import { goProjectFiles } from '../../adapters/go/goTemplate';
+import { nodeProjectFiles } from '../../adapters/node/nodeTemplate';
 import { pythonProjectFiles } from '../../adapters/python/pythonTemplate';
 
 describe('cmakeProjectFiles', () => {
@@ -48,5 +49,22 @@ describe('goProjectFiles', () => {
     const main = files.find((f) => f.relativePath === 'main.go')!;
     assert.match(main.content, /package main/);
     assert.match(main.content, /Hello from widget!/);
+  });
+});
+
+describe('nodeProjectFiles', () => {
+  it('emits a valid package.json (with start + build scripts) and index.js', () => {
+    const files = nodeProjectFiles('my-node-app');
+    const paths = files.map((f) => f.relativePath).sort();
+    assert.deepEqual(paths, ['index.js', 'package.json']);
+
+    const pkgFile = files.find((f) => f.relativePath === 'package.json')!;
+    const pkg = JSON.parse(pkgFile.content) as { name: string; scripts: Record<string, string> };
+    assert.equal(pkg.name, 'my-node-app');
+    assert.equal(pkg.scripts.start, 'node index.js');
+    assert.ok(typeof pkg.scripts.build === 'string');
+
+    const main = files.find((f) => f.relativePath === 'index.js')!;
+    assert.match(main.content, /Hello from my-node-app!/);
   });
 });
