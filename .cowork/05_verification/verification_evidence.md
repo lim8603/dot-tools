@@ -44,7 +44,7 @@
 | Review Evidence | In Progress | 세션 로그 #004·#005, 커밋 이력 | 2026-08-15 | 각 Task F5 통과 후 병합 |
 | Test Execution Evidence | In Progress | `test_case.md`(Auto 3 + Manual 20) | 2026-08-17 | Unit **203**·Integration 3 Pass, Manual **17 Pass**/2 Partial/1 Deferred(TC-11 WSL). 세션 #011 Run Group TC-18~20 Pass + 설정 페이지 공백 버그 수정 |
 | NFR Evidence | Partial | `test_strategy.md` §3 | 2026-08-15 | NFR-002/002a 설계 준수. 성능 NFR 별도 측정 없음 |
-| Release Readiness Evidence | Pass (조건부) | `quality_gate.md`, TASK-021, EV-006 | 2026-08-16 | README·VSIX(021) 완료·설치 스모크 통과 → v0.1.0 확정. 잔여 수동검증(TC-11 WSL·TC-09·TC-02/03)은 문서화된 잔여 리스크(개인용 v0.1 수용) |
+| Release Readiness Evidence | Pass | `quality_gate.md`, TASK-040, EV-010 | 2026-08-17 | **v0.4.0 배포**(Run Group C-6): README·CHANGELOG·vsix·설치 스모크·태그 push. 잔여 수동검증(TC-11 WSL)은 문서화된 리스크. TASK-039(준비감지)=후속 마이너 |
 
 ---
 
@@ -59,6 +59,7 @@
 | EV-005 | E2E(Manual) | TC-09(재시작 복원)·TC-02(workspace 3멤버)·TC-03(멀티루트) | Pass | Gate 4/5 | 세션 #006 F5 (scratchpad/verify 픽스처) | 2026-08-16 | 검증 중 버그 2건 발견·수정(features e7b462b·untrusted eb8983a) |
 | EV-008 | E2E(Manual) | TC-11(WSL/F18) | Deferred | Gate 5 | — | 2026-08-16 | WSL 내부 재클론 후 별도 진행. GAP-001 유지 |
 | EV-006 | Packaging | `vsce package` → `devswitcher-tools-0.1.0.vsix`(9파일 34.68KB) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.1.0` 인식) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir) | 2026-08-16 | TASK-021. README·LICENSE·CHANGELOG 포함 |
+| EV-010 | Packaging/Release | **v0.4.0** `devswitcher-tools-0.4.0.vsix`(13파일 235.6KB) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.4.0` 인식). main FF 병합·`v0.4.0` 태그·origin push | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir), `git push origin main/v0.4.0` | 2026-08-17 | TASK-040. Run Group(C-6) 번들 |
 | EV-007 | E2E(Manual) | F20 시작 마법사 — 4개 언어 생성(TC-14~17): Rust(`cargo new`+자동전환)·C#(`dotnet new`)·C++/Python(workspace.fs 템플릿, `<iostream>` 온전) | Pass | Gate 4 | 세션 #006 F5 (생성 파일 내용 검증) | 2026-08-16 | TASK-022·023. cmake/python은 scope A로 스위처 미등장(생성만) |
 | EV-009 | E2E(Manual) + Unit | **Run Group(C-6, MS-013)** — TC-18~20: 설정 Run Groups 탭 그룹 정의·멤버별 Stage(같은 Stage 병렬)·Stage 순서 계층 기동(프로세스 시작 시점 전진)·이미 실행 중 skip·상태바 통합 메뉴(Run/Stop/Stop all). 순수 계획/검증/스테이지/시퀀서 단위 커버 | Pass | Gate 4 | 세션 #011 F5 (6멤버·Stage 1~5, preset-demo→test-python 순차) + `runGroupPlan.test.ts`·`groupSequencer.test.ts` | 2026-08-17 | ADR-015·D-20. 준비 감지(포트/헬스체크)=후속 마이너(TASK-039) |
 

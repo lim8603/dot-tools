@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-013 Run Group (C-6)** — In Progress. TASK-036·037·038 **F5 통과·Done**. 남음: TASK-040. 완주=**v0.4.0**(D-19) |
+| 활성 Milestone | **없음** — MS-013 Done + **v0.4.0 배포 완료**(C-6). 다음: TASK-042(추가 기능·논의 + v1.0.0 결정, D-19) |
 | 마지막 갱신일 | 2026-08-17 |
 | 참조 세션 로그 | session_2026-08-17_011.md |
 
@@ -20,12 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-036 | Run Group 모델 + 스키마 + 저장 | MS-013 | Done | F5 통과 | 없음 |
-| TASK-037 | GroupOrchestrator | MS-013 | Done | F5 통과 | 없음 |
-| TASK-038 | 그룹 정의/트리거 UI | MS-013 | Done | F5 통과 | 없음 |
-| TASK-040 | 통합 테스트·검증·문서 | MS-013 | Planned | — | 없음 |
+| 없음 | (MS-013 완료·v0.4.0 배포) | — | — | 다음: TASK-042 논의 | 없음 |
 
-> **MS-013 Run Group: TASK-036·037·038 완료(세션 #011).** Human 결정: 준비=**프로세스 시작 감지**·멤버=**Run 전용**·**v0.x.x 유지**(v1.0.0은 TASK-042, D-19). 036=모델·저장·순수 `runGroupPlan`·**ADR-015**. 037=`TaskRunner.start`·순수 `groupSequencer`·`GroupOrchestrator`·커맨드. 038=설정 페이지 **Run Groups 탭**·상태바 런처·순수 편집 헬퍼. **F5-1 fix**: 설정 페이지 공백=`renderProfile` 아포스트로피가 webview JS 깨뜨림(#010 유입·v0.3.0 잠복) → 수정 + 회귀 가드. **F5-2 피드백(D-20)**: 순서 UI=**스테이지 번호**·중복=**skip**·상태바 **아이콘만+통합 메뉴(Run/Stop/Stop-all)**·**Run 바로 뒤**. unit **203**·prod·미커밋. **다음: 재-F5** → TASK-040(→**v0.4.0**). 039(준비감지)=후속 마이너. **SemVer**: 0.3.0 → C-6=0.4.0 → v1.0.0(Human 선언, D-19).
+> **MS-013 Run Group 전체 완주 + v0.4.0 배포(세션 #011).** Human 결정: 준비=**프로세스 시작 감지**·멤버=**Run 전용**·**v0.x.x 유지**(v1.0.0=TASK-042, D-19). 036(모델·`runGroupPlan`·ADR-015)·037(`TaskRunner.start`·`groupSequencer`·`GroupOrchestrator`·커맨드)·038(설정 Run Groups 탭·**스테이지 순서 UI**·상태바 **통합 메뉴**)·040(검증·문서). **F5-2 피드백(D-20)**: 스테이지 번호·**skip**·아이콘만+통합 메뉴·Run 바로 뒤. **F5-1 fix**: 설정 페이지 공백=`renderProfile` 아포스트로피 webview JS 파손(#010 유입·v0.3.0 잠복) → 수정 + 회귀 가드. unit **203**. 4커밋 main FF·`v0.4.0` 태그·origin push·vsix 스모크 통과. **다음: TASK-042**(추가 기능·논의 + v1.0.0 완주 결정, Human). 039(준비감지)=후속 마이너. **SemVer**: 0.3.0 → C-6=**0.4.0** → v1.0.0(Human 선언, D-19).
 
 ---
 
