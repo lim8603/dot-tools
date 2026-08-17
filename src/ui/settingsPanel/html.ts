@@ -189,8 +189,9 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       '<div class="row item' + (it.id === state.profile ? ' active' : '') + '">' + esc(it.label) +
       (it.description ? '<span class="badge">' + esc(it.description) + '</span>' : '') +
       (it.id === state.profile ? '<span class="badge">active</span>' : '') + '</div>').join('');
-    return '<h2>Profiles <span class="muted">(read-only in v1)</span></h2>' + rows +
-      '<p class="muted">Editing profile definitions (Cargo.toml) is planned for v2.</p>';
+    return '<h2>Profiles <span class="muted">(read-only)</span></h2>' + rows +
+      '<p class="muted">Profiles come from your project\'s build files. DevSwitcher switches ' +
+      'between them but never edits them.</p>';
   }
 
   function currentOptionValue(o) {

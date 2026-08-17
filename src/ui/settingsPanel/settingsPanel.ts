@@ -201,6 +201,11 @@ export class SettingsPanel {
 
     const chips: ChipView[] = [];
     for (const chip of adapter.chips) {
+      // Respect the same per-project visibility as the status bar (TASK-041): a chip that
+      // doesn't apply (e.g. profile/architecture when a CMake preset is active) gets no tab.
+      if (chip.appliesTo && !(await chip.appliesTo(project))) {
+        continue;
+      }
       let items: ChipItem[] = [];
       try {
         items = await chip.listItems(project);
