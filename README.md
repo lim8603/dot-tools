@@ -253,6 +253,10 @@ UI language-agnostic behind `LanguageAdapter` + declarative `ChipDescriptor[]`, 
 options at call time instead of editing files, runs everything through the VS Code Task API,
 and persists state in `workspaceState` (no database).
 
+> **Note**: this is a personal project and does not accept external pull requests
+> (they are closed automatically — see [CONTRIBUTING.md](CONTRIBUTING.md)).
+> Bug reports and feedback via [Issues](https://github.com/lim8603/dot-tools/issues) are welcome.
+
 ## License
 
 [MIT](LICENSE) © 2026 LIM SEUNG HYUN
