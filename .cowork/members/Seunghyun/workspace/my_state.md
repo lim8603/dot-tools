@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — MS-013 Done + **v0.4.0 배포 완료**(C-6). 다음: TASK-042(추가 기능·논의 + v1.0.0 결정, D-19) |
+| 활성 Milestone | **없음** — 다음: **MS-015 Go 어댑터(v0.5.0)** 착수 (v1.0.0 로드맵 D-21의 1단계) |
 | 마지막 갱신일 | 2026-08-17 |
-| 참조 세션 로그 | session_2026-08-17_011.md |
+| 참조 세션 로그 | session_2026-08-17_012.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| 없음 | (MS-013 완료·v0.4.0 배포) | — | — | 다음: TASK-042 논의 | 없음 |
+| MS-015 | Go 어댑터 (v0.5.0) | MS-015 | Planned | 다음 착수 | 없음 |
 
-> **MS-013 Run Group 전체 완주 + v0.4.0 배포(세션 #011).** Human 결정: 준비=**프로세스 시작 감지**·멤버=**Run 전용**·**v0.x.x 유지**(v1.0.0=TASK-042, D-19). 036(모델·`runGroupPlan`·ADR-015)·037(`TaskRunner.start`·`groupSequencer`·`GroupOrchestrator`·커맨드)·038(설정 Run Groups 탭·**스테이지 순서 UI**·상태바 **통합 메뉴**)·040(검증·문서). **F5-2 피드백(D-20)**: 스테이지 번호·**skip**·아이콘만+통합 메뉴·Run 바로 뒤. **F5-1 fix**: 설정 페이지 공백=`renderProfile` 아포스트로피 webview JS 파손(#010 유입·v0.3.0 잠복) → 수정 + 회귀 가드. unit **203**. 4커밋 main FF·`v0.4.0` 태그·origin push·vsix 스모크 통과. **다음: TASK-042**(추가 기능·논의 + v1.0.0 완주 결정, Human). 039(준비감지)=후속 마이너. **SemVer**: 0.3.0 → C-6=**0.4.0** → v1.0.0(Human 선언, D-19).
+> **v1.0.0 완주 로드맵 확정(D-21, 세션 #012).** TASK-042 추가 기능·논의 → **v1.0.0 = 4개 MINOR**: MS-015 Go(v0.5.0)·MS-016 Node/TS(v0.6.0, 6개 언어 완성)·MS-017 키보드 단축키(v0.7.0, General 탭 기본+변경)·MS-018 준비감지(v0.8.0, TASK-039 승격) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**. 버전 사다리 0.4.0→0.5~0.8→1.0.0(중간은 vsix+태그, 게시는 1.0.0만). **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0로 재스케줄**(Deferred, v1.1.0/v1.2.0 후보, 설계서 §16 원래 v2+ 위치). **다음: MS-015(Go) 착수**(Task 미분해). 원격/크로스·단축키 구현방식은 착수 시 ADR. 직전 세션 #011 = MS-013 Run Group 완주·v0.4.0 배포.
 
 ---
 
@@ -41,14 +41,15 @@
 | #009 | 2026-08-16 | **MS-012 CMake 핵심 루프 완성.** TASK-033(listProjects+chips+File API codemodel)·034(prepareInvocation 훅+`cmake --build`+`-D` 주입+resolveExecutable)·035(run build-then-exec + debug 컴파일러 자동판별 cppvsdbg/cppdbg+gdb/lldb+override). 전부 F5 통과·커밋(`8664be9`~`61f6ac3`). unit 165. KB #6/#9 | MS-012 | TASK-033·034·035 | **핵심 루프(switch/build/run/debug) 완성 / TASK-041 남음** |
 | #010 | 2026-08-17 | **TASK-041 CMakePresets.json F5 통과 → MS-012 구현 완료.** `ChipDescriptor.appliesTo` 동적 대체(Preset 칩↔profile/arch, D-17) + `parseConfigurePresets`/`resolvePresetBinaryDir`(순수, inherits/hidden/매크로) + `cmake --preset` configure(binaryDir·--config 생략) + target/디버거 자동판별 재사용. 프리셋 픽스처(msvc-x64/x86/clangcl). unit **172**·실 cmake 스모크·**실 F5**(msvc-x64 build/run/debug 중단점). 커밋(feat+docs)·미병합 | MS-012 | TASK-041 | **MS-012 전 Task F5 통과, main 병합 대기** |
 | #011 | 2026-08-17 | **MS-013 Run Group: TASK-036·037·038 완료 + 버전 정책 반전.** Human 결정(준비=프로세스 시작·Run 전용) + **D-19**(v1.0.0 자동 안 함·v0.x.x 유지·TASK-042 게이트) + **ADR-015** + **036**(모델·저장·순수 계획) + **037**(TaskRunner.start·sequencer·GroupOrchestrator·커맨드) + **038**(설정 페이지 Run Groups 탭·상태바 런처·순수 편집). **TASK-042/MS-014** 신설. unit **196**·prod 99.3kb·미커밋 | MS-013 | TASK-036·037·038 | **엔진+UI 완료(Review), 다음: 전체 F5 → TASK-040(v0.4.0)** |
+| #012 | 2026-08-17 | **TASK-042 추가 기능·논의 → v1.0.0 완주 로드맵 확정(D-21).** v1.0.0 = MS-015 Go·MS-016 Node/TS·MS-017 단축키·MS-018 준비감지(0.5~0.8) → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 단위 커 post-1.0 재스케줄**(v1.1.0/v1.2.0 후보). registry 반영 | MS-014~020 | TASK-042 | 로드맵 확정+재스케줄. 다음: MS-015(Go) 착수 |
 
 ---
 
 ## 다음 시작점
 
-1. **커밋** (권장 선행) — 소스 `feat(core): run group (TASK-036~038)` + 설정 페이지 fix + 문서 `docs(cowork)` 분리. 브랜치 `feature/ms-013-run-group` 권장(현재 main·미커밋, 대량 변경).
-2. **TASK-040** — 통합 테스트(커맨드/스모크) + test_case/verification + README/CHANGELOG → **v0.4.0** 배포(C-6 충족). 이후 **TASK-042**(v1.0.0 결정, D-19). 039(준비감지)=후속 마이너.
-3. 별도 트랙: TC-11(WSL, Deferred).
+1. **MS-015 — Go 어댑터 (v0.5.0) 착수** (v1.0.0 로드맵 D-21의 첫 단계): 착수 시 Task 분해 — 감지(`go.mod`)·chips·`go build`/`go run`·`dlv` 디버그. 어댑터 프레임워크 5번째 언어.
+2. 이후 로드맵 순차: MS-016 Node/TS(v0.6.0) → MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**(Human 완주 선언). 원격디버그(MS-019)·크로스컴파일(MS-020)은 post-1.0.
+3. README 미커밋 1건(라이선스 저작권 표기) 처리 여부 확인. 별도 트랙: TC-11(WSL, Deferred).
 
 ---
 

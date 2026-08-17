@@ -16,18 +16,18 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | Build (MS-001~013 Done · **v0.4.0 배포** / INT-001 등록 조건 C-7+C-6 전부 충족) |
-| 활성 Intent | INT-001 (Approved — 등록 조건 = C-7[Done] + C-6[Done]. v1.0.0 완주 선언은 TASK-042, D-19) |
-| 활성 Milestone | **없음** — MS-013 Done + **v0.4.0 릴리즈 완료**(C-6). 다음: MS-014 v1.0.0 완주 결정 게이트(TASK-042) |
-| 활성 Task | **없음** — 다음: **TASK-042**(추가 기능·논의 + v1.0.0 완주 결정, Human). TASK-039(준비감지)=후속 마이너 |
+| 현재 Phase | Build (MS-001~013 Done · **v0.4.0 배포** / **v1.0.0 완주 로드맵 D-21** — MS-015~018 → MS-014; MS-019/020 post-1.0) |
+| 활성 Intent | INT-001 (Approved — 등록 조건 C-7+C-6 충족. v1.0.0은 로드맵 D-21 완주 후 Human 선언, D-19) |
+| 활성 Milestone | **없음** — 다음: **MS-015 Go 어댑터(v0.5.0)** 착수 대기 (v1.0.0 로드맵 D-21의 첫 단계) |
+| 활성 Task | **없음** — 다음: **MS-015 착수 시 Task 분해**. TASK-042(v1.0.0 완주 결정)는 로드맵(MS-018) 완료 후 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
 | 마지막 갱신일 | 2026-08-17 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-17_011.md |
-| 최신 배포 | **v0.4.0** (`devswitcher-tools-0.4.0.vsix`, 태그 `v0.4.0` origin push) |
+| 참조 세션 로그 | session_2026-08-17_012.md |
+| 최신 배포 | **v0.4.0** (`devswitcher-tools-0.4.0.vsix`, 태그 `v0.4.0` origin push) — 다음 v0.5.0(Go) |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -43,13 +43,14 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **MS-001~013 Done · v0.4.0 배포**. INT-001 **등록 조건 C-7+C-6 전부 충족**. **MS-013 Run Group 완료**(계층 기동·스테이지 순서·skip·상태바 통합 메뉴·teardown, ADR-015·D-20). `v0.4.0` 태그 origin push. **v1.0.0 완주 선언은 D-19대로 TASK-042(추가 기능·논의)에서 Human 결정.** TASK-039(준비감지)=후속 마이너. **C-3 폐기**(D-15).
+- **MS-001~013 Done · v0.4.0 배포**. INT-001 등록 조건 C-7+C-6 충족. **v1.0.0 완주 로드맵 확정(D-21, 세션 #012)** — MS-015 Go(v0.5.0) → MS-016 Node/TS(v0.6.0) → MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release(Human 선언, D-19). **원격디버그(MS-019)·크로스컴파일(MS-020)은 post-1.0 백로그**(단위 커 v1.1.0/v1.2.0). **다음: MS-015(Go) 착수.** **C-3 폐기**(D-15).
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- **완료(세션 #011)**: **MS-013 Run Group 전체 완주 + v0.4.0 배포.** TASK-036(모델·저장·`runGroupPlan`·ADR-015)·037(`TaskRunner.start`·`groupSequencer`·`GroupOrchestrator`·커맨드)·038(설정 Run Groups 탭·스테이지 UI·상태바 통합 메뉴)·040(검증·문서). F5 통과(스테이지 순서·병렬·skip). 위생: 설정 페이지 공백 버그(webview 아포스트로피) fix + 회귀 가드. unit **203**. 4커밋 main FF 병합·`v0.4.0` 태그·origin push. `vsix` 설치 스모크 통과.
-- **다음**: **TASK-042 = 추가 기능·논의 + v1.0.0 완주 결정**(Human 주도). INT-001 등록 조건은 충족했으나 v1.0.0은 D-19대로 별도 결정. TASK-039(준비감지=포트/헬스체크)=후속 마이너. 별도 트랙: TC-11(WSL, Deferred).
+- **완료(세션 #012)**: **TASK-042 추가 기능·논의 → v1.0.0 완주 로드맵 확정(D-21).** Human 선정 항목을 MINOR 버킷으로 배열: v1.0.0 = MS-015 Go·MS-016 Node/TS·MS-017 단축키·MS-018 준비감지(0.5~0.8) → MS-014 최종점검+게시. **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0(v1.1.0/v1.2.0 후보)로 재스케줄**(설계서 §16 원래 v2+ 위치 복귀). MS-015~018 신설·MS-019/020 백로그화·MS-014 재정의·registry 반영.
+- **완료(세션 #011)**: MS-013 Run Group 완주 + v0.4.0 배포(036·037·038·040, unit **203**, `v0.4.0` 태그 push, vsix 스모크). 상세는 아래 핸드오프 메모.
+- **다음**: **MS-015 Go 어댑터(v0.5.0) 착수** — 착수 시 Task 분해(감지 `go.mod`·chips·`go build`/`go run`·`dlv` 디버그). 이후 로드맵 순차. TASK-042(v1.0.0 완주 결정)는 MS-018 후. 별도 트랙: TC-11(WSL, Deferred).
 
 ---
 
@@ -58,11 +59,11 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-040 | Run Group 통합 테스트 + 검증 + 문서 | AI | Done | 2026-08-17 | **완료·v0.4.0 배포**(TC-18~20·EV-009·README·CHANGELOG·vsix 스모크·`v0.4.0` 태그 push). MS-013 Done |
-| TASK-039 | (선택) 준비 감지 (포트/헬스체크) | AI | Planned | 2026-08-17 | **후속 마이너로 분리**(ADR-015/D-20). 멤버별 준비 조건(포트·URL·타임아웃) |
-| TASK-042 | 추가 기능·논의 + v1.0.0 완주 결정 | Human | Planned | 2026-08-17 | MS-013(v0.4.0) 후 게이트 — 남은 기능·논의 수집 → v1.0.0 완주 여부 Human 결정(D-19) |
+| MS-015 | Go 어댑터 (v0.5.0) — 로드맵 1단계 | AI | Planned | 2026-08-17 | **다음 착수** — 착수 시 Task 분해(감지 `go.mod`·chips·`go build`/`go run`·`dlv` 디버그). 5번째 언어 |
+| TASK-039 | 준비 감지 (포트/헬스체크) | AI | Planned | 2026-08-17 | **MS-018(v0.8.0)로 승격**(D-21). 로드맵 순서상 단축키(MS-017) 후 |
+| TASK-042 | 추가 기능·논의 + v1.0.0 완주 결정 | Human | In Progress | 2026-08-17 | 추가 논의 완료 → 로드맵 D-21 확정. 잔여 = MS-018 후 **v1.0.0 완주 선언**(MS-014) |
 
-> **TASK-001~041 Done(039 제외) · MS-013 완료·v0.4.0 배포**(unit 203, 태그 push). 다음: **TASK-042**(추가 기능·논의 + v1.0.0 결정, Human). 039(준비감지)=후속 마이너. Done된 CMake Task(033~035·041) 상세는 session_2026-08-17_010 참조. C-3 폐기(D-15). 수동검증 TC-11(WSL) Deferred.
+> **TASK-001~041 Done(039 제외)·MS-013 완료·v0.4.0 배포**. **v1.0.0 로드맵 확정(D-21)**: MS-015 Go → MS-016 Node/TS → MS-017 단축키 → MS-018 준비감지 → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 post-1.0.** **다음: MS-015 착수**(Task 미분해). Done된 CMake Task(033~035·041) 상세는 session #010, Run Group(036~040)은 #011. C-3 폐기(D-15). TC-11(WSL) Deferred.
 
 - `상태` 값은 `Planned` / `In Progress` / `Review` / `Done`을 사용한다.
 - `담당`, `상태`, `마지막 갱신일`, `다음 액션`은 `task_registry.md` / `tasks/TASK-*.md`와 같은 의미로 유지한다.
@@ -72,8 +73,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-042 — 추가 기능·논의 + v1.0.0 완주 결정** (Human 주도): Human이 남겨둔 "추가 기능·논의"를 꺼내면 백로그/Intent로 정리하고, INT-001 v1.0.0 완주 선언 여부를 결정(D-19). 등록 조건(C-7+C-6)은 이미 충족·v0.4.0 배포됨.
-2. (선택) TASK-039 준비 감지(포트/헬스체크) — 후속 마이너. GitHub Release 생성(`v0.4.0` 태그 + vsix 첨부). 별도 트랙: TC-11(WSL, Deferred, GAP-001).
+1. **MS-015 — Go 어댑터 (v0.5.0) 착수** (v1.0.0 로드맵 D-21의 첫 단계): 착수 시 Task 분해 — 감지(`go.mod`)·chips·`go build`/`go run`·`dlv` 디버그. 어댑터 프레임워크 5번째 언어.
+2. 이후 로드맵 순차: MS-016 Node/TS(v0.6.0) → MS-017 단축키(v0.7.0) → MS-018 준비감지(v0.8.0) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**(Human 완주 선언). 원격디버그(MS-019)·크로스컴파일(MS-020)은 post-1.0. 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
 
@@ -117,6 +118,7 @@
 - **세션 #006 (계속) — v0.1.0 병합·push + MS-008 착수(TASK-022 코드완료·F5 대기)**: `feature/task-021-readme-vsix`→main FF 병합·`git push`(GitHub v0.1.0 반영). MS-008 분해(TASK-022~024, D-13). **TASK-022 구현**: `core/projectName.ts`(순수 검증·mocha4)+`ui/newProjectWizard.ts`(폴더→언어→이름)+`types.ts NEW_PROJECT_TASK_TYPE`+`cargoAdapter.createProjectTask`(`cargo new`, ProcessExecution 셸無)+`adapterRegistry.adapter()/creatableAdapters()`+`orchestrator.newProject()`(마법사→createProjectTask→TaskRunner(synthetic lock)→성공 시 refresh+findCreatedProject→setActiveProject+renderActive 자동전환 OQ-001; 실패 시 Run Doctor; 스텁 throw catch)+`extension.ts`/`package.json`(newProject 커맨드·devswitcher-newproject taskDef). check-types·lint·**unit 96**·esbuild OK. TASK-022 F5 통과·커밋(ab58c15/6999f34).
 - **세션 #006 (계속) — TASK-023 코드완료·F5 대기**: 계약 일반화 `createProjectTask→createProject(target): {kind:'task'}|{kind:'files'}`(types.ts `ProjectFile`/`ProjectCreation`). cargo/dotnet=네이티브 new(task, `dotnet new console -o`), **cmake/python=확장이 `workspace.fs`로 템플릿 작성(files)** — D-13을 ShellExecution→workspace.fs로 개정(셸 종류 미제어·C++ `<>` 충돌 발견). `cmakeTemplate.ts`/`pythonTemplate.ts`(순수·mocha2) + orchestrator `newProject` kind 분기 + `writeProjectFiles`(createDirectory+writeFile). interface_contract §5 갱신. **scope A**: v1 스위처 자동등장=Rust만(나머지 3개 listProjects v2 스텁). check-types·lint·**unit 98**·esbuild OK. TASK-023 F5 통과(4언어 생성·내용 검증)·커밋(2684ee7/467f8f3).
 - **세션 #006 (계속) — TASK-024·MS-008 Done**: 통합 테스트에 `newProject` 추가 + **퍼블리셔 회귀 fix**(EXTENSION_ID `seunghyun`→`lim8603`) → `npm run test:integration` **3 passing**. test_case(§1 퍼블리셔·11커맨드·§2 TC-14~17 F20 Pass·요약 Manual 11)·verification_evidence(EV-007 F20·EV-001 unit98·EV-002 11커맨드)·CHANGELOG([Unreleased] F20) 갱신. **MS-008 Done → 등록 Milestone(MS-001~008) 전부 완료.** 브랜치 `feature/ms-008-new-project-wizard` 5커밋(022·023 각 feat+docs + 024) **병합 대기**. **다음: main FF 병합+push (지시 시) → 선택적 v0.2.0 릴리즈.**
+- **세션 #012 — v1.0.0 완주 로드맵 확정(D-21) + 재스케줄**: TASK-042 추가 기능·논의. **v1.0.0 로드맵 = 4개 MINOR**: **MS-015 Go**(v0.5.0)·**MS-016 Node/TS**(v0.6.0, 6개 언어 완성)·**MS-017 키보드 단축키**(v0.7.0, 설정 페이지 General 탭 기본+변경, 팀 필수)·**MS-018 준비감지**(v0.8.0, TASK-039 승격=포트/헬스체크) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**. 버전 사다리 0.4.0→0.5~0.8→1.0.0(중간은 vsix+태그, 게시는 1.0.0만). **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0로 재스케줄**(Deferred; v1.1.0/v1.2.0 후보; 설계서 §16이 원래 이 둘을 "v2+ 백로그·v1 범위 밖"으로 분류했던 위치로 복귀). MS-015~018 신설·MS-019/020 백로그화·MS-014 재정의·milestone/task registry 반영. 순서 근거: 검증된 패턴(언어·준비감지)·핵심 가치 확장만 v1.0.0, 큰 아키텍처(§12.4 "한 창=한 환경" 한계 도전)는 1.0 이후. **다음: MS-015(Go) 착수**(Task 미분해). 원격/크로스·단축키 구현방식은 착수 시 ADR. **README/LICENSE/package.json 저작권 표기 불일치**(README=`LIM SEUNG HYUN`, LICENSE·author=`Seunghyun`) — 통일 필요, Human 확인 대기.
 - **세션 #011 — MS-013 Run Group 착수 + TASK-036(모델·저장·순수 계획/검증) 코드 완료 + 버전 정책 반전(D-19)**: 브리핑 후 **MS-013 착수**. **Human 설계 결정(2문항)**: ① 준비 신호=**프로세스 시작 감지**(`onDidStartTaskProcess`), 헬스체크는 후속 마이너 / ② 멤버=**Run 전용**. 추가 지시: **v1.0.0 자동 완주 안 함 — 특별 지시 전까지 v0.x.x 유지**, 추가논의 TASK 신설 후 그때 v1.0.0 결정. → **D-19**(버전 정책 반전: MS-013=v0.4.0, v1.0.0=Human 선언) + **TASK-042/MS-014**(v1.0.0 완주 결정 게이트) 신설. **ADR-015**(실행 모델: 준비=프로세스 시작·Run 전용·계층적 위상정렬·teardown=terminate·저장=workspaceState.groups). **TASK-036 구현**: `types.ts` `RunGroup`/`RunGroupMember`/`PersistedState.groups`(additive·`StateStore` 로드시 `[]` 정규화·importState 보존·profileExport `next.groups` 이월) + `stateStore` groups 접근자(get/save/delete) + 순수 `core/runGroupPlan.ts`(`planGroupExecution` Kahn 계층화[cyclic 잔여 보고]·`validateGroup`). **TASK-037 구현(동일 세션)**: `TaskRunner.start`(종료 대기 없이 시작·`onDidStartTaskProcess`=`ready`·`onDidEndTaskProcess`=`done`·`terminate`, 프로젝트 락 공유·`StartedTask`/`StartResult` 타입) + 순수 `core/groupSequencer.ts`(`sequenceGroup` — 계층 병렬 기동·준비 대기 후 다음 계층·실패 시 역순 teardown, injectable startMember) + `core/groupOrchestrator.ts`(`runGroup` validate→plan→sequence→추적·done prune / `stopGroup` terminate / required칩 가드[appliesTo] / prepareInvocation·runRequiresBuild 빌드 선행 / profile 오버레이 / `promptRunGroup`·`promptStopGroup` QuickPick) + extension/package `devSwitcher.runGroup`·`stopGroup` 커맨드 + 통합테스트 커맨드목록. unit `runGroupPlan`·`groupSequencer`=191·esbuild prod 91.5kb. **TASK-038 구현(동일 세션)**: 설정 페이지 **Run Groups 탭**(html.ts renderGroups/renderGroupEditor — 워크스페이스-레벨·activeProject 무관 렌더·그룹 CRUD·멤버 체크박스·종속 "starts after" 박스·검증경고·Run/Stop) + `settingsPanel`(GroupOrchestrator 주입·group 메시지 7종·`buildGroupViews` running/problems·`makeGroupId`) + 상태바 `setGroups`(`$(run-all) Groups`·GROUP_CHIP·render sweep/hideAll 면제) + extension 배선(`syncGroups`·setOnChange) + 순수 편집 `withMember`/`withMemberDependencies`(runGroupPlan, dangling 정리) + 단위 +5. **F5-1 버그 fix**(Human 스크린샷=설정 페이지 공백): `renderProfile`의 `project\'s`가 템플릿 리터럴서 `'`로 소비→webview JS 문자열 깨짐(세션 #010 유입 잠복 버그, **v0.3.0 설정 페이지 이미 깨짐**). 아포스트로피 제거 + `import type * as vscode` + 회귀 가드 `settingsHtml.test.ts`(스크립트 문법 파싱 검사). unit 197·esbuild prod 99.3kb. **F5-2 피드백 반영(D-20)**: ① 순서 UI **스테이지 번호**(종속 매트릭스→멤버별 Stage, `memberStages`/`withMemberStage` 순수, dependsOn/엔진 불변) ② 중복=**이미 실행 중 건너뛰기**(`startMember` `isRunning` 가드) ③ 상태바 **아이콘만** + **통합 메뉴** `promptGroups`(Run/Stop/Stop-all)·`stopAll`·`devSwitcher.groups` 커맨드 ④ 상태바 **Run 바로 뒤**(`TRAILING_ORDER`). unit **203**. **재-F5 통과**(Human) → TASK-036·037·038 Done. **TASK-040 완료 → v0.4.0 배포**: README Run groups·CHANGELOG [0.4.0]·TC-18~20·EV-009·`devswitcher-tools-0.4.0.vsix`(13파일 235.6KB) 스모크 통과. **4커밋 main FF 병합·`v0.4.0` 태그·origin push·브랜치 삭제.** **MS-013 Done → INT-001 등록 조건(C-7+C-6) 전부 충족.** 다음=TASK-042(추가 기능·논의 + v1.0.0 결정, Human). 039(준비감지)=후속 마이너.
 - **세션 #010 — TASK-041(CMakePresets.json) F5 통과 → MS-012 구현 완료**: **핵심 설계(Human 승인)**=Preset 칩 **동적 대체**(D-17). **코어 계약(제네릭)**: `types.ts` `ChipDescriptor.appliesTo?(project):Promise<boolean>`(false=칩 숨김+필수 프롬프트/기본 시딩 생략) · `statusBar` `RenderOptions.hiddenChipIds` 존중 · `orchestrator` `resolveHiddenChips`(렌더 전 해소·stash)+`renderBar`(5개 render 통일)+ensureRequiredChips/applyDefaults appliesTo 가드. **UI는 predicate 결과만 알 뿐 프리셋 무지(BR-003).** **`cmakeBridge`(순수)**: `parseConfigurePresets`(main+user 병합·`inherits` binaryDir 상속[cyclic 가드]·`hidden` 제외[상속 부모로 유지])·`resolvePresetBinaryDir`(`${sourceDir}`/`${presetName}` 확장·폴백) + I/O `configurePreset`(`cmake --preset` cwd=srcDir·서명캐시)·`targetsForPreset`·`dropTargetCache` + `buildArgs` config **옵셔널**(프리셋 `--config` 생략). **`cmakeAdapter`**: `presetCache`(srcDir별·동기 peek)·`readPresetsFor`(workspace.fs 읽기전용·`siblingUri` 원격안전)·`configuredTargets`(프리셋↔플레인 단일 분기) + **Preset 칩**(required·appliesTo=프리셋有·displayName)·profile/architecture appliesTo=프리셋無. build/run(sync peekActivePreset)·prepare/resolve/debug(async configuredTargets). **target 칩·디버거 자동판별은 프리셋 binaryDir에서 재사용.** 픽스처 `fixtures/cmake/presets/`(hidden vs-base 상속·`${sourceDir}/out/build/${presetName}` 매크로·msvc-x64/x86/clangcl 전환). check-types·lint·unit **172**(+7)·esbuild 84.8kb. **실 cmake 4.4.2 스모크 통과**(실 브리지: parse→`cmake --preset msvc-x64`→File API `preset-demo`→MSVC 판별→build→run 인자). **F5 완전 통과(Human)**: Preset 칩 노출·profile/arch 숨김·`cmake --build …\out\build\msvc-x64`(--config無)·run 출력·debug cppvsdbg 중단점. 비프리셋(hello/test-cmake) 현행 유지. 커밋(feat+docs)·미병합. **다음: MS-012 main 병합→Done(C-7 완주).** ※ Human 질문: 스모크 절대경로는 스크래치패드 일회성 스크립트(미배포·미커밋), 확장 소스는 런타임 프로젝트 경로 유도로 이식성 무결.
 - **세션 #009 — TASK-033 계속(listProjects+chips+File API) 코드 완료(Review, F5 대기)**: cmake 4.4.2+VS18(2026)로 `hello` 픽스처 configure→**File API reply 실구조 확보**. **`cmakeBridge.ts`**: 순수 파서 `hasProjectCommand`/`parseProjectName`(project() 루트·이름, 주석제거·변수명 폴백) + File API 4종(`parseReplyIndexCodemodel`·`parseCodemodelConfigs`·`parseTargetInfo`·`executableArtifact`) + fs `readReplyDir`(index→codemodel→target, EXECUTABLE 필터·config 선택/폴백) + `CMakeBridge.listTargets`(shared query `codemodel-v2` 작성+plain configure+readReplyDir, (buildDir,config) 캐시)+`invalidateCache` 확장. **`cmakeAdapter.ts`**: `listProjects`(project() 루트 판별·`workspace.fs`·id=`cmake:${rel}`) + chips 3종(**profile** 정적 4 build type·default Debug / **architecture** 정적 플랫폼 Host default+x64/Win32/ARM64[Human 승인, `-A` 주입은 TASK-034] / **target** File API EXECUTABLE·단일 자동선택·configure 실패 시 [] graceful) + **`requiredExtensions` `[]`**(ADR-014: 빌드/실행 무의존, 디버거 확장 TASK-035). 픽스처: `fixtures/cmake/hello/`(F5용) + `fixtures/cmake/file-api-reply/`(실 reply 5파일). 테스트 +12(File API 파서·readReplyDir 실 픽스처 end-to-end). check-types·lint·**unit 154**·esbuild **76.9kb** OK. **실 cmake end-to-end 스모크 통과**: `listTargets(Debug)`→`Debug/hello.exe`, `listTargets(Release)`→`Release/hello.exe`(구성별 artifact 경로 정확). **F5 통과·커밋**(`8664be9`+`4ca0330`). ► **TASK-034**(동일 세션): 핵심이슈=동기 단일 Task 모델에 configure+build 2단계 담기 → **optional `prepareInvocation` 훅**(Human 승인; 오케스트레이터가 build/run/debug Task 전 await; CMake만 구현, 나머지 no-op). `cmakeBridge` `configureArgs`/`buildArgs`/`overlayDefines`+오버레이-aware `configure`(서명캐시)/`targetsFor`. `cmakeAdapter` `createBuildTask`=`cmake --build`(셸無·`$msCompile`)+`prepareInvocation`=오버레이 configure+`resolveExecutable`=File API artifact `join(buildDir,·)`. `package.json` `devSwitcher.cmake` taskDef. interface_contract §4 반영. unit **158**(+4). **실 cmake 빌드/실행 스모크 통과**(configure 오버레이→`cmake --build`→exe 산출·실행) + **F5 통과**(test-cmake.exe). F5 피드백: 교차-컴파일러 옵션 예시 수정(`/O2 /W4` MSVC·MSVC/GCC 병기, **KB #9**). **F5 통과·커밋**(`c0f564a`+`a231e24`+`814d654`). ► **TASK-035**(run+debug): 디버거는 컴파일러 강결합이라 File API `toolchains`(`CMAKE_CXX_COMPILER_ID`)로 **자동판별**(`debuggerFor`: MSVC→cppvsdbg/GNU→cppdbg+gdb/Clang→cppdbg+lldb, WSL/MinGW 자동대응) + **override 설정**(`devSwitcher.cmake.debugger`). `createDebugConfig`가 판별 확장 **동적 ensure**(requiredExtensions=[] 유지). run=**build-then-exec**(`ActionCapabilities.runRequiresBuild`→오케스트레이터 사전 build + `createRunTask`=`peekArtifact` 동기캐시 exe·디버거 무의존). 오케스트레이터 Task 생성을 prepareInvocation 이후로 이동. unit **165**(+7). 실 cmake 스모크(detectCompiler→MSVC·debuggerFor→cppvsdbg·peekArtifact→Debug/hello.exe) + **F5 Run+Debug 통과**(중단점 정지). **KB #6**(환경결속 툴 자동판별). **다음: 커밋(이 세션 마무리) → TASK-041(CMakePresets)**.
@@ -174,6 +176,7 @@
 | D-17 | **CMakePresets = Preset 칩 동적 대체**(TASK-041). `ChipDescriptor.appliesTo` 제네릭 predicate 추가(false=칩 숨김+필수/기본 시딩 생략, UI 언어 무지 유지) → 프리셋 有 시 Preset 칩이 profile/architecture 대체(프리셋이 컴파일러+제너레이터+빌드타입 인코딩), 無 시 현행 `-S -B -D` 폴백. `cmake --preset <name>` configure는 프리셋 binaryDir(`${sourceDir}`/`${presetName}` 확장·`inherits` 해소)로·`--config` 생략. 프리셋 파일 workspace.fs 읽기전용(ADR-013). target 칩·디버거 자동판별 재사용. **F5 통과** | `ADR-014`, `interface_contract §2·§4` | 2026-08-17 |
 | D-20 | **Run Group F5 피드백 결정** — ① 순서 지정 UI = **스테이지 번호**(멤버별 Stage, 같은 번호=병렬; N×N 종속 매트릭스 폐기; dependsOn/엔진 불변, stage는 투영) ② 중복 실행 = **이미 실행 중 멤버 건너뛰기**(abort 아님) ③ 상태바 그룹 = **아이콘만 + 통합 메뉴**(Run/Stop/Stop-all, `devSwitcher.groups`) ④ 상태바 위치 = **Run 바로 뒤** | `runGroupPlan.ts`(memberStages·withMemberStage), `groupOrchestrator.ts`(promptGroups·stopAll·skip), `statusBar.ts` | 2026-08-17 |
 | D-19 | **버전 정책 반전** — INT-001 등록 조건(C-7+C-6) 충족만으로 **v1.0.0 자동 트리거 안 함**. C-6 Run Group(MS-013)=**v0.4.0**(MINOR). v1.0.0은 추가 기능·논의(MS-014/TASK-042) 후 **Human 명시 선언** 시. 특별 지시 전까지 v0.x.x 유지. 근거: 완주 후 추가 기능·논의 잔존(Human) | `milestone_registry.md`(SemVer), `task_registry.md`(TASK-042), ADR-015 | 2026-08-17 |
+| D-21 | **v1.0.0 완주 로드맵 확정 + 재스케줄** — TASK-042 추가 기능·논의 결과. **v1.0.0 = 4개 MINOR**: MS-015 Go(v0.5.0) → MS-016 Node/TS(v0.6.0, 6개 언어 완성) → MS-017 키보드 단축키(v0.7.0, General 탭 기본+변경) → MS-018 준비감지(v0.8.0, TASK-039 승격) → **MS-014 v1.0.0 최종점검+Marketplace 게시+GitHub Release**. **원격디버그(MS-019)·크로스컴파일(MS-020)은 단위가 커 post-1.0로 재스케줄**(v1.1.0/v1.2.0 후보; 설계서 §16 원래 "v2+ 백로그" 위치로 복귀). 중간 릴리즈(0.5~0.8)는 vsix+태그만·게시는 v1.0.0에서만. 원격/크로스·단축키 구현방식은 착수 시 ADR. D-19 연장 | `milestone_registry.md`, `task_registry.md`, 세션 #012 | 2026-08-17 |
 | ADR-015 | **Run Group 실행 모델** — 준비 신호=**프로세스 시작**(`onDidStartTaskProcess`, 종료 아님)·**Run 전용**·**계층적 위상정렬**(병렬/순차)·teardown=`TaskExecution.terminate`·저장=`workspaceState.groups`(ADR-001·additive). 헬스체크(TASK-039)는 후속 마이너 분리. TaskRunner 프로젝트별 락 재사용 | `adrs/ADR-015_Run_Group_실행_모델.md` | 2026-08-17 |
 | D-15 | **C-3 폐기(Won't Do)** — 오버레이를 캐노니컬 파일에 영구 편집/승격하는 기능을 v2 백로그에서 제거. 근거: ①ADR-011 근간이 "파일 무편집" ②영속화·공유는 프로파일 export/import(F12)가 이미 해결 ③TOML 손상·머지충돌 리스크. 후속: `LanguageAdapter.persistSetting` 계약 제거(TASK-026). "파일 무편집 = 영구 불변식"을 ADR-013으로 기록. **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정, 완주 로드맵 MS-009~013 착수 | `ADR-013`, `milestone_registry.md` | 2026-08-16 |
 
@@ -243,14 +246,20 @@
 | Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | Done | C-7 2/3. F5(Doctr 제외) 통과·main 병합·push. (v0.3.0 번들 예정) |
 | Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | Done | C-7 3/3 **완주**. ADR-014. TASK-033·034·035·041 전부 F5·**main FF 병합(2026-08-17)**. Preset 칩 동적 대체·`cmake --preset`. **4개 언어 전부 스위처 실동작.** |
 | Milestone | MS-013 | Run Group (C-6) | Done | **완료·v0.4.0 배포**(세션 #011). ADR-015·D-20. 계층 기동·스테이지 순서·병렬·skip·상태바 통합 메뉴. 036·037·038·040 Done. TASK-039(준비감지)=후속 마이너 분리. C-6 충족 |
-| Milestone | MS-014 | v1.0.0 완주 결정 게이트 | Planned | 세션 #011 신규(Human 지시). 추가 기능·논의 후 v1.0.0 완주 여부 Human 결정(TASK-042, D-19) |
+| Milestone | MS-014 | v1.0.0 완주 — 최종 점검 + 게시 | Planned | **로드맵 최종(D-21)**. 통합 테스트 보강 + Marketplace 게시 + GitHub Release → v1.0.0 완주 선언(Human, D-19). 실행 순서상 MS-015~018 이후 |
+| Milestone | MS-015 | Go 어댑터 (v0.5.0) | Planned | v1.0.0 로드맵 D-21 1단계. 5번째 언어. **다음 착수** |
+| Milestone | MS-016 | Node/TS 어댑터 (v0.6.0) | Planned | D-21 2단계. 6번째 언어 → 6개 언어 완성 |
+| Milestone | MS-017 | 키보드 단축키 설정 (v0.7.0) | Planned | D-21 3단계. General 탭 기본 단축키+변경. 구현방식 착수 시 ADR |
+| Milestone | MS-018 | Run Group 준비 감지 (v0.8.0) | Planned | D-21 4단계(v1.0.0 마지막 기능). TASK-039 승격(포트/헬스체크) |
+| Milestone | MS-019 | 원격 디버그 타깃 (post-1.0) | Deferred | **v1.0.0 이후 백로그(D-21)** — v1.1.0 후보. 로컬 빌드+원격 실행/어태치. 착수 시 ADR |
+| Milestone | MS-020 | 크로스 컴파일 (도커) (post-1.0) | Deferred | **v1.0.0 이후 백로그(D-21)** — v1.2.0 후보. 아키텍처 칩 확장·도커 타깃 빌드. 착수 시 ADR |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
 | Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Superseded | F20 마법사 + features/untrusted 수정 |
 | Release | v0.4.0 | `devswitcher-tools-0.4.0.vsix` | Done | **Run Group(C-6)** — 계층 기동·스테이지 순서·병렬·skip·상태바 통합 메뉴 + 설정 페이지 공백 버그 fix. 13파일 235.6KB. 설치 스모크 통과(`@0.4.0`). main FF·`v0.4.0` 태그·origin push |
 | Release | v0.3.0 | `devswitcher-tools-0.3.0.vsix` | Superseded | **C-7 3언어 실구현 번들**(C#/Python/C++·CMake presets·Rescan·다언어 activation·아이콘). **README 전면 영문 재작성** + 실사용 상태바 이미지(hero + 언어별 4). 13파일 230KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.3.0`) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
-- `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
+- `Milestone`: `Planned` / `In Progress` / `Review` / `Done` / `Deferred`
 - `User Story`: `Draft` / `Approved` / `Implemented`
 - `Task`: `Planned` / `In Progress` / `Review` / `Done`
 
