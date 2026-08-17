@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
   CMakeBridge,
   type CMakeExec,
@@ -15,11 +15,13 @@ import {
   overlayDefines,
   parseCMakeVersion,
   parseCodemodelConfigs,
+  parseConfigurePresets,
   parseCxxCompilerId,
   parseProjectName,
   parseReplyIndexCodemodel,
   parseTargetInfo,
   readReplyDir,
+  resolvePresetBinaryDir,
 } from '../../adapters/cmake/cmakeBridge';
 
 describe('cmakeProjectName', () => {
@@ -189,6 +191,12 @@ describe('configureArgs / buildArgs / overlayDefines', () => {
     ]);
   });
 
+  it('buildArgs omits --config for preset builds (undefined config)', () => {
+    assert.deepEqual(buildArgs('/src/out/build/msvc', undefined, 'hello'), [
+      '--build', '/src/out/build/msvc', '--target', 'hello',
+    ]);
+  });
+
   it('overlayDefines maps compiler/linker flags, ignoring empty values', () => {
     assert.deepEqual(overlayDefines({ 'cxx-flags': '-O2 -Wall' }, { 'exe-linker-flags': '/DEBUG' }), {
       CMAKE_CXX_FLAGS: '-O2 -Wall',
@@ -263,5 +271,69 @@ describe('debuggerFor', () => {
 
   it('the codelldb override forces CodeLLDB regardless of compiler', () => {
     assert.deepEqual(debuggerFor('MSVC', 'win32', 'codelldb'), { type: 'lldb', extensionId: 'vadimcn.vscode-lldb' });
+  });
+});
+
+describe('parseConfigurePresets (TASK-041)', () => {
+  it('reads the visible presets from the real CMakePresets.json fixture', () => {
+    const json = readFileSync(
+      join(process.cwd(), 'src', 'test', 'fixtures', 'cmake', 'presets', 'CMakePresets.json'),
+      'utf8',
+    );
+    const presets = parseConfigurePresets(json);
+    // The hidden `vs-base` template is excluded; the three concrete presets remain in order.
+    assert.deepEqual(presets.map((p) => p.name), ['msvc-x64', 'msvc-x86', 'clangcl-x64']);
+    assert.equal(presets[0].displayName, 'MSVC x64');
+    // binaryDir is inherited from vs-base with its macros still intact (expanded later).
+    assert.equal(presets[0].binaryDir, '${sourceDir}/out/build/${presetName}');
+  });
+
+  it('resolves binaryDir through the inherits chain and excludes hidden bases', () => {
+    const main = JSON.stringify({
+      version: 3,
+      configurePresets: [
+        { name: 'base', hidden: true, binaryDir: '${sourceDir}/b/${presetName}' },
+        { name: 'debug', displayName: 'Debug', inherits: 'base' },
+      ],
+    });
+    const user = JSON.stringify({ version: 3, configurePresets: [{ name: 'local', inherits: 'debug' }] });
+    const presets = parseConfigurePresets(main, user);
+    // hidden `base` excluded; user preset appended after project presets.
+    assert.deepEqual(presets.map((p) => p.name), ['debug', 'local']);
+    assert.equal(presets.find((p) => p.name === 'debug')?.binaryDir, '${sourceDir}/b/${presetName}');
+    // transitive inherit: local → debug → base.
+    assert.equal(presets.find((p) => p.name === 'local')?.binaryDir, '${sourceDir}/b/${presetName}');
+  });
+
+  it('supports an inherits array (first parent that declares binaryDir wins)', () => {
+    const json = JSON.stringify({
+      configurePresets: [
+        { name: 'noBin', hidden: true },
+        { name: 'withBin', hidden: true, binaryDir: '${sourceDir}/x' },
+        { name: 'leaf', inherits: ['noBin', 'withBin'] },
+      ],
+    });
+    assert.equal(parseConfigurePresets(json).find((p) => p.name === 'leaf')?.binaryDir, '${sourceDir}/x');
+  });
+
+  it('guards cyclic inherits and degrades to [] on missing/malformed input', () => {
+    const cyclic = JSON.stringify({ configurePresets: [{ name: 'a', inherits: 'b' }, { name: 'b', inherits: 'a' }] });
+    const presets = parseConfigurePresets(cyclic);
+    assert.deepEqual(presets.map((p) => p.name), ['a', 'b']);
+    assert.equal(presets[0].binaryDir, undefined); // cycle → no binaryDir, no hang
+    assert.deepEqual(parseConfigurePresets(undefined), []);
+    assert.deepEqual(parseConfigurePresets('{ not json'), []);
+    assert.deepEqual(parseConfigurePresets(JSON.stringify({ version: 3 })), []); // no configurePresets key
+  });
+});
+
+describe('resolvePresetBinaryDir (TASK-041)', () => {
+  it('expands ${sourceDir} and ${presetName} and resolves against the source dir', () => {
+    const preset = { name: 'msvc-x64', binaryDir: '${sourceDir}/out/build/${presetName}' };
+    assert.equal(resolvePresetBinaryDir(preset, '/proj'), resolve('/proj', 'out/build/msvc-x64'));
+  });
+
+  it('falls back to <srcDir>/build/<name> when the preset declares no binaryDir', () => {
+    assert.equal(resolvePresetBinaryDir({ name: 'ninja' }, '/proj'), resolve('/proj', 'build/ninja'));
   });
 });

@@ -1,0 +1,35 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "vs-base",
+      "hidden": true,
+      "description": "Shared Visual Studio generator settings (hidden template, inherited only).",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/out/build/${presetName}"
+    },
+    {
+      "name": "msvc-x64",
+      "displayName": "MSVC x64",
+      "inherits": "vs-base",
+      "architecture": "x64",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20"
+      }
+    },
+    {
+      "name": "msvc-x86",
+      "displayName": "MSVC x86 (Win32)",
+      "inherits": "vs-base",
+      "architecture": "Win32"
+    },
+    {
+      "name": "clangcl-x64",
+      "displayName": "Clang-CL x64",
+      "inherits": "vs-base",
+      "architecture": "x64",
+      "toolset": "ClangCL"
+    }
+  ]
+}

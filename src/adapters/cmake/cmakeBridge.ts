@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import type { OptionValue } from '../../core/types';
 import { DevSwitcherError } from '../../core/errors';
 
@@ -206,9 +206,18 @@ export function configureArgs(srcDir: string, buildDir: string, opts: ConfigureO
   return args;
 }
 
-/** Build args: `cmake --build <build> --config <cfg> --target <target>` (no shell, NFR-002). */
-export function buildArgs(buildDir: string, config: string, target: string): string[] {
-  return ['--build', buildDir, '--config', config, '--target', target];
+/**
+ * Build args: `cmake --build <build> [--config <cfg>] --target <target>` (no shell, NFR-002).
+ * `config` is omitted for preset builds (TASK-041) — the preset already fixed the generator
+ * and build type, so `--config` would be redundant (multi-config) or ignored (single-config).
+ */
+export function buildArgs(buildDir: string, config: string | undefined, target: string): string[] {
+  const args = ['--build', buildDir];
+  if (config) {
+    args.push('--config', config);
+  }
+  args.push('--target', target);
+  return args;
 }
 
 /**
@@ -230,6 +239,111 @@ export function overlayDefines(
     defines.CMAKE_EXE_LINKER_FLAGS = link;
   }
   return defines;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CMakePresets.json (TASK-041) — pure parsing. The extension reads CMakePresets.json
+// (+ CMakeUserPresets.json) read-only (ADR-013) and offers each visible configurePreset
+// as the Preset chip; `cmake --preset <name>` then drives configure. The preset encodes
+// compiler + generator + build type, so it replaces the profile/architecture chips.
+// `inherits` is resolved for binaryDir and ${sourceDir}/${presetName} macros are expanded
+// (resolvePresetBinaryDir); all other fields/macros are left to cmake itself.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A configure preset offered as a Preset-chip item. */
+export interface CMakeConfigurePreset {
+  name: string;
+  displayName?: string;
+  /** inherits-resolved binaryDir, still holding ${sourceDir}/${presetName} macros (undefined = none). */
+  binaryDir?: string;
+}
+
+interface RawConfigurePreset {
+  name?: string;
+  displayName?: string;
+  binaryDir?: string;
+  hidden?: boolean;
+  inherits?: string | string[];
+}
+
+/** The raw configurePresets array from one presets JSON file (tolerant of malformed input). */
+function rawConfigurePresets(json: string | undefined): RawConfigurePreset[] {
+  if (!json) {
+    return [];
+  }
+  try {
+    const doc = JSON.parse(json) as { configurePresets?: RawConfigurePreset[] };
+    return Array.isArray(doc.configurePresets) ? doc.configurePresets : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The visible configure presets from CMakePresets.json (+ CMakeUserPresets.json). `hidden`
+ * presets are excluded from the result but still serve as inheritance parents (the common
+ * "hidden base" pattern). Each preset's binaryDir is resolved through its `inherits` chain
+ * (first parent that declares one wins; cycles are guarded); macro expansion is deferred to
+ * resolvePresetBinaryDir. User presets are appended after project presets and may inherit
+ * from them. Duplicate names keep the first definition.
+ */
+export function parseConfigurePresets(mainJson: string | undefined, userJson?: string): CMakeConfigurePreset[] {
+  const raw = [...rawConfigurePresets(mainJson), ...rawConfigurePresets(userJson)];
+  const byName = new Map<string, RawConfigurePreset>();
+  for (const preset of raw) {
+    if (typeof preset.name === 'string' && !byName.has(preset.name)) {
+      byName.set(preset.name, preset);
+    }
+  }
+  const inheritedBinaryDir = (name: string, seen: Set<string>): string | undefined => {
+    if (seen.has(name)) {
+      return undefined; // cyclic inherits — stop
+    }
+    seen.add(name);
+    const preset = byName.get(name);
+    if (!preset) {
+      return undefined;
+    }
+    if (typeof preset.binaryDir === 'string' && preset.binaryDir) {
+      return preset.binaryDir;
+    }
+    const parents =
+      preset.inherits === undefined ? [] : Array.isArray(preset.inherits) ? preset.inherits : [preset.inherits];
+    for (const parent of parents) {
+      const found = inheritedBinaryDir(parent, seen);
+      if (found) {
+        return found;
+      }
+    }
+    return undefined;
+  };
+  const presets: CMakeConfigurePreset[] = [];
+  const emitted = new Set<string>();
+  for (const preset of raw) {
+    if (typeof preset.name !== 'string' || preset.hidden === true || emitted.has(preset.name)) {
+      continue;
+    }
+    emitted.add(preset.name);
+    presets.push({
+      name: preset.name,
+      displayName: typeof preset.displayName === 'string' ? preset.displayName : undefined,
+      binaryDir: inheritedBinaryDir(preset.name, new Set()),
+    });
+  }
+  return presets;
+}
+
+/**
+ * Absolute build directory for a preset: its binaryDir with ${sourceDir}/${presetName}
+ * expanded, resolved against the source dir. Falls back to `<srcDir>/build/<name>` when the
+ * preset (and its parents) declare no binaryDir — matching cmake's conventional layout.
+ */
+export function resolvePresetBinaryDir(preset: CMakeConfigurePreset, srcDir: string): string {
+  const template = preset.binaryDir ?? '${sourceDir}/build/${presetName}';
+  const expanded = template
+    .replace(/\$\{sourceDir\}/g, srcDir)
+    .replace(/\$\{presetName\}/g, preset.name);
+  return resolve(srcDir, expanded);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -462,6 +576,37 @@ export class CMakeBridge {
       );
     }
     this.configuredSig.set(buildDir, signature);
+    this.dropTargetCache(buildDir);
+  }
+
+  /**
+   * Configure via a named preset: `cmake --preset <name>` run from the source dir (TASK-041).
+   * The preset owns the binary dir, generator, toolchain and build type; we only write the
+   * File API query into that binary dir first so targets/toolchains come back. Signature-gated
+   * on the preset name so repeated clicks don't reconfigure. The canonical CMakePresets.json
+   * is never edited (ADR-013). On a reconfigure the cached target lists for this build tree
+   * are dropped.
+   */
+  async configurePreset(srcDir: string, presetName: string, binaryDir: string): Promise<void> {
+    const signature = JSON.stringify(['preset', presetName]);
+    if (this.configuredSig.get(binaryDir) === signature) {
+      return;
+    }
+    await this.writeApiQueries(binaryDir);
+    const result = await execCapture('cmake', ['--preset', presetName], srcDir, this.exec);
+    if (result.exitCode !== 0) {
+      throw new DevSwitcherError(
+        'CMAKE_CONFIGURE_FAILED',
+        `cmake --preset ${presetName} failed for ${srcDir} (exit ${result.exitCode}).`,
+        result.stderr,
+      );
+    }
+    this.configuredSig.set(binaryDir, signature);
+    this.dropTargetCache(binaryDir);
+  }
+
+  /** Drop the cached target lists for one build tree (all configs) after a (re)configure. */
+  private dropTargetCache(buildDir: string): void {
     for (const key of [...this.targetCache.keys()]) {
       if (key.startsWith(`${buildDir}\0`)) {
         this.targetCache.delete(key);
@@ -497,6 +642,28 @@ export class CMakeBridge {
    */
   listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeExeTarget[]> {
     return this.targetsFor(srcDir, buildDir, {}, config);
+  }
+
+  /**
+   * Configure via a preset (if needed) and list its executable targets (TASK-041). The
+   * preset's binaryDir is the reply source; `config` is left undefined so readReplyDir reads
+   * the codemodel's default (only) configuration. Cached per (binaryDir, config).
+   */
+  async targetsForPreset(
+    srcDir: string,
+    presetName: string,
+    binaryDir: string,
+    config?: string,
+  ): Promise<CMakeExeTarget[]> {
+    const key = `${binaryDir}\0${config ?? ''}`;
+    const cached = this.targetCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    await this.configurePreset(srcDir, presetName, binaryDir);
+    const targets = await readReplyDir(join(binaryDir, '.cmake', 'api', 'v1', 'reply'), config);
+    this.targetCache.set(key, targets);
+    return targets;
   }
 
   /** Request codemodel (targets/paths) + toolchains (compiler id) replies on the next

@@ -74,6 +74,15 @@ export interface ChipDescriptor {
    * `rustup target add` a not-installed target (declined/failed install → not stored).
    */
   onPick?(project: ProjectInfo, value: ChipValue): Promise<boolean>;
+  /**
+   * Optional per-project applicability gate (TASK-041). When it resolves false the chip is
+   * hidden for that project — and skipped by the required-chip prompt and default seeding —
+   * so an adapter can swap which chips a project shows. CMake uses it to present the Preset
+   * chip only when CMakePresets.json exists (hiding profile/architecture then), and the
+   * reverse when it doesn't. Omitted = the chip always applies. The UI stays language-
+   * agnostic: it consults this predicate only, never learns about presets (BR-003).
+   */
+  appliesTo?(project: ProjectInfo): Promise<boolean>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

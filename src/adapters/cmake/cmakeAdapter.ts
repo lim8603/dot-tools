@@ -1,4 +1,4 @@
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import { ensureExtension } from '../../core/ensureExtension';
@@ -13,6 +13,7 @@ import {
 import { cmakeProjectFiles } from './cmakeTemplate';
 import {
   CMakeBridge,
+  CMakeConfigurePreset,
   CMakeExeTarget,
   CODELLDB_EXTENSION,
   CPPTOOLS_EXTENSION,
@@ -23,7 +24,9 @@ import {
   debuggerFor,
   hasProjectCommand,
   overlayDefines,
+  parseConfigurePresets,
   parseProjectName,
+  resolvePresetBinaryDir,
 } from './cmakeBridge';
 
 const bridge = new CMakeBridge();
@@ -56,14 +59,101 @@ async function readManifest(uri: vscode.Uri): Promise<string | undefined> {
   }
 }
 
+// ─── CMakePresets.json (TASK-041) ────────────────────────────────────────────
+// When a project has CMakePresets.json, the Preset chip replaces profile + architecture
+// (via ChipDescriptor.appliesTo) and `cmake --preset <name>` drives configure/build/run/
+// debug. Presets are read via workspace.fs (remote-safe, ADR-008), parsed by the pure
+// bridge helper, and cached per source dir so the *synchronous* run/build task assembly can
+// peek them — the async chips / prepareInvocation warm the cache first. target discovery and
+// the compiler-detected debugger (TASK-035) are reused unchanged from the preset's binaryDir.
+
+const presetCache = new Map<string, CMakeConfigurePreset[]>();
+
+/** The uri of a file sitting next to the project's CMakeLists.txt (remote-safe, ADR-008). */
+function siblingUri(project: ProjectInfo, filename: string): vscode.Uri {
+  const rel = relative(project.workspaceFolder.uri.fsPath, join(srcDirOf(project), filename));
+  return vscode.Uri.joinPath(project.workspaceFolder.uri, ...rel.split(/[\\/]/));
+}
+
+/** Read + parse the project's configure presets (CMakePresets.json + CMakeUserPresets.json),
+ *  cached per source dir. [] when neither file exists or every preset is hidden. */
+async function readPresetsFor(project: ProjectInfo): Promise<CMakeConfigurePreset[]> {
+  const srcDir = srcDirOf(project);
+  const cached = presetCache.get(srcDir);
+  if (cached) {
+    return cached;
+  }
+  const main = await readManifest(siblingUri(project, 'CMakePresets.json'));
+  const user = await readManifest(siblingUri(project, 'CMakeUserPresets.json'));
+  const presets = parseConfigurePresets(main, user);
+  presetCache.set(srcDir, presets);
+  return presets;
+}
+
+/** Whether the project drives configure through presets (≥1 visible configure preset). */
+async function hasPresets(project: ProjectInfo): Promise<boolean> {
+  return (await readPresetsFor(project)).length > 0;
+}
+
+/** The active preset name: the stored pick, else the sole/first preset (auto-selected like
+ *  the target chip). undefined when the project has no presets. */
+function activePresetName(sel: Selection, presets: CMakeConfigurePreset[]): string | undefined {
+  if (presets.length === 0) {
+    return undefined;
+  }
+  const stored = sel.values.preset;
+  if (typeof stored === 'string' && presets.some((p) => p.name === stored)) {
+    return stored;
+  }
+  return presets[0].name;
+}
+
+/** Sync resolution of the active preset (name + absolute binaryDir) from the warm cache —
+ *  for the synchronous build/run task assembly. undefined when no presets (plain path). */
+function peekActivePreset(project: ProjectInfo, sel: Selection): { name: string; binaryDir: string } | undefined {
+  const presets = presetCache.get(srcDirOf(project));
+  const name = presets ? activePresetName(sel, presets) : undefined;
+  const preset = presets?.find((p) => p.name === name);
+  return preset ? { name: preset.name, binaryDir: resolvePresetBinaryDir(preset, srcDirOf(project)) } : undefined;
+}
+
 /**
- * Executable targets for a project via the File API. A configure failure (no compiler yet,
- * a broken CMakeLists, …) degrades to [] so the Target chip shows an empty list rather than
- * throwing — Doctor surfaces the real cause. TASK-034 threads the overlay build-dir/profile.
+ * Configure (via the active preset, or the plain overlay path) and return the build dir +
+ * executable targets. The single async entry point the prepare/resolve/debug flows share,
+ * so the preset-vs-plain decision lives in one place.
+ */
+async function configuredTargets(
+  project: ProjectInfo,
+  sel: Selection,
+  config: InvocationConfig,
+): Promise<{ buildDir: string; targets: CMakeExeTarget[] }> {
+  const srcDir = srcDirOf(project);
+  const presets = await readPresetsFor(project);
+  const preset = presets.find((p) => p.name === activePresetName(sel, presets));
+  if (preset) {
+    const binaryDir = resolvePresetBinaryDir(preset, srcDir);
+    return { buildDir: binaryDir, targets: await bridge.targetsForPreset(srcDir, preset.name, binaryDir) };
+  }
+  const buildDir = buildDirFor(srcDir, config);
+  const targets = await bridge.targetsFor(srcDir, buildDir, configureOptsFor(sel, config), activeCfg(sel));
+  return { buildDir, targets };
+}
+
+/**
+ * Executable targets for the Target chip. Preset projects enumerate via the first preset
+ * (add_executable names are the same across presets, so any configured preset yields the
+ * list; the selected preset drives the real paths in configuredTargets). Non-preset projects
+ * use the plain default build dir. A configure failure (no compiler yet, a broken CMakeLists,
+ * …) degrades to [] so the chip shows empty rather than throwing — Doctor surfaces the cause.
  */
 async function listExecutableTargetsFor(project: ProjectInfo): Promise<CMakeExeTarget[]> {
   const srcDir = srcDirOf(project);
   try {
+    const presets = await readPresetsFor(project);
+    if (presets.length > 0) {
+      const preset = presets[0];
+      return await bridge.targetsForPreset(srcDir, preset.name, resolvePresetBinaryDir(preset, srcDir));
+    }
     return await bridge.listTargets(srcDir, defaultBuildDir(srcDir));
   } catch {
     return [];
@@ -108,12 +198,16 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
   return Object.keys(env).length > 0 ? env : undefined;
 }
 
-/** Build task: `cmake --build <buildDir> --config <cfg> --target <target>` (no shell, NFR-002). */
+/** Build task: `cmake --build <buildDir> [--config <cfg>] --target <target>` (no shell, NFR-002).
+ *  Under a preset the build dir is the preset's binaryDir and --config is dropped (the preset
+ *  fixed the generator + build type); the peek is warm because prepareInvocation ran first. */
 function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
   const srcDir = srcDirOf(project);
-  const buildDir = buildDirFor(srcDir, config);
+  const preset = peekActivePreset(project, sel);
+  const buildDir = preset ? preset.binaryDir : buildDirFor(srcDir, config);
+  const buildConfig = preset ? undefined : activeCfg(sel);
   const target = activeTarget(sel) ?? 'ALL_BUILD'; // the required chip guarantees a value before build
-  const execution = new vscode.ProcessExecution('cmake', buildArgs(buildDir, activeCfg(sel), target), {
+  const execution = new vscode.ProcessExecution('cmake', buildArgs(buildDir, buildConfig, target), {
     cwd: srcDir,
     env: taskEnv(config),
   });
@@ -140,11 +234,12 @@ function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: Invoca
  *  because actions.runRequiresBuild). Falls back to the conventional multi-config path on a miss. */
 function makeCmakeRunTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
   const srcDir = srcDirOf(project);
-  const buildDir = buildDirFor(srcDir, config);
-  const cfg = activeCfg(sel);
+  const preset = peekActivePreset(project, sel);
+  const buildDir = preset ? preset.binaryDir : buildDirFor(srcDir, config);
+  const cfg = preset ? undefined : activeCfg(sel);
   const target = activeTarget(sel) ?? '';
   const rel = bridge.peekArtifact(buildDir, cfg, target);
-  const exe = rel ? join(buildDir, rel) : join(buildDir, cfg, target); // cache miss → conventional path
+  const exe = rel ? join(buildDir, rel) : join(buildDir, cfg ?? '', target); // cache miss → conventional path
   const execution = new vscode.ProcessExecution(exe, config.runArgs ?? [], {
     cwd: srcDir,
     env: taskEnv(config),
@@ -176,11 +271,14 @@ function debuggerOverride(): DebuggerOverride {
  * C++ (CMake) adapter — MS-012 / C-7 (ADR-014). The extension drives `cmake` itself (no CMake
  * Tools delegation): switch/build/run/debug are the same "vscode-free bridge + thin wiring +
  * ProcessExecution + call-time overlay injection + File API path resolution" pattern the other
- * three adapters use. This slice (TASK-033) implements detection (listProjects) and the chips
- * (profile = static CMAKE_BUILD_TYPE, architecture = generator platform, target = File API
- * executables). Build/run (`cmake -S -B -D…` / `cmake --build`) + resolveExecutable land in
- * TASK-034; debug + the debugger extension in TASK-035. F20 creation writes template files
- * (D-13); the extension never edits CMakeLists.txt (ADR-013).
+ * three adapters use. Detection (listProjects) + chips (profile = static CMAKE_BUILD_TYPE,
+ * architecture = generator platform, target = File API executables) = TASK-033; two-stage
+ * configure/build (`cmake -S -B -D…` / `cmake --build`) + resolveExecutable = TASK-034; run
+ * (build-then-exec) + compiler-detected debugger = TASK-035. TASK-041 adds CMakePresets.json:
+ * when present, a Preset chip replaces profile/architecture and `cmake --preset <name>` drives
+ * configure into the preset's binaryDir (target discovery + debugger auto-detect reused from
+ * there). F20 creation writes template files (D-13); the extension never edits CMakeLists.txt
+ * or CMakePresets.json (ADR-013).
  */
 export const cmakeAdapter: LanguageAdapter = {
   id: 'cmake',
@@ -233,10 +331,35 @@ export const cmakeAdapter: LanguageAdapter = {
 
   chips: [
     {
+      id: 'preset',
+      icon: 'rocket',
+      label: 'Preset',
+      required: true,
+      // Only shown when CMakePresets.json declares configure presets (TASK-041); it then
+      // replaces the profile + architecture chips, since a preset already encodes the
+      // compiler + generator + build type. `cmake --preset <name>` drives configure.
+      appliesTo: (project) => hasPresets(project),
+      listItems: async (project) => {
+        const presets = await readPresetsFor(project);
+        return presets.map((p) => ({
+          id: p.name,
+          label: p.displayName ?? p.name,
+          description: p.displayName ? p.name : undefined,
+        }));
+      },
+      // Auto-select the sole preset; with several, the required chip forces a pick.
+      defaultValue: async (project) => {
+        const presets = await readPresetsFor(project);
+        return presets.length === 1 ? presets[0].name : undefined;
+      },
+    },
+    {
       id: 'profile',
       icon: 'layers',
       label: 'Configuration',
-      // Static CMAKE_BUILD_TYPE / --config set. Injection at configure/build time = TASK-034.
+      // Static CMAKE_BUILD_TYPE / --config set. Hidden when presets drive configure (the
+      // preset fixes the build type); the plain `-S -B -D` path uses it otherwise.
+      appliesTo: async (project) => !(await hasPresets(project)),
       listItems: async () => CMAKE_BUILD_TYPES.map((name) => ({ id: name, label: name })),
       defaultValue: async () => 'Debug',
     },
@@ -246,6 +369,8 @@ export const cmakeAdapter: LanguageAdapter = {
       label: 'Architecture',
       unsetText: 'default', // unselected = generator default platform (no -A override)
       clearValueId: HOST_DEFAULT_PLATFORM, // 'Host default' entry clears back to unset
+      // Hidden when presets drive configure (the preset fixes the generator platform).
+      appliesTo: async (project) => !(await hasPresets(project)),
       // Static generator platforms (-A) for the VS generators. The chip declares the axis
       // now; the actual `-A` injection at configure time lands with the build wiring (TASK-034).
       listItems: async () => {
@@ -323,7 +448,9 @@ export const cmakeAdapter: LanguageAdapter = {
    */
   async createDebugConfig(project, sel, config) {
     const srcDir = srcDirOf(project);
-    const buildDir = buildDirFor(srcDir, config);
+    // buildDir is the preset's binaryDir (or the plain overlay build dir); the compiler is
+    // read from that tree's File API toolchains reply to auto-select the debugger (TASK-035).
+    const { buildDir } = await configuredTargets(project, sel, config);
     const program = await this.resolveExecutable(project, sel, config);
     const compilerId = await bridge.detectCompiler(buildDir);
     const dbg = debuggerFor(compilerId, process.platform, debuggerOverride());
@@ -348,27 +475,24 @@ export const cmakeAdapter: LanguageAdapter = {
     return debugConfig;
   },
 
-  /** Configure with the overlay and warm the File API cache (targets + toolchains) before the
-   *  build/run/debug task (§7.3/§7.4). Idempotent (signature-cached). */
+  /** Configure (preset or overlay) and warm the File API caches (targets + toolchains) before
+   *  the build/run/debug task (§7.3/§7.4). Idempotent (signature-cached). */
   async prepareInvocation(project, sel, config) {
-    const srcDir = srcDirOf(project);
-    const buildDir = buildDirFor(srcDir, config);
-    await bridge.targetsFor(srcDir, buildDir, configureOptsFor(sel, config), activeCfg(sel));
+    await configuredTargets(project, sel, config);
   },
 
   /**
-   * The built executable path for the selected (target, config) — read from the File API
-   * codemodel's artifact path (no path guessing, KB #8/DD-05), joined onto the build dir.
-   * §7.4 builds first, so the binary exists by the time this resolves for debug.
+   * The built executable path for the selected target — read from the File API codemodel's
+   * artifact path (no path guessing, KB #8/DD-05), joined onto the active build dir (the
+   * preset's binaryDir, or the plain overlay build dir). §7.4 builds first, so the binary
+   * exists by the time this resolves for debug.
    */
   async resolveExecutable(project, sel, config) {
-    const srcDir = srcDirOf(project);
-    const buildDir = buildDirFor(srcDir, config);
     const target = activeTarget(sel);
     if (!target) {
       throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `No target selected for ${project.name}.`); // E6
     }
-    const targets = await bridge.targetsFor(srcDir, buildDir, configureOptsFor(sel, config), activeCfg(sel));
+    const { buildDir, targets } = await configuredTargets(project, sel, config);
     const found = targets.find((t) => t.name === target);
     if (!found?.artifactPath) {
       throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `No executable artifact for target ${target}.`); // E6
@@ -378,10 +502,13 @@ export const cmakeAdapter: LanguageAdapter = {
 
   createProject: (target) => ({ kind: 'files', files: cmakeProjectFiles(target.projectName) }),
 
-  // invalidateCache clears the cmake toolchain probe + File API discovery so a freshly
-  // installed cmake / edited CMakeLists re-discovers on Rescan. Must not throw —
-  // invalidateAll() runs it on every manual Rescan.
-  invalidateCache: (_project) => bridge.invalidateCache(),
+  // invalidateCache clears the cmake toolchain probe + File API discovery + parsed presets
+  // so a freshly installed cmake / edited CMakeLists / edited CMakePresets.json re-discovers
+  // on Rescan. Must not throw — invalidateAll() runs it on every manual Rescan.
+  invalidateCache: (_project) => {
+    presetCache.clear();
+    bridge.invalidateCache();
+  },
 
   // F19 (§13.5) — probe cmake (critical). Real even while build/run/debug stay stubbed: Doctor
   // uses detectAdapters (a CMakeLists.txt glob), so a present manifest surfaces this. With

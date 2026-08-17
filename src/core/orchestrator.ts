@@ -30,6 +30,10 @@ export class Orchestrator {
   /** Latest Doctor diagnostics — computed on initialize and after each Doctor fix (F19). */
   private diagnostics: DiagnosticItem[] = [];
 
+  /** Chip ids hidden for the active project (TASK-041) — resolved from each chip's
+   *  `appliesTo` predicate in renderActive and reused by the inline renders below. */
+  private hiddenChips: ReadonlySet<string> = new Set();
+
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
@@ -167,7 +171,7 @@ export class Orchestrator {
       ? (live: ChipValue): void => {
           void this.store
             .setValue(project.id, chipId, live)
-            .then(() => this.statusBar.render(adapter, project, this.store.getSelection(project.id)));
+            .then(() => this.renderBar(adapter, project));
         }
       : undefined;
     const value = await pickChipValue(chip, project, this.store.getValue(project.id, chipId), onLiveChange);
@@ -177,7 +181,7 @@ export class Orchestrator {
     // The clear sentinel (e.g. architecture 'Host default') removes the value → unset.
     if (chip.clearValueId !== undefined && value === chip.clearValueId) {
       await this.store.clearValue(project.id, chipId);
-      this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+      this.renderBar(adapter, project);
       return;
     }
     // Post-pick hook (e.g. rustup target add for a not-installed target, §13.4);
@@ -186,7 +190,7 @@ export class Orchestrator {
       return;
     }
     await this.store.setValue(project.id, chipId, value);
-    this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+    this.renderBar(adapter, project);
   }
 
   async build(): Promise<void> {
@@ -528,12 +532,17 @@ export class Orchestrator {
       if (!chip.required || this.store.getValue(project.id, chip.id) !== undefined) {
         continue;
       }
+      // A required chip that doesn't apply to this project (e.g. the Preset chip when there
+      // is no CMakePresets.json) must not block the action (TASK-041).
+      if (chip.appliesTo && !(await chip.appliesTo(project))) {
+        continue;
+      }
       const value = await pickChipValue(chip, project, undefined);
       if (value === undefined) {
         return false;
       }
       await this.store.setValue(project.id, chip.id, value);
-      this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+      this.renderBar(adapter, project);
     }
     return true;
   }
@@ -554,14 +563,47 @@ export class Orchestrator {
       return;
     }
     const { project, adapter } = context;
+    this.hiddenChips = await this.resolveHiddenChips(project, adapter);
     await this.applyDefaults(project, adapter);
-    this.statusBar.render(adapter, project, this.store.getSelection(project.id));
+    this.renderBar(adapter, project);
     this.viewSync();
+  }
+
+  /** Render the status bar for the active project honouring the resolved chip visibility. */
+  private renderBar(adapter: LanguageAdapter, project: ProjectInfo): void {
+    this.statusBar.render(adapter, project, this.store.getSelection(project.id), {
+      hiddenChipIds: this.hiddenChips,
+    });
+  }
+
+  /**
+   * Chip ids not applicable to this project (TASK-041). A chip with an `appliesTo`
+   * predicate that resolves false is hidden — CMake uses it to swap the Preset chip for
+   * profile/architecture. A predicate that throws leaves the chip visible (fail-open).
+   */
+  private async resolveHiddenChips(project: ProjectInfo, adapter: LanguageAdapter): Promise<ReadonlySet<string>> {
+    const hidden = new Set<string>();
+    for (const chip of adapter.chips) {
+      if (!chip.appliesTo) {
+        continue;
+      }
+      try {
+        if (!(await chip.appliesTo(project))) {
+          hidden.add(chip.id);
+        }
+      } catch {
+        // applicability unknown — keep the chip visible rather than silently dropping it
+      }
+    }
+    return hidden;
   }
 
   /** Seed unset chips from their defaultValue (e.g. profile=dev, sole bin target). */
   private async applyDefaults(project: ProjectInfo, adapter: LanguageAdapter): Promise<void> {
     for (const chip of adapter.chips) {
+      if (this.hiddenChips.has(chip.id)) {
+        continue; // don't seed a chip this project doesn't show (e.g. profile under a preset)
+      }
       if (!chip.defaultValue || this.store.getValue(project.id, chip.id) !== undefined) {
         continue;
       }

@@ -11,6 +11,12 @@ const ACTION_CHIPS = ['build', 'debug', 'run'] as const;
 export interface RenderOptions {
   /** Manifest parse failed — mark the project chip and keep the last good render. */
   manifestError?: boolean;
+  /**
+   * Chip ids to omit for this project (TASK-041). The orchestrator resolves these from
+   * each chip's `appliesTo` predicate; a hidden chip is drawn nowhere and swept out below.
+   * Lets CMake show the Preset chip in place of profile/architecture when presets exist.
+   */
+  hiddenChipIds?: ReadonlySet<string>;
 }
 
 /**
@@ -54,6 +60,9 @@ export class StatusBarController {
 
     const shownChipIds: string[] = [];
     for (const chip of adapter.chips) {
+      if (opts.hiddenChipIds?.has(chip.id)) {
+        continue; // not applicable to this project (e.g. profile hidden while a preset is active)
+      }
       const value = sel.values[chip.id];
       // A chip is "unselected" when it has no value, or its value reads as blank
       // (empty array, or a chip-defined default like features holding only 'default').
