@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — MS-012 Done + **v0.3.0 릴리즈 완료**(C-7 완주). 다음: MS-013 Run Group (C-6 → v1.0.0) |
+| 활성 Milestone | **MS-013 Run Group (C-6)** — In Progress. TASK-036·037·038 **F5 통과·Done**. 남음: TASK-040. 완주=**v0.4.0**(D-19) |
 | 마지막 갱신일 | 2026-08-17 |
-| 참조 세션 로그 | session_2026-08-17_010.md |
+| 참조 세션 로그 | session_2026-08-17_011.md |
 
 ---
 
@@ -20,9 +20,12 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| 없음 | (MS-012 완료·병합) | — | — | 다음 세션 방향 논의 | 없음 |
+| TASK-036 | Run Group 모델 + 스키마 + 저장 | MS-013 | Done | F5 통과 | 없음 |
+| TASK-037 | GroupOrchestrator | MS-013 | Done | F5 통과 | 없음 |
+| TASK-038 | 그룹 정의/트리거 UI | MS-013 | Done | F5 통과 | 없음 |
+| TASK-040 | 통합 테스트·검증·문서 | MS-013 | Planned | — | 없음 |
 
-> **TASK-001~035·041 완료 · MS-012 main FF 병합(2026-08-17) → C-7 완주**(Rust·C#·Python·C++ 4개 언어 전부 스위처 실동작). 세션 #010: TASK-041 CMakePresets(`ChipDescriptor.appliesTo` 동적 대체·`cmake --preset`·프리셋 binaryDir 스레드·target/디버거 재사용) F5 통과(msvc-x64/x86/clangcl) + 설정 페이지 appliesTo 일관성·profile read-only 문구 정정. 14커밋 병합·병합 브랜치(ms-011·012) 삭제. unit 172. **다음 세션 논의**: C-6(MS-013 Run Group, INT-001 마지막 조건→v1.0.0) / v0.3.0 릴리즈 / KB 정리 / origin push. **SemVer**: 현재 0.2.0 → C-7=0.3.0(MINOR) → INT-001 완주=1.0.0.
+> **MS-013 Run Group: TASK-036·037·038 완료(세션 #011).** Human 결정: 준비=**프로세스 시작 감지**·멤버=**Run 전용**·**v0.x.x 유지**(v1.0.0은 TASK-042, D-19). 036=모델·저장·순수 `runGroupPlan`·**ADR-015**. 037=`TaskRunner.start`·순수 `groupSequencer`·`GroupOrchestrator`·커맨드. 038=설정 페이지 **Run Groups 탭**·상태바 런처·순수 편집 헬퍼. **F5-1 fix**: 설정 페이지 공백=`renderProfile` 아포스트로피가 webview JS 깨뜨림(#010 유입·v0.3.0 잠복) → 수정 + 회귀 가드. **F5-2 피드백(D-20)**: 순서 UI=**스테이지 번호**·중복=**skip**·상태바 **아이콘만+통합 메뉴(Run/Stop/Stop-all)**·**Run 바로 뒤**. unit **203**·prod·미커밋. **다음: 재-F5** → TASK-040(→**v0.4.0**). 039(준비감지)=후속 마이너. **SemVer**: 0.3.0 → C-6=0.4.0 → v1.0.0(Human 선언, D-19).
 
 ---
 
@@ -40,13 +43,15 @@
 | #008 | 2026-08-16 | **초대형 세션 — MS-011 완주·병합 + MS-012 착수.** ① **MS-011 Python**: TASK-031(실행·resolveExecutable=스크립트경로·PYTHONOPTIMIZE·taskDef)·032(debugpy·collectDiagnostics). F5(Doctor 제외) 통과. F5 유래 3수정: A)Environment 실경로 dedup B)New Project 폴더 선택창 C)`Rescan Projects`(+invalidateAll 스텁 관용 fix). ② 커밋+**main FF 병합·push**(MS-009·010·011 origin 반영). ③ **Edge Tools 경고=이전 세션 스크래치패드**(우리 코드 아님) 규명 + 설정 웹뷰 a11y 수정(`ff2ee13`). ④ **MS-012 착수**: ADR-014(자체 cmake CLI)+TASK-033 Doctor 슬라이스 → **cmake 미설치로 Doctor ❌+E1 실검증 통과**(Human이 cmake 4.4.2 설치). unit **142** | MS-011·012 | TASK-030~033 | **MS-011 Done·병합 / MS-012 진행(TASK-033 계속)** |
 | #009 | 2026-08-16 | **MS-012 CMake 핵심 루프 완성.** TASK-033(listProjects+chips+File API codemodel)·034(prepareInvocation 훅+`cmake --build`+`-D` 주입+resolveExecutable)·035(run build-then-exec + debug 컴파일러 자동판별 cppvsdbg/cppdbg+gdb/lldb+override). 전부 F5 통과·커밋(`8664be9`~`61f6ac3`). unit 165. KB #6/#9 | MS-012 | TASK-033·034·035 | **핵심 루프(switch/build/run/debug) 완성 / TASK-041 남음** |
 | #010 | 2026-08-17 | **TASK-041 CMakePresets.json F5 통과 → MS-012 구현 완료.** `ChipDescriptor.appliesTo` 동적 대체(Preset 칩↔profile/arch, D-17) + `parseConfigurePresets`/`resolvePresetBinaryDir`(순수, inherits/hidden/매크로) + `cmake --preset` configure(binaryDir·--config 생략) + target/디버거 자동판별 재사용. 프리셋 픽스처(msvc-x64/x86/clangcl). unit **172**·실 cmake 스모크·**실 F5**(msvc-x64 build/run/debug 중단점). 커밋(feat+docs)·미병합 | MS-012 | TASK-041 | **MS-012 전 Task F5 통과, main 병합 대기** |
+| #011 | 2026-08-17 | **MS-013 Run Group: TASK-036·037·038 완료 + 버전 정책 반전.** Human 결정(준비=프로세스 시작·Run 전용) + **D-19**(v1.0.0 자동 안 함·v0.x.x 유지·TASK-042 게이트) + **ADR-015** + **036**(모델·저장·순수 계획) + **037**(TaskRunner.start·sequencer·GroupOrchestrator·커맨드) + **038**(설정 페이지 Run Groups 탭·상태바 런처·순수 편집). **TASK-042/MS-014** 신설. unit **196**·prod 99.3kb·미커밋 | MS-013 | TASK-036·037·038 | **엔진+UI 완료(Review), 다음: 전체 F5 → TASK-040(v0.4.0)** |
 
 ---
 
 ## 다음 시작점
 
-1. **MS-012 main 병합** — 브랜치 `feature/ms-012-cmake-adapter`(TASK-033·034·035·041 전부 F5·커밋) FF 병합 → MS-012 Done(C-7 완주 = 4개 언어 전부 스위처 실동작). Human 지시 시.
-2. **C-6** — MS-013 Run Group(C-7 이후, TASK-036~040). 위생: KB 17항목 통합 검토. 별도 트랙: TC-11(WSL, Deferred, GAP-001). **C-3은 폐기**(D-15/ADR-013).
+1. **커밋** (권장 선행) — 소스 `feat(core): run group (TASK-036~038)` + 설정 페이지 fix + 문서 `docs(cowork)` 분리. 브랜치 `feature/ms-013-run-group` 권장(현재 main·미커밋, 대량 변경).
+2. **TASK-040** — 통합 테스트(커맨드/스모크) + test_case/verification + README/CHANGELOG → **v0.4.0** 배포(C-6 충족). 이후 **TASK-042**(v1.0.0 결정, D-19). 039(준비감지)=후속 마이너.
+3. 별도 트랙: TC-11(WSL, Deferred).
 
 ---
 

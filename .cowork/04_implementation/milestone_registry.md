@@ -40,15 +40,16 @@ Milestone은 `Phase`와 다르다.
 | MS-010 | C# (Dotnet) 어댑터 실구현 | INT-001 | Build | Done | TASK-027~029 | 2026-08-16 | **F5 통과**(C# 프로젝트 등장·Config/TFM 칩·build/run·coreclr 중단점·Doctor). 메타데이터=`msbuild -getProperty`(JSON)·실행경로=TargetPath·주입=`-p:`·디버그=coreclr. 디버그 RID 경로 fix(빌드와 동일 인자 재사용). C# fixture 추가. unit 123. C-7 1/3. main FF 병합 |
 | MS-011 | Python 어댑터 실구현 (리트머스) | INT-001 | Build | Done | TASK-030~032 | 2026-08-16 | environment 축·실행(`python <script>`·PYTHONPATH/PYTHONOPTIMIZE env)·디버그(debugpy)·진단. `actions.build=false` 리트머스. F5(감지·리트머스·칩·Run·debugpy 통과, Doctor는 MS-012 cmake로 실검증). unit 133·실 python 3.12 스모크. **main FF 병합·push**. C-7 2/3. (v0.3.0 번들에 포함 예정) |
 | MS-012 | C++ (CMake) 어댑터 실구현 | INT-001 | Build | Done | TASK-033~035·041 | 2026-08-17 | **ADR-014**(자체 `cmake` CLI·File API). 033(감지+chips+File API)·034(prepareInvocation+`-D` 주입+resolveExecutable)·035(run build-then-exec+debug 컴파일러 자동판별)·**041(CMakePresets: `ChipDescriptor.appliesTo` 동적 대체·`cmake --preset`·D-17)**. unit 172·실 cmake 4.4.2+VS18 스모크·**실 F5**(msvc-x64/x86/clangcl build/run/debug 중단점). **main FF 병합·브랜치 삭제.** C-7 3/3 **완주**. **v0.3.0 릴리즈**(2026-08-17) |
-| MS-013 | Run Group (C-6) | INT-001 | Build | Planned | TASK-036~040 | | 그룹 상태 모델+GroupOrchestrator(종속 위상정렬·순차/병렬·teardown)+정의/트리거 UI+(선택)준비감지. TaskRunner 프로젝트별 락 기반 존재. 다언어 그룹은 C-7 이후 가치 최대. **완주 = v1.0.0**(INT-001) |
+| MS-013 | Run Group (C-6) | INT-001 | Build | In Progress | TASK-036~040 | | **착수(세션 #011).** 그룹 상태 모델+GroupOrchestrator(계층적 위상정렬·병렬/순차·teardown)+정의/트리거 UI. **ADR-015**: 준비=프로세스 시작(`onDidStartTaskProcess`)·Run 전용·헬스체크(TASK-039)는 후속 마이너 분리. TaskRunner 프로젝트별 락 재사용. **TASK-036 Review**(모델·저장·순수 계획/검증, unit 186). **완주=v0.4.0 배포**(C-6 충족) — v1.0.0 아님(D-19) |
+| MS-014 | 추가 기능·논의 및 v1.0.0 완주 결정 (게이트) | INT-001 | Evolve | Planned | TASK-042 | | **MS-013(v0.4.0) 이후 게이트(세션 #011, Human 지시).** 남은 추가 기능 후보·논의 수집 → **v1.0.0 완주(INT-001 종료) 여부를 Human이 명시적으로 결정**(D-19). MS-013이 INT-001 등록 조건(C-7+C-6)을 충족해도 v1.0.0은 자동 트리거되지 않음 |
 
-> 현재 등록 Milestone: MS-001~MS-013 (M0~M6 + F20 마법사 완료 / MS-009~013 = INT-001 완주 로드맵: 정리 + 다언어 어댑터 실구현 C-7 + Run Group C-6)
+> 현재 등록 Milestone: MS-001~MS-014 (M0~M6 + F20 완료 / MS-009~013 = INT-001 완주 로드맵: 정리 + 다언어 C-7 + Run Group C-6 / MS-014 = v1.0.0 완주 결정 게이트)
 
 - `주 Phase`: `Define` / `Design` / `Build` / `Verify` / `Evolve` / `Deliver`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done` / `Deferred`
 - 상세 계획이 필요한 Milestone은 `milestones/MS-*.md`를 생성한다(현재는 registry 경량 운영).
-- 의존 순서: MS-001 → … → MS-008 **전부 Done(2026-08-16, v0.2.0)**. **INT-001 완주 로드맵 착수**: MS-009(정리) → MS-010 C# → MS-011 Python → MS-012 CMake(= C-7 언어별 3 MS) → MS-013 Run Group(C-6). **C-3(캐노니컬 파일 편집)은 폐기**(D-15 — "파일 무편집" 영구 불변식).
-- **버전 정책(SemVer)**: 1.0 이전은 `0.y.z` 개발 단계. 현재 배포=**v0.2.0**(F20). **C-7(C#·Python·C++)은 병합됐으나 미배포 → 다음 릴리즈 = `v0.3.0`(신기능 MINOR 증분, 3개 언어 번들)**. **INT-001 완주(C-6 Run Group 포함) = `v1.0.0`**(첫 stable). ※ 과거 표에 있던 "v1.1/v1.2/v1.3/v2.0"은 릴리즈 번호가 아닌 초기 오표기 — 실제는 위 SemVer 스킴. MS-009의 "v1.1 정리"는 릴리즈가 아닌 마일스톤 코드명.
+- 의존 순서: MS-001 → … → MS-008 **전부 Done(2026-08-16, v0.2.0)**. **INT-001 완주 로드맵**: MS-009(정리) → MS-010 C# → MS-011 Python → MS-012 CMake(= C-7, **Done·v0.3.0**) → MS-013 Run Group(C-6, **In Progress → v0.4.0**) → **MS-014 v1.0.0 완주 결정 게이트**(D-19). **C-3(캐노니컬 파일 편집)은 폐기**(D-15 — "파일 무편집" 영구 불변식).
+- **버전 정책(SemVer, D-19 갱신 2026-08-17)**: 1.0 이전은 `0.y.z` 개발 단계. 현재 배포=**v0.3.0**(C-7 3언어). **C-6 Run Group(MS-013) = 다음 릴리즈 `v0.4.0`**(신기능 MINOR). **v1.0.0은 INT-001 등록 조건(C-7+C-6) 충족만으로 자동 트리거되지 않는다** — 남은 추가 기능·논의(MS-014/TASK-042) 후 **Human이 명시적으로 완주 선언할 때** v1.0.0으로 올린다(D-19). 특별 지시 전까지 **v0.x.x 유지**. SemVer: 0.3.0 → 0.4.0(C-6) → (추가 기능 MINOR…) → 1.0.0(Human 선언). ※ 과거 "INT-001 완주=v1.0.0"·"v1.1/v1.2/v1.3/v2.0"은 폐기된 표기.
 
 ---
 
