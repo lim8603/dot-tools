@@ -3,6 +3,18 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.5.0] - 2026-08-17
+
+### Added
+
+- **Go is now supported** — Go modules (`go.mod`) join the switcher with build, run, and
+  debug. `go build` / `go run` run through the Task API (no shell, with an owned problem
+  matcher), the **Target** chip lists the module's `main` packages (auto-selected when there
+  is only one), and debugging launches via **delve** (the `golang.go` extension, installed on
+  demand). Build flags — `-ldflags`, `-gcflags`, `-tags`, `-race`, `-trimpath`, and
+  `CGO_ENABLED` — are settings-page options injected at build time. `DevSwitcher: New Project…`
+  scaffolds a Go module (`go.mod` + `main.go`). The extension never edits your `go.mod`.
+
 ## [0.4.0] - 2026-08-17
 
 ### Added

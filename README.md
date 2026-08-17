@@ -4,11 +4,11 @@
 
 # DevSwitcher Tools
 
-**Switch, build, run, and debug Rust, C#, Python, and C++ projects from a single status bar — each through its own native toolchain, without editing a single build file.**
+**Switch, build, run, and debug Rust, C#, Python, C++, and Go projects from a single status bar — each through its own native toolchain, without editing a single build file.**
 
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.90%2B-007ACC?logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
-![Languages](https://img.shields.io/badge/Rust%20%C2%B7%20C%23%20%C2%B7%20Python%20%C2%B7%20C%2B%2B-supported-success)
+![Languages](https://img.shields.io/badge/Rust%20%C2%B7%20C%23%20%C2%B7%20Python%20%C2%B7%20C%2B%2B%20%C2%B7%20Go-supported-success)
 
 </div>
 
@@ -17,15 +17,15 @@
 DevSwitcher Tools turns the VS Code status bar into a project cockpit. Pick the active
 project, build profile, target, and other options as **chips**; then **Build**, **Run**, or
 **Debug** with a click. It's the same workflow whether the project is Cargo, .NET, Python,
-or CMake — under the hood the extension drives each toolchain's own CLI and resolves paths
-from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`, and
-`pyproject.toml` are never touched.**
+CMake, or Go — under the hood the extension drives each toolchain's own CLI and resolves paths
+from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`, `pyproject.toml`,
+and `go.mod` are never touched.**
 
 ---
 
 ## Features
 
-- **Four languages, one UX.** Rust (Cargo), C# (.NET), Python, and C++ (CMake) all appear
+- **Five languages, one UX.** Rust (Cargo), C# (.NET), Python, C++ (CMake), and Go all appear
   in the same switcher. Adding a language is an adapter — the UI never learns which language
   it's showing.
 - **Chips instead of commands.** The active project and its build options (profile, target,
@@ -33,7 +33,7 @@ from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`, and
   change — no memorizing per-toolchain flags.
 - **Build / Run / Debug buttons.** One click each. Debug auto-selects the right debugger for
   the toolchain (e.g. CodeLLDB for Rust, `cppvsdbg`/`gdb`/`lldb` for CMake by compiler, coreclr
-  for .NET, debugpy for Python) and installs the needed extension on demand.
+  for .NET, debugpy for Python, delve for Go) and installs the needed extension on demand.
 - **Per-config settings, zero file edits.** A settings page lets you set compiler flags,
   linker flags, output dirs, environment variables, and pre/post-build commands. They're
   stored per _(project × profile)_ and injected at invocation time (`--config`, `-p:`, `-D`,
@@ -60,6 +60,7 @@ from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`, and
 | **C# (.NET)** | `*.csproj` | ✅ | ✅ | ✅ | .NET SDK · C# Dev Kit (coreclr) |
 | **Python** | `pyproject.toml` | — | ✅ | ✅ | Python interpreter · Python extension (debugpy) |
 | **C++ (CMake)** | `CMakeLists.txt` | ✅ | ✅ | ✅ | `cmake` + a C++ compiler · C/C++ (auto) or CodeLLDB |
+| **Go** | `go.mod` | ✅ | ✅ | ✅ | Go toolchain · Go extension (delve) |
 
 Python has no build step — it runs the interpreter directly. Debug extensions are prompted
 for on demand the first time you debug; you only need the toolchains for languages you use.
@@ -85,13 +86,16 @@ for on demand the first time you debug; you only need the toolchains for languag
 
 ![C++ status bar](images/status-bar-cmake.png)
 
+**Go** — project · package (the module's `main` package to build, run, or debug)
+
 </details>
 
 ## Requirements
 
 - **VS Code 1.90+**
 - Per language, on your `PATH`: **Rust** → `rustup`/`cargo`; **C#** → the .NET SDK;
-  **Python** → a Python interpreter; **C++** → `cmake` plus a compiler (MSVC, GCC, or Clang).
+  **Python** → a Python interpreter; **C++** → `cmake` plus a compiler (MSVC, GCC, or Clang);
+  **Go** → the Go toolchain (`go`).
 
 Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's missing.
 
@@ -100,7 +104,7 @@ Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's miss
 This extension is distributed as a `.vsix`:
 
 ```bash
-code --install-extension devswitcher-tools-0.4.0.vsix
+code --install-extension devswitcher-tools-0.5.0.vsix
 ```
 
 Or in VS Code: **Extensions** view → `⋯` menu → **Install from VSIX…** → pick the file.
