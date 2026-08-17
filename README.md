@@ -194,4 +194,4 @@ and persists state in `workspaceState` (no database).
 
 ## License
 
-[MIT](LICENSE) © 2026 Seunghyun
+[MIT](LICENSE) © 2026 LIM SEUNG HYUN
