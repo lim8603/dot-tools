@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — MS-012 C++(CMake) **Done·main 병합 완료**(C-7 완주). 다음: MS-013 Run Group / v1.3 릴리즈 (논의) |
+| 활성 Milestone | **없음** — MS-012 C++(CMake) **Done·main 병합 완료**(C-7 완주). 다음: MS-013 Run Group(→v1.0.0) / v0.3.0 릴리즈 (논의) |
 | 마지막 갱신일 | 2026-08-17 |
 | 참조 세션 로그 | session_2026-08-17_010.md |
 
@@ -22,7 +22,7 @@
 |---------|------|----------------|------|--------|--------|
 | 없음 | (MS-012 완료·병합) | — | — | 다음 세션 방향 논의 | 없음 |
 
-> **TASK-001~035·041 완료 · MS-012 main FF 병합(2026-08-17) → C-7 완주**(Rust·C#·Python·C++ 4개 언어 전부 스위처 실동작). 세션 #010: TASK-041 CMakePresets(`ChipDescriptor.appliesTo` 동적 대체·`cmake --preset`·프리셋 binaryDir 스레드·target/디버거 재사용) F5 통과(msvc-x64/x86/clangcl) + 설정 페이지 appliesTo 일관성·profile read-only 문구 정정. 14커밋 병합·병합 브랜치(ms-011·012) 삭제. unit 172. **다음 세션 논의**: C-6(MS-013 Run Group, INT-001 마지막 조건) / v1.3 릴리즈 / KB 정리 / origin push.
+> **TASK-001~035·041 완료 · MS-012 main FF 병합(2026-08-17) → C-7 완주**(Rust·C#·Python·C++ 4개 언어 전부 스위처 실동작). 세션 #010: TASK-041 CMakePresets(`ChipDescriptor.appliesTo` 동적 대체·`cmake --preset`·프리셋 binaryDir 스레드·target/디버거 재사용) F5 통과(msvc-x64/x86/clangcl) + 설정 페이지 appliesTo 일관성·profile read-only 문구 정정. 14커밋 병합·병합 브랜치(ms-011·012) 삭제. unit 172. **다음 세션 논의**: C-6(MS-013 Run Group, INT-001 마지막 조건→v1.0.0) / v0.3.0 릴리즈 / KB 정리 / origin push. **SemVer**: 현재 0.2.0 → C-7=0.3.0(MINOR) → INT-001 완주=1.0.0.
 
 ---
 

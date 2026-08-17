@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
-| 활성 Milestone | **없음** — MS-012 C++(CMake) **Done·main 병합 완료**(C-7 완주). 다음 후보: MS-013 Run Group(C-6) 또는 v1.3 릴리즈 |
-| 활성 Task | **없음** — 다음 세션 논의(MS-013 TASK-036부터 / v1.3 vsix / KB 정리) |
+| 활성 Milestone | **없음** — MS-012 C++(CMake) **Done·main 병합 완료**(C-7 완주). 다음 후보: MS-013 Run Group(C-6) 또는 v0.3.0 릴리즈 |
+| 활성 Task | **없음** — 다음 세션 논의(MS-013 TASK-036부터 / v0.3.0 vsix / KB 정리) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -48,7 +48,7 @@
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
 - **완료(세션 #010)**: **TASK-041 CMakePresets.json F5 통과 → MS-012 main FF 병합**(14커밋, `034e6cb`→`03610f8`, origin 미푸시). Preset 칩 동적 대체·`cmake --preset` build/run/debug(msvc-x64/x86/**clangcl** 실 F5) + 설정 페이지 appliesTo 일관성·profile read-only 문구 정정. 병합 브랜치 삭제(ms-011·012). unit **172**.
-- **다음(논의)**: **C-6 Run Group(MS-013, TASK-036~040)** 착수 / **v1.3 릴리즈**(vsix) / KB 17항목 정리 중 택. origin push 여부.
+- **다음(논의)**: **C-6 Run Group(MS-013, TASK-036~040)** 착수 / **v0.3.0 릴리즈**(C-7 3언어 번들 vsix) 중 택. (위생 완료: **KB 17→15 통합 정리** · 버전 라벨 SemVer 정정 · **origin push**). (SemVer: 현재 0.2.0 → C-7 = 0.3.0 MINOR → INT-001 완주 = 1.0.0)
 
 ---
 
@@ -72,9 +72,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **다음 세션 방향 논의** — 택1: **C-6 MS-013 Run Group**(TASK-036~040·그룹 상태 모델 ADR 채번부터, INT-001 마지막 조건) / **v1.3 릴리즈**(C++ 포함 vsix·CHANGELOG·README) / **KB 17항목 통합 정리**.
-2. **origin push** 여부 확인 — 현재 main이 origin/main보다 14커밋 앞섬(로컬 병합만).
-3. (위생) 별도 트랙: TC-11(WSL, Deferred, GAP-001).
+1. **다음 세션 방향 논의** — 택1: **C-6 MS-013 Run Group**(TASK-036~040·그룹 상태 모델 ADR 채번부터, INT-001 마지막 조건 → **v1.0.0**) / **v0.3.0 릴리즈**(C-7 3언어 번들 vsix·CHANGELOG·README·version 0.2.0→0.3.0).
+2. (위생 완료, 세션 #010) KB 17→15 통합 · 버전 라벨 SemVer 정정 · origin push. 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
 
@@ -236,9 +235,9 @@
 | Milestone | MS-008 | F20 시작 마법사 | Done | 4개 언어 생성 F5 통과(2026-08-16). 스위처 자동등장=Rust(scope A) |
 | Milestone | MS-009 | v1.1 정리 (자유 플래그 L-1 + 계약 정리) | Done | TASK-025(L-1, F5 통과)·TASK-026(persistSetting 제거). 2026-08-16 |
 | Milestone | MS-010 | C# (Dotnet) 어댑터 실구현 | Done | F5 통과(build/run/coreclr 디버그·Doctor). main FF 병합. C-7 1/3 |
-| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | Done | C-7 2/3. F5(Doctr 제외) 통과·main 병합·push. v1.2 |
+| Milestone | MS-011 | Python 어댑터 실구현 (리트머스) | Done | C-7 2/3. F5(Doctr 제외) 통과·main 병합·push. (v0.3.0 번들 예정) |
 | Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | Done | C-7 3/3 **완주**. ADR-014. TASK-033·034·035·041 전부 F5·**main FF 병합(2026-08-17)**. Preset 칩 동적 대체·`cmake --preset`. **4개 언어 전부 스위처 실동작.** |
-| Milestone | MS-013 | Run Group (C-6) | Planned | v2.0. TASK-036~040. C-7 이후 |
+| Milestone | MS-013 | Run Group (C-6) | Planned | **완주 = v1.0.0**(INT-001). TASK-036~040. C-7 이후 |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
 | Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Done | F20 마법사 + features/untrusted 수정. 9파일 37.47KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.2.0`) |
 
