@@ -2,8 +2,14 @@ import * as vscode from 'vscode';
 import { ALL_ADAPTERS } from '../adapters';
 import type { LanguageAdapter, ProjectInfo } from './types';
 
-/** Build artifacts / VCS dirs never hold a source manifest we care about (상세설계서 §8.2/§9). */
-const EXCLUDE_GLOB = '**/{target,node_modules,.git}/**';
+/**
+ * Build artifacts / VCS / tooling dirs never hold a source manifest we care about
+ * (상세설계서 §8.2/§9). `.vscode-test` is the extension-test runner's downloaded VS Code —
+ * a huge tree of bundled `package.json` files (built-in extensions, resources/app) that
+ * would otherwise flood the Node switcher; it only exists in extension-dev workspaces but
+ * is always non-project.
+ */
+const EXCLUDE_GLOB = '**/{target,node_modules,.git,.vscode-test}/**';
 
 /**
  * AdapterRegistry — workspace scan and project→adapter matching (TASK-007, ADR-006 /

@@ -215,13 +215,13 @@ export const nodeAdapter: LanguageAdapter = {
   ],
 
   async listProjects(manifests) {
-    // One package.json = one switcher entry. The scan already excludes node_modules
-    // (adapterRegistry EXCLUDE_GLOB); filter again defensively so a nested dependency's
-    // package.json can never masquerade as a project.
+    // One package.json = one switcher entry. The scan already excludes node_modules /
+    // .vscode-test (adapterRegistry EXCLUDE_GLOB); filter again defensively so a nested
+    // dependency's or a bundled tool's package.json can never masquerade as a project.
     const projects: ProjectInfo[] = [];
     for (const uri of manifests) {
       const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
-      if (/(^|\/)node_modules\//.test(rel)) {
+      if (/(^|\/)(node_modules|\.vscode-test)\//.test(rel)) {
         continue;
       }
       const folder = vscode.workspace.getWorkspaceFolder(uri);
