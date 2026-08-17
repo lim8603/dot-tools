@@ -3,21 +3,27 @@ import { dirname, join } from 'node:path';
 import {
   ChipItem,
   DiagnosticProbe,
+  InvocationConfig,
   LanguageAdapter,
   ProjectInfo,
+  Selection,
 } from '../../core/types';
 import { notImplemented } from '../notImplemented';
 import { nodeProjectFiles } from './nodeTemplate';
 import {
+  BUILD_SCRIPT,
   LOCKFILES,
   NodeBridge,
   PACKAGE_MANAGERS,
   PackageManager,
+  assembleNodeArgs,
   nodeProjectName,
   parseScripts,
 } from './nodeBridge';
 
 const bridge = new NodeBridge();
+
+const NODE_TASK_TYPE = 'devSwitcher.node';
 
 /** Scripts the run/build defaults prefer, in order — the conventional Node run entry points. */
 const PREFERRED_RUN_SCRIPTS = ['start', 'dev', 'serve'];
@@ -25,6 +31,67 @@ const PREFERRED_RUN_SCRIPTS = ['start', 'dev', 'serve'];
 /** The directory a node command runs in — the folder holding package.json. */
 function projectDirOf(project: ProjectInfo): string {
   return dirname(project.manifestPath);
+}
+
+/** The selected package manager (chip value), defaulting to npm. */
+function resolvePackageManager(sel: Selection): PackageManager {
+  const v = sel.values.packageManager;
+  return typeof v === 'string' && (PACKAGE_MANAGERS as string[]).includes(v) ? (v as PackageManager) : 'npm';
+}
+
+/** The selected run script (chip value), or undefined when unset. */
+function scriptOf(sel: Selection): string | undefined {
+  return typeof sel.values.script === 'string' && sel.values.script.length > 0 ? sel.values.script : undefined;
+}
+
+/**
+ * The invocation overlay's env for a Task. Node has no compiler/linker/output channel (tsc
+ * flags live in tsconfig, ADR-013), so every overlay option (NODE_ENV, NODE_OPTIONS,
+ * NODE_PATH, …) is already an env var (§8) — this just surfaces config.env when non-empty.
+ * Mirrors go/python taskEnv.
+ */
+function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
+  const env: Record<string, string> = { ...(config.env ?? {}) };
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+/**
+ * Build a `<pm> run <script>` Task. Node runs npm scripts through the package manager, which
+ * on Windows is a `.cmd` shim (npm/pnpm/yarn) that a shell-less ProcessExecution cannot spawn
+ * (Node 24 refuses `.cmd` without a shell — EINVAL). So this uses the **array form** of
+ * ShellExecution: the shell resolves the `.cmd`, and VSCode quotes each arg individually, so
+ * there is still no shell-injection surface — the security goal of NFR-002 is preserved via
+ * array quoting rather than ProcessExecution (ADR-016, a documented NFR-002 exception like
+ * NFR-002a). Build always runs the conventional `build` script; run runs the selected script
+ * with runArgs forwarded after `--`. The build task carries the built-in `$tsc` matcher so a
+ * TS build's compile errors populate the Problems panel.
+ */
+function makeNodeTask(action: 'build' | 'run', project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
+  const pm = resolvePackageManager(sel);
+  const script = action === 'build' ? BUILD_SCRIPT : (scriptOf(sel) ?? 'start');
+  const args = assembleNodeArgs(script, action === 'run' ? (config.runArgs ?? []) : []);
+  const execution = new vscode.ShellExecution(pm, args, {
+    cwd: projectDirOf(project),
+    env: taskEnv(config),
+  });
+  const definition: vscode.TaskDefinition = { type: NODE_TASK_TYPE, action, projectId: project.id };
+  const task = new vscode.Task(
+    definition,
+    project.workspaceFolder,
+    `${action} ${project.name}`,
+    'node',
+    execution,
+    action === 'build' ? ['$tsc'] : undefined, // VSCode's built-in TypeScript matcher
+  );
+  if (action === 'build') {
+    task.group = vscode.TaskGroup.Build;
+  }
+  task.presentationOptions = {
+    reveal: vscode.TaskRevealKind.Always,
+    panel: vscode.TaskPanelKind.Shared,
+    clear: true,
+  };
+  return task;
 }
 
 /** Read package.json text (remote-safe via workspace.fs, ADR-008); '' when unreadable. */
@@ -76,7 +143,42 @@ export const nodeAdapter: LanguageAdapter = {
   requiredExtensions: [], // js-debug is bundled with VSCode — nothing to install
   canCreateProject: true,
   configCategories: ['env', 'runArgs'], // tsc flags live in tsconfig (read-only, ADR-013): no compiler/linker/output
-  optionCatalog: [], // TASK-047 (NODE_ENV / NODE_OPTIONS env + runArgs)
+  // Node has no compiler-flag channel, so every option is an env var (§8), keyed by its
+  // label = the variable name (applyOption), like python/go's env options.
+  optionCatalog: [
+    {
+      id: 'nodeenv',
+      category: 'env',
+      label: 'NODE_ENV',
+      description: 'The environment name many libraries branch on — e.g. "production" disables dev-only checks and enables optimizations.',
+      example: 'production',
+      injectsAs: 'NODE_ENV=<value>',
+      type: 'string',
+      injection: 'env',
+    },
+    {
+      id: 'nodeoptions',
+      category: 'env',
+      label: 'NODE_OPTIONS',
+      description: 'Flags passed to the node runtime itself — e.g. raise the heap (--max-old-space-size) or enable source maps (--enable-source-maps).',
+      example: '--max-old-space-size=4096',
+      injectsAs: 'NODE_OPTIONS=<value>',
+      docUrl: 'https://nodejs.org/api/cli.html#node_optionsoptions',
+      type: 'string',
+      injection: 'env',
+    },
+    {
+      id: 'nodepath',
+      category: 'env',
+      label: 'NODE_PATH',
+      description: 'Extra module-resolution directories — the Node analogue of PYTHONPATH (§8).',
+      example: './src:./libs',
+      injectsAs: 'NODE_PATH=<value>',
+      docUrl: 'https://nodejs.org/api/modules.html#loading-from-the-global-folders',
+      type: 'string',
+      injection: 'env',
+    },
+  ],
 
   chips: [
     {
@@ -136,11 +238,34 @@ export const nodeAdapter: LanguageAdapter = {
     return projects;
   },
 
-  // build/run/debug land in TASK-047/048; detection + chips + creation + Doctor first (TASK-046).
-  createBuildTask: (_project, _sel, _config) => notImplemented('NodeAdapter.createBuildTask', 'TASK-047'),
-  createRunTask: (_project, _sel, _config) => notImplemented('NodeAdapter.createRunTask', 'TASK-047'),
+  createBuildTask(project, sel, config) {
+    // Build button = `<pm> run build` (TS's tsc lives in the project's build script).
+    return makeNodeTask('build', project, sel, config);
+  },
+
+  createRunTask(project, sel, config) {
+    // `<pm> run <script>` — a single self-contained command (no runRequiresBuild).
+    return makeNodeTask('run', project, sel, config);
+  },
+
   createDebugConfig: (_project, _sel, _config) => notImplemented('NodeAdapter.createDebugConfig', 'TASK-048'),
-  resolveExecutable: (_project, _sel, _config) => notImplemented('NodeAdapter.resolveExecutable', 'TASK-047'),
+
+  async resolveExecutable(project, _sel, _config) {
+    // Node debug launches the package manager (runtimeExecutable), not a pre-built binary,
+    // so there is no compiled artifact to resolve. Return the package.json `main` entry
+    // (default index.js) as a best-effort program path for callers that want "the program".
+    const text = await readManifestText(project.manifestPath);
+    let main = 'index.js';
+    try {
+      const pkg = JSON.parse(text) as { main?: unknown };
+      if (typeof pkg.main === 'string' && pkg.main.trim().length > 0) {
+        main = pkg.main.trim();
+      }
+    } catch {
+      // unparseable package.json — keep the index.js default
+    }
+    return join(projectDirOf(project), main);
+  },
 
   createProject: (target) => ({ kind: 'files', files: nodeProjectFiles(target.projectName) }),
   invalidateCache: (_project) => bridge.invalidateCache(),

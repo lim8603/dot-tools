@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import {
+  assembleNodeArgs,
   nodeProjectName,
   packageManagerFromLockfile,
   parseScripts,
@@ -51,5 +52,16 @@ describe('packageManagerFromLockfile', () => {
   it('returns undefined for an unknown lockfile name', () => {
     assert.equal(packageManagerFromLockfile('bun.lockb'), undefined);
     assert.equal(packageManagerFromLockfile('package.json'), undefined);
+  });
+});
+
+describe('assembleNodeArgs', () => {
+  it('runs a script with no args as just `run <script>`', () => {
+    assert.deepEqual(assembleNodeArgs('start', []), ['run', 'start']);
+    assert.deepEqual(assembleNodeArgs('build', []), ['run', 'build']);
+  });
+
+  it('forwards runArgs after a `--` separator (portable across npm/pnpm/yarn)', () => {
+    assert.deepEqual(assembleNodeArgs('start', ['--port', '3000']), ['run', 'start', '--', '--port', '3000']);
   });
 });

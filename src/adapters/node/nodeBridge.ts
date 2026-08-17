@@ -90,6 +90,29 @@ export function packageManagerFromLockfile(lockfileName: string): PackageManager
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Argument assembly (interface_contract §8). Node runs npm scripts through the
+// package manager; the compiler overlay has no CLI-flag channel (tsc flags live in
+// tsconfig.json, read-only — ADR-013), so only runArgs are injected. Pure/testable.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The conventional build script the Build button runs (`<pm> run build`). */
+export const BUILD_SCRIPT = 'build';
+
+/**
+ * Assemble the `<pm> run <script>` args (the command itself is the package manager). When
+ * present, runArgs follow a `--` separator so the package manager forwards them to the
+ * script rather than consuming them: npm requires `--`, and pnpm/yarn tolerate it, so `--`
+ * is the portable form across all three. Build passes no runArgs.
+ */
+export function assembleNodeArgs(script: string, runArgs: string[]): string[] {
+  const args = ['run', script];
+  if (runArgs.length > 0) {
+    args.push('--', ...runArgs);
+  }
+  return args;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // node CLI I/O boundary — the only part that touches the process boundary.
 // vscode-free and exec-injected (NodeExec) so tests run hermetically. Mirrors
 // GoBridge's I/O half (TASK-043).
