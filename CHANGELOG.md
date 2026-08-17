@@ -3,6 +3,18 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.7.0] - 2026-08-17
+
+### Added
+
+- **Keyboard shortcuts** — the core actions now have default keybindings: **Build**
+  `Ctrl/Cmd+Alt+B`, **Run** `Ctrl/Cmd+Alt+R`, **Debug** `Ctrl/Cmd+Alt+D`, **Switch Project**
+  `Ctrl/Cmd+Alt+P`, **Open Settings** `Ctrl/Cmd+Alt+,`. They are scoped to when a DevSwitcher
+  project is present (`when: devSwitcher.hasProjects`), so they stay inert in unrelated
+  workspaces. The settings page's **General** tab lists them and links straight to VS Code's
+  Keyboard Shortcuts editor (filtered to DevSwitcher) for customization. VS Code's built-in
+  keys (`F5`, `Ctrl+Shift+B`) are intentionally left untouched.
+
 ## [0.6.0] - 2026-08-17
 
 ### Added

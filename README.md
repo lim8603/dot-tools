@@ -139,7 +139,6 @@ the status bar.
 ### Commands
 
 All commands live under **`DevSwitcher:`** in the Command Palette (`Ctrl/Cmd+Shift+P`).
-Default keybindings are intentionally unset — bind the ones you use in **Keyboard Shortcuts**.
 
 | Command | Description |
 | --- | --- |
@@ -152,6 +151,25 @@ Default keybindings are intentionally unset — bind the ones you use in **Keybo
 | **Run Groups…** | Run or stop a run group (or stop all) from one menu. |
 | **Export Profile** / **Import Profile** | Save or load selections + overlays as JSON. |
 | **Toggle Compact Status Bar** | Icon-only chips for narrow windows. |
+
+### Keyboard shortcuts
+
+The core actions ship with default keybindings (active only when a DevSwitcher project is
+present, so they never clash in unrelated workspaces):
+
+| Action | Windows / Linux | macOS |
+| --- | --- | --- |
+| Build | `Ctrl+Alt+B` | `Cmd+Alt+B` |
+| Run | `Ctrl+Alt+R` | `Cmd+Alt+R` |
+| Debug | `Ctrl+Alt+D` | `Cmd+Alt+D` |
+| Switch Project | `Ctrl+Alt+P` | `Cmd+Alt+P` |
+| Open Settings | `Ctrl+Alt+,` | `Cmd+Alt+,` |
+
+Change any of them in VS Code's **Keyboard Shortcuts** editor — the settings page's **General**
+tab lists them and links straight there (filtered to DevSwitcher). VS Code's built-in keys
+(`F5` debug, `Ctrl+Shift+B` build task) are left untouched; if you'd rather drive DevSwitcher
+with them, bind `devSwitcher.debug` to `F5` or `devSwitcher.build` to `Ctrl+Shift+B` in that
+editor.
 
 ### Settings page & the invocation overlay
 
