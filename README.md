@@ -43,6 +43,10 @@ from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt`, and
   compilers (MSVC ↔ Clang-CL ↔ GCC) by picking a preset.
 - **Doctor.** One command diagnoses your toolchains and debug extensions and points you to
   the fix; a warning chip lights up when something critical is missing.
+- **Run groups.** Start several projects together in dependency order — e.g. `auth → api →
+  web` — from one click. Each member runs in a **stage**; same stage starts in parallel, a
+  higher stage waits until the previous stage's processes have launched. Stop them all with
+  one command.
 - **Profiles export / import.** Share your chip selections and per-config overlays as a
   portable `devswitcher.profile.json`.
 - **New Project wizard.** `DevSwitcher: New Project…` scaffolds a starter project in any of
@@ -96,7 +100,7 @@ Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's miss
 This extension is distributed as a `.vsix`:
 
 ```bash
-code --install-extension devswitcher-tools-0.3.0.vsix
+code --install-extension devswitcher-tools-0.4.0.vsix
 ```
 
 Or in VS Code: **Extensions** view → `⋯` menu → **Install from VSIX…** → pick the file.
@@ -114,6 +118,7 @@ the status bar.
 | **Option chips** | Per-language build options (profile/configuration, architecture/target, features, Python environment, CMake preset…). Click to change; a required chip glows until set. |
 | `$(symbol-method)` **Target** | The binary/executable/script to run or debug. |
 | `$(tools)` `$(debug-alt)` `$(play)` | **Build · Debug · Run.** |
+| `$(run-all)` **Groups** | Appears when a run group is defined — click to run, stop, or stop all groups. |
 | `$(gear)` | Open the settings page. |
 | `$(warning) Toolchain` | Appears when a critical tool is missing — click to run Doctor. |
 
@@ -130,6 +135,7 @@ Default keybindings are intentionally unset — bind the ones you use in **Keybo
 | **Doctor (environment diagnostics)** | Diagnose toolchains and debug extensions. |
 | **Rescan Projects** | Force a re-scan when a folder moved or changed outside the editor. |
 | **New Project…** | Scaffold a new project (folder → language → name). |
+| **Run Groups…** | Run or stop a run group (or stop all) from one menu. |
 | **Export Profile** / **Import Profile** | Save or load selections + overlays as JSON. |
 | **Toggle Compact Status Bar** | Icon-only chips for narrow windows. |
 
@@ -140,6 +146,19 @@ linker flags, output directories, environment variables, and pre/post-build comm
 with inline help and a **live command preview** of exactly what will run. Everything you set
 is stored per _(project × profile)_ inside the extension and injected at build/run time — the
 canonical build files stay untouched (profiles are read-only here by design).
+
+### Run groups
+
+Open the settings page → **Run Groups** tab to define a group: name it, check the projects to
+include, and give each a **Stage** number. Members with the same stage start together; a higher
+stage waits until every lower stage's process has launched — so `auth (1) → api (2) → web (3)`
+starts each service in order, while two members sharing a stage run in parallel.
+
+Run or stop a group from the group's **Run**/**Stop** button, the status-bar `$(run-all)`
+launcher, or **`DevSwitcher: Run Groups…`** (which also offers **Stop all**). A member that is
+already running — individually or in another group — is treated as ready and skipped, so the
+rest of the group still starts. Readiness in this release means the member's process has
+launched; port/health-check readiness is planned.
 
 ## Extension settings
 

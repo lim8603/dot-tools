@@ -3,6 +3,25 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.0] - 2026-08-17
+
+### Added
+
+- **Run groups** — start several projects together in dependency order (e.g. `auth → api →
+  web`). Define a group in the settings page's **Run Groups** tab: check members and give
+  each a **Stage** (same stage runs in parallel; a higher stage waits until the previous
+  stage's processes have launched). Run or stop from the group's button, the status-bar
+  `$(run-all)` launcher, or **`DevSwitcher: Run Groups…`** (with **Stop all**). A member
+  already running individually or in another group is treated as ready and skipped.
+  Readiness = the member's process has launched; port/health-check readiness is planned.
+
+### Fixed
+
+- Settings page rendered blank because an unescaped apostrophe in the profiles help text was
+  swallowed by the webview's surrounding template literal, breaking the whole inline script
+  (latent since 0.3.0's profile-text change). A regression test now parses the emitted webview
+  script.
+
 ## [0.3.0] - 2026-08-17
 
 ### Added
