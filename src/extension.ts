@@ -66,9 +66,9 @@ export function activate(context: vscode.ExtensionContext): void {
         void orchestrator.renderActive();
       }
     }),
-    // Debug sessions aren't tasks, so toggle the Stop button as they start/end.
-    vscode.debug.onDidStartDebugSession(() => orchestrator.refreshStopButton()),
-    vscode.debug.onDidTerminateDebugSession(() => orchestrator.refreshStopButton()),
+    // Debug sessions aren't tasks, so track them for the Stop button as they start/end.
+    vscode.debug.onDidStartDebugSession((session) => orchestrator.noteDebugSessionStarted(session)),
+    vscode.debug.onDidTerminateDebugSession((session) => orchestrator.noteDebugSessionEnded(session)),
   );
 
   const globs = [...new Set(ALL_ADAPTERS.flatMap((adapter) => adapter.manifestGlobs))];

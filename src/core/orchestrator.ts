@@ -38,6 +38,11 @@ export class Orchestrator {
    *  terminated task as a stop, not a failure (no error toast). Cleared after the run settles. */
   private readonly stopping = new Set<string>();
 
+  /** Our live debug sessions (session.id → the project it debugs). Tracked from the
+   *  debug start/end events (wired in extension.ts) because `vscode.debug.activeDebugSession`
+   *  is stale in the terminate event, so polling it would leave the Stop button stuck on. */
+  private readonly debugSessions = new Map<string, { session: vscode.DebugSession; projectId: string }>();
+
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
@@ -251,22 +256,48 @@ export class Orchestrator {
       stopped = true;
     }
 
-    // Debug sessions live outside the task system — stop ours (named `Debug <project name>`,
-    // or any `Debug …` session launched in this project's folder) if one is active.
-    const session = vscode.debug.activeDebugSession;
-    if (
-      session &&
-      session.name.startsWith('Debug ') &&
-      (session.name === `Debug ${project.name}` ||
-        session.workspaceFolder?.uri.toString() === project.workspaceFolder.uri.toString())
-    ) {
-      await vscode.debug.stopDebugging(session);
-      stopped = true;
+    // Debug sessions live outside the task system — stop the tracked session(s) we started
+    // for this project (see debugSessions).
+    for (const { session, projectId } of this.debugSessions.values()) {
+      if (projectId === activeId) {
+        await vscode.debug.stopDebugging(session);
+        stopped = true;
+      }
     }
 
     if (!stopped) {
       void vscode.window.showInformationMessage(`DevSwitcher: nothing running for ${project.name}.`);
     }
+  }
+
+  /** The scanned project a debug session belongs to — by exact config name (`Debug <name>`,
+   *  every adapter's naming) first, else any `Debug …` session in a project's folder. */
+  private projectForDebugSession(session: vscode.DebugSession): ProjectInfo | undefined {
+    const projects = this.registry.getProjects();
+    const byName = projects.find((p) => session.name === `Debug ${p.name}`);
+    if (byName) {
+      return byName;
+    }
+    if (!session.name.startsWith('Debug ')) {
+      return undefined;
+    }
+    const folder = session.workspaceFolder?.uri.toString();
+    return folder ? projects.find((p) => p.workspaceFolder.uri.toString() === folder) : undefined;
+  }
+
+  /** Track a starting debug session as ours if it maps to a scanned project (Stop button). */
+  noteDebugSessionStarted(session: vscode.DebugSession): void {
+    const project = this.projectForDebugSession(session);
+    if (project) {
+      this.debugSessions.set(session.id, { session, projectId: project.id });
+    }
+    this.refreshStopButton();
+  }
+
+  /** Drop a terminated debug session (by id — reliable, unlike activeDebugSession). */
+  noteDebugSessionEnded(session: vscode.DebugSession): void {
+    this.debugSessions.delete(session.id);
+    this.refreshStopButton();
   }
 
   /**
@@ -652,18 +683,12 @@ export class Orchestrator {
    */
   refreshStopButton(): void {
     const activeId = this.store.activeProjectId;
-    const project = activeId ? this.registry.project(activeId) : undefined;
-    if (!project) {
+    if (!activeId) {
       this.statusBar.setStopVisible(false);
       return;
     }
-    const taskRunning = this.taskRunner.isRunning(project.id);
-    const session = vscode.debug.activeDebugSession;
-    const debugRunning =
-      session !== undefined &&
-      session.name.startsWith('Debug ') &&
-      (session.name === `Debug ${project.name}` ||
-        session.workspaceFolder?.uri.toString() === project.workspaceFolder.uri.toString());
+    const taskRunning = this.taskRunner.isRunning(activeId);
+    const debugRunning = [...this.debugSessions.values()].some((s) => s.projectId === activeId);
     this.statusBar.setStopVisible(taskRunning || debugRunning);
   }
 
