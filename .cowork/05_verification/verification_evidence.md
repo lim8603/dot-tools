@@ -42,9 +42,9 @@
 | 영역 | 최근 상태 | 주요 근거 문서 | 마지막 갱신일 | 비고 |
 |------|----------|----------------|--------------|------|
 | Review Evidence | In Progress | 세션 로그 #004·#005, 커밋 이력 | 2026-08-15 | 각 Task F5 통과 후 병합 |
-| Test Execution Evidence | In Progress | `test_case.md`(Auto 3 + Manual 21) | 2026-08-17 | Unit **219**·Integration 3 Pass, Manual **18 Pass**/2 Partial/1 Deferred(TC-11 WSL). 세션 #012 Go TC-21 Pass |
+| Test Execution Evidence | Pass | `test_case.md`(Auto 3 + Manual 24) | 2026-08-17 | Unit **268**·Integration 3 Pass, Manual **21 Pass**/2 Partial/1 Known Issue(TC-11 WSL, D-23). v1.0.0 최종 재검증(EV-019) |
 | NFR Evidence | Partial | `test_strategy.md` §3 | 2026-08-15 | NFR-002/002a 설계 준수. 성능 NFR 별도 측정 없음 |
-| Release Readiness Evidence | Pass | `quality_gate.md`, TASK-040, EV-010 | 2026-08-17 | **v0.4.0 배포**(Run Group C-6): README·CHANGELOG·vsix·설치 스모크·태그 push. 잔여 수동검증(TC-11 WSL)은 문서화된 리스크. TASK-039(준비감지)=후속 마이너 |
+| Release Readiness Evidence | Pass | `quality_gate.md`, TASK-054·055, EV-019 | 2026-08-17 | **v1.0.0 릴리즈(MS-014)**: Gate 5 Pass — 최종 재검증(EV-019)·docs/ 공식 산출물 13종·README/CHANGELOG 1.0.0. TC-11=Known Issue(D-23). Marketplace 게시+repo public+GitHub Release는 TASK-055 |
 
 ---
 
@@ -57,7 +57,7 @@
 | EV-003 | E2E(Manual) | TC-01·04·05·07·08·12·13 (칩·빌드·디버그·watcher·export/import·target add·Doctor) | Pass | Gate 4 | 세션 로그 #004·#005 F5 | 2026-08-15 | 7 케이스 |
 | EV-004 | E2E(Manual) | TC-06(디버그×오버레이)·TC-10(E1 칩) | Partial | Gate 4 | 세션 #005 | 2026-08-15 | 코어 검증됨, 결합 재확인 권장 |
 | EV-005 | E2E(Manual) | TC-09(재시작 복원)·TC-02(workspace 3멤버)·TC-03(멀티루트) | Pass | Gate 4/5 | 세션 #006 F5 (scratchpad/verify 픽스처) | 2026-08-16 | 검증 중 버그 2건 발견·수정(features e7b462b·untrusted eb8983a) |
-| EV-008 | E2E(Manual) | TC-11(WSL/F18) | Deferred | Gate 5 | — | 2026-08-16 | WSL 내부 재클론 후 별도 진행. GAP-001 유지 |
+| EV-008 | E2E(Manual) | TC-11(WSL/F18) | Known Issue | Gate 5 | — | 2026-08-17 | **v1.0.0 Known Issue 수용(Human D-23)** — 릴리즈 비차단, README·CHANGELOG 공지. WSL 검증 시 해소 |
 | EV-006 | Packaging | `vsce package` → `devswitcher-tools-0.1.0.vsix`(9파일 34.68KB) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.1.0` 인식) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir) | 2026-08-16 | TASK-021. README·LICENSE·CHANGELOG 포함 |
 | EV-010 | Packaging/Release | **v0.4.0** `devswitcher-tools-0.4.0.vsix`(13파일 235.6KB) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.4.0` 인식). main FF 병합·`v0.4.0` 태그·origin push | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir), `git push origin main/v0.4.0` | 2026-08-17 | TASK-040. Run Group(C-6) 번들 |
 | EV-007 | E2E(Manual) | F20 시작 마법사 — 4개 언어 생성(TC-14~17): Rust(`cargo new`+자동전환)·C#(`dotnet new`)·C++/Python(workspace.fs 템플릿, `<iostream>` 온전) | Pass | Gate 4 | 세션 #006 F5 (생성 파일 내용 검증) | 2026-08-16 | TASK-022·023. cmake/python은 scope A로 스위처 미등장(생성만) |
@@ -70,6 +70,7 @@
 | EV-016 | Packaging/Release | **v0.7.0** `devswitcher-tools-0.7.0.vsix`(13파일 241.55KB, prod 116.56kb) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.7.0` 인식) + 통합 3 passing(활성화·**16 커맨드**) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir), `npm run test:integration` | 2026-08-17 | TASK-050. 키보드 단축키(MS-017) 번들. main 병합·태그·push |
 | EV-017 | E2E(Manual) + Unit | **Run Group 준비 감지(MS-018, v0.8.0)** — TC-24: 멤버별 **Ready when**(process/port/HTTP)·포트 게이트로 종속 대기·타임아웃 abort+teardown(실패 멤버명)·취소 버튼·기존 무변경. 순수 `pollUntilReady`/`readinessProblems`/`withMemberReadiness`·sequencer 취소·probe(net/http) 단위 커버. UI 재설계(멤버 카드·Add 드롭다운)·seedMemberDefaults | Pass | Gate 4 | 세션 #014 F5 — svc-a(부팅~4s→7801)→svc-b **4초 뒤 시작**(게이트 작동) + 픽스처 스모크(7801 ~4071ms 개방) + `readiness.test.ts`·`groupSequencer.test.ts`(취소)·`runGroupPlan.test.ts` | 2026-08-17 | TASK-051·052·053. **ADR-018** |
 | EV-018 | Packaging/Release | **v0.8.0** `devswitcher-tools-0.8.0.vsix`(15파일 273.43KB, prod 130.0kb) + 격리 프로필 설치 스모크(`lim8603.devswitcher-tools@0.8.0` 인식) + **README 스크린샷 재생성**(6개 언어 히어로 "SIX toolchains"·Go/Node 개별 이미지 신규·Rust 트리플 `pc-windows-msvc`, codicon 폰트 Edge 헤드리스 2x) | Pass | Gate 5 | `npx @vscode/vsce package`, `code --install-extension`(격리 dir) | 2026-08-17 | TASK-053. Run Group 준비 감지(MS-018) 번들. **v1.0.0 로드맵 마지막 기능** |
+| EV-019 | Unit + Integration + Build | **v1.0.0 최종 검증(TASK-054)** — main(v0.8.0 병합 후) 클린 트리에서 재실행: check-types·lint 클린 → unit **268 passing** → 통합 **3 passing**(16커맨드) → esbuild prod 클린 | Pass | Gate 5 | `npm run check-types`·`lint`·`test:unit`·`test:integration`·`package` (세션 #015) | 2026-08-17 | v1.0.0 릴리즈 베이스라인. TC-11(WSL)만 Known Issue(D-23) |
 
 ---
 
@@ -79,6 +80,7 @@
 |------|-----------|------------|------|------|
 | Gate 4 | Partial | EV-001·002·003 | Unit·Integration·핵심 Manual Pass. TC-06·10 Partial | MS-007 진행 중 |
 | Gate 5 | Pass (조건부) | EV-006 | README·VSIX(TASK-021) 완료·설치 스모크 Pass → v0.1.0 확정. WSL(TC-11) 등 EV-005는 문서화된 잔여 리스크로 수용 | 릴리즈 게이트 |
+| Gate 5 (v1.0.0) | Pass | EV-019·EV-008 | 통합 3 Pass·unit 268·NFR(설계 준수, GAP-004 정성 수용)·문서 최종화(README·CHANGELOG 1.0.0)·**공식 산출물 docs/ 13종 생성**(deliverable_plan 활성 전체). TC-11(WSL)은 **Known Issue 수용(Human D-23)** — 릴리즈 비차단 | **v1.0.0 릴리즈 게이트(세션 #015)** |
 
 ---
 
@@ -86,7 +88,7 @@
 
 | ID | 항목 | 부족한 근거 | 다음 액션 | 상태 |
 |----|------|------------|----------|------|
-| GAP-001 | F18 원격(WSL) 동일 동작 | TC-11 미실행 | WSL 내부 재클론 후 시나리오 1~7 수동 스모크 | Deferred (세션 #006, WSL 재클론 후) |
+| GAP-001 | F18 원격(WSL) 동일 동작 | TC-11 미실행 | WSL 내부 재클론 후 시나리오 1~7 수동 스모크 | **Known Issue 수용(v1.0.0, Human D-23)** — 릴리즈 비차단·README/CHANGELOG 공지. 검증 시 해소 |
 | ~~GAP-002~~ | **해소(2026-08-16, 세션 #006)** — TC-09 Pass(features-demo 재시작 복원). features 칩 버그 수정 e7b462b | (해소) | 재시작 복원 확인 |
 | ~~GAP-003~~ | **해소(2026-08-16, 세션 #006)** — TC-02(cargo-workspace 3멤버)·TC-03(멀티루트) Pass. untrusted 무한스피너 수정 eb8983a | (해소) | verify 픽스처로 확인 |
 | GAP-004 | 성능 NFR 측정 | 측정치 없음 | v0.1은 규모 작아 정성 판단, 필요 시 측정 | Deferred |

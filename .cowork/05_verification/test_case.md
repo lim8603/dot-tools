@@ -47,7 +47,7 @@
 | TC-08 | export → import 라운드트립, 다른 클론에서 import(경로 독립성) | Manual | ✅ Pass | TASK-015 F5 (세션 #005). 다른 클론 import는 미확인 |
 | TC-09 | VSCode 재시작 → workspaceState 복원 (DD-01) | Manual | ✅ Pass | 세션 #006 F5 (verify/features-demo: 칩 선택 Reload 복원). 부수: features 칩 버그 다수 발견·수정(e7b462b — 토글/카운트/none 보존) |
 | TC-10 | cargo 미설치(PATH 제거) → E1 경고 칩 → Doctor 유도 | Manual | 🟡 Partial | Doctor QuickPick 검증(TASK-017). E1 칩은 PATH 조작 필요(worstStatus 단위테스트 커버) |
-| TC-11 | WSL에서 동일 레포 → 시나리오 1~7 동일, Windows 창과 선택 독립 (F18·DD-01) | Manual | ⏸ Deferred | **WSL 내부에 레포 재클론 후 별도 진행 예정**(세션 #006). `/mnt` 경유 회피 |
+| TC-11 | WSL에서 동일 레포 → 시나리오 1~7 동일, Windows 창과 선택 독립 (F18·DD-01) | Manual | ❗ Known Issue | **v1.0.0에서 Known Issue로 수용(Human, D-23, 세션 #015)** — 릴리즈 비차단. README Known limitations·CHANGELOG [1.0.0]에 공지. 추후 WSL 내부 재클론 후 검증 시 해소 |
 | TC-12 | CodeLLDB 온디맨드 설치 → 디버그 이어짐(E7) / 미설치 target 선택 → `rustup target add` (§13.4) | Manual | ✅ Pass | CodeLLDB=MS-005 F5, target add=TASK-018 F5 |
 | TC-13 | Doctor 실행 → 항목별 상태 정확, 1단계 즉시 설치, 2·3단계 안내 (F19) | Manual | ✅ Pass | TASK-017 F5 (cargo/rustup/CodeLLDB ✅+버전) |
 | TC-14 | New Project → Rust → 이름 → `cargo new` → 파일 생성 + **스위처 자동 등장·전환** (F20, OQ-001) | Manual | ✅ Pass | TASK-022·023 F5 (세션 #006) |

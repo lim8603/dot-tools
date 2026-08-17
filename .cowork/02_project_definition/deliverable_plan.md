@@ -49,17 +49,17 @@
 | 1 | 요구사항 명세서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `requirement_spec.md` | 완료 | FR-001~013, NFR, 제약/의존 반입 |
 | 2 | 도메인 정의서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `domain_glossary.md` | 완료 | LanguageAdapter·ChipDescriptor·SSOT·시작마법사 등 |
 | 3 | 기능 명세서 | 필수 | 2026-08-13 | 2026-08-13 / Human | | `functional_spec.md` | 완료 | F1~F20 — 구현 기준. 핵심 |
-| 4 | 화면설계서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `ui_spec.md` | 수집중 | 상태바 UX + Webview 설정 페이지(마스터-디테일 옵션 브라우저·구성 스위처, ADR-012) |
-| 5 | WBS | 필수 | 2026-08-13 | 2026-08-13 / Human | | `milestone_registry.md` + `task_registry.md` | 수집중 | 로드맵 M0~M6 — 구현 추적 핵심 |
+| 4 | 화면설계서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `ui_spec.md` | 완료 | 상태바 UX + Webview 설정 페이지. **v1.0.0 export 완료**(구현 반영 주석 포함, 세션 #015) |
+| 5 | WBS | 필수 | 2026-08-13 | 2026-08-13 / Human | | `milestone_registry.md` + `task_registry.md` | 완료 | MS-001~020·TASK-001~055. **v1.0.0 export 완료**(세션 #015) |
 | 6 | 시스템 아키텍처 설계서 | 필수 | 2026-08-13 | 2026-08-13 / Human | | `domain_model.md` + `tech_stack.md` + ADR | 완료 | 어댑터 계층 구조가 프로젝트 핵심 |
 | 7 | API 명세서 | 필수 | 2026-08-13 | 2026-08-13 / Human | | `interface_contract.md` | 완료 | `LanguageAdapter` 인터페이스 = 설계의 핵심 |
 | 8 | DB 설계서 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `data_model.md` | 완료 | DB 없음 — workspaceState/Selection/export 스키마를 기록 |
-| 9 | 테스트 시나리오 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `test_strategy.md` | 수집중 | 단위/통합 전략(설계서 §15) |
-| 10 | 테스트 케이스 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `test_case.md` | 수집중 | 수동 체크리스트 13종 + 단위 케이스(§15) |
-| 11 | 릴리즈 노트 | 권장 | 2026-08-13 | 2026-08-13 / Human | 공개 배포 전환 시 | `release_note.md` | 미수집 | v0.1 릴리즈 시점 작성 |
+| 9 | 테스트 시나리오 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `test_strategy.md` | 완료 | 3계층 전략(단위 268·통합 3·수동 24). **v1.0.0 export 완료**(세션 #015) |
+| 10 | 테스트 케이스 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `test_case.md` | 완료 | TC-01~24 (21 Pass·2 Partial·1 Known Issue). **v1.0.0 export 완료**(세션 #015) |
+| 11 | 릴리즈 노트 | 권장 | 2026-08-13 | 2026-08-13 / Human | 공개 배포 전환 시 | `release_note.md` | 완료 | v0.1.0~v1.0.0 이력 소스 승격 + **v1.0.0 export 완료**(세션 #015) |
 | 12 | 운영서 | 해당없음 | 2026-08-13 | 2026-08-13 / Human | 서버/클라우드 운영 도입 시 | `operation_guide.md` | 미수집 | 서버 운영 없음 — 설치/사용은 README+메뉴얼로 충분 |
-| 13 | 사용자 메뉴얼 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `user_manual.md` | 미수집 | 칩/버튼/Doctor/export-import 사용법 |
-| 14 | README | 필수 | 2026-08-13 | 2026-08-13 / Human | | 전체 컨텍스트 합성 (`export_spec.md`) | 미수집 | 확장 배포 필수(package.json 요구) |
+| 13 | 사용자 메뉴얼 | 권장 | 2026-08-13 | 2026-08-13 / Human | | `user_manual.md` | 완료 | 12개 절 소스 승격 + **v1.0.0 export 완료**(세션 #015) |
+| 14 | README | 필수 | 2026-08-13 | 2026-08-13 / Human | | 전체 컨텍스트 합성 (`export_spec.md`) | 완료 | 루트 README(영문, v0.3.0 전면 재작성 → 1.0.0 Marketplace 반영) = 제품 랜딩. docs/README.md = 산출물 인덱스(세션 #015) |
 
 ### 필요 여부 기준
 
@@ -92,8 +92,8 @@
 | 기능 명세서 | F1~F20 반입 완료 | 외부 참조(설계서) | AI | High | 완료 |
 | 시스템 아키텍처 설계서 | domain_model·tech_stack·ADR-001~010 반입 완료 | 외부 참조(설계서) | AI | High | 완료 |
 | API 명세서 | interface_contract(LanguageAdapter/ChipDescriptor + F20) 반입 완료 | 외부 참조(설계서) | AI | High | 완료 |
-| WBS | milestone_registry(M0~M6) + 초기 task_registry | 외부 참조(설계서 §16) | AI | Medium | 미수집(BUILD 준비 시) |
-| README | 전체 컨텍스트 합성 | 합성 | AI | Low | 미수집(Deliver 시) |
+| WBS | milestone_registry(M0~M6) + 초기 task_registry | 외부 참조(설계서 §16) | AI | Medium | 완료(세션 #015 export) |
+| README | 전체 컨텍스트 합성 | 합성 | AI | Low | 완료(v0.3.0 재작성 → 세션 #015 v1.0.0 반영) |
 
 > 목록 문서 + 상세 문서 구조를 사용하는 항목은 인덱스 문서와 상세 문서를 함께 참조한다.
 
