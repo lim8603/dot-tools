@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import {
   assembleNodeArgs,
+  buildNodeDebugConfig,
   nodeProjectName,
   packageManagerFromLockfile,
   parseScripts,
@@ -63,5 +64,39 @@ describe('assembleNodeArgs', () => {
 
   it('forwards runArgs after a `--` separator (portable across npm/pnpm/yarn)', () => {
     assert.deepEqual(assembleNodeArgs('start', ['--port', '3000']), ['run', 'start', '--', '--port', '3000']);
+  });
+});
+
+describe('buildNodeDebugConfig', () => {
+  it('builds a js-debug node config that runs the script via the package manager', () => {
+    assert.deepEqual(
+      buildNodeDebugConfig('example-hello', 'pnpm', 'dev', ['--watch'], '/w/hello', { NODE_ENV: 'development' }),
+      {
+        type: 'node',
+        request: 'launch',
+        name: 'Debug example-hello',
+        cwd: '/w/hello',
+        runtimeExecutable: 'pnpm',
+        runtimeArgs: ['run', 'dev', '--', '--watch'],
+        console: 'integratedTerminal',
+        skipFiles: ['<node_internals>/**'],
+        sourceMaps: true,
+        env: { NODE_ENV: 'development' },
+      },
+    );
+  });
+
+  it('omits env when not provided and falls back to a generic name', () => {
+    assert.deepEqual(buildNodeDebugConfig(undefined, 'npm', 'start', [], '/x'), {
+      type: 'node',
+      request: 'launch',
+      name: 'Debug',
+      cwd: '/x',
+      runtimeExecutable: 'npm',
+      runtimeArgs: ['run', 'start'],
+      console: 'integratedTerminal',
+      skipFiles: ['<node_internals>/**'],
+      sourceMaps: true,
+    });
   });
 });

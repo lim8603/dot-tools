@@ -8,7 +8,6 @@ import {
   ProjectInfo,
   Selection,
 } from '../../core/types';
-import { notImplemented } from '../notImplemented';
 import { nodeProjectFiles } from './nodeTemplate';
 import {
   BUILD_SCRIPT,
@@ -17,6 +16,7 @@ import {
   PACKAGE_MANAGERS,
   PackageManager,
   assembleNodeArgs,
+  buildNodeDebugConfig,
   nodeProjectName,
   parseScripts,
 } from './nodeBridge';
@@ -138,7 +138,9 @@ async function detectPackageManager(projectDir: string): Promise<PackageManager>
 export const nodeAdapter: LanguageAdapter = {
   id: 'node',
   displayName: 'Node.js / TypeScript',
-  actions: { build: true }, // Build button runs the `build` script (`<pm> run build`), TASK-047
+  // Build button runs the `build` script; debug opts out of the pre-build (debugRequiresBuild:
+  // false) — Node debugs the npm script directly and npm's prestart/prebuild hooks build (ADR-016).
+  actions: { build: true, debugRequiresBuild: false },
   manifestGlobs: ['**/package.json'],
   requiredExtensions: [], // js-debug is bundled with VSCode — nothing to install
   canCreateProject: true,
@@ -248,7 +250,15 @@ export const nodeAdapter: LanguageAdapter = {
     return makeNodeTask('run', project, sel, config);
   },
 
-  createDebugConfig: (_project, _sel, _config) => notImplemented('NodeAdapter.createDebugConfig', 'TASK-048'),
+  async createDebugConfig(project, sel, config) {
+    // Debug the selected npm script under the bundled js-debug (Human: debug the script).
+    // runtimeExecutable = the package manager (js-debug resolves the .cmd shim); the debug
+    // flow skipped the pre-build (debugRequiresBuild:false), so the script's own lifecycle
+    // (or a prior Build) produces anything it needs. requiredExtensions is empty.
+    const pm = resolvePackageManager(sel);
+    const script = scriptOf(sel) ?? 'start';
+    return buildNodeDebugConfig(project.name, pm, script, config.runArgs ?? [], projectDirOf(project), taskEnv(config));
+  },
 
   async resolveExecutable(project, _sel, _config) {
     // Node debug launches the package manager (runtimeExecutable), not a pre-built binary,

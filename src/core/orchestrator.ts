@@ -251,7 +251,9 @@ export class Orchestrator {
     try {
       // Two-stage adapters (CMake) configure with the overlay before the build (§7.4).
       await adapter.prepareInvocation?.(project, selection, config);
-      if (adapter.actions.build) {
+      // Compiled languages build a debuggable artifact first; Node opts out
+      // (debugRequiresBuild:false) — it debugs the npm script directly (ADR-016).
+      if (adapter.actions.build && adapter.actions.debugRequiresBuild !== false) {
         const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
         if (!build.succeeded) {
           const showProblems = 'Show Problems';

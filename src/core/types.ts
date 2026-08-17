@@ -120,6 +120,15 @@ export interface ActionCapabilities {
    * Omitted (false) for single-command runs (cargo run / dotnet run / python script).
    */
   runRequiresBuild?: boolean;
+  /**
+   * Whether the debug flow (§7.4) runs a build before launching the debugger. Defaults to
+   * `build` — the compiled languages debug a pre-built artifact (delve/coreclr/cppvsdbg need
+   * the binary), so the orchestrator builds first. Node sets this false: it debugs the
+   * selected npm script directly (ADR-016), and npm's own script lifecycle (prestart /
+   * prebuild hooks) handles any building — forcing a separate `<pm> run build` would break
+   * projects without a `build` script. Ignored when `build` is false.
+   */
+  debugRequiresBuild?: boolean;
   // run/debug are common to every language and need no declaration.
 }
 

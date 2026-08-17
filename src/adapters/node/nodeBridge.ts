@@ -113,6 +113,56 @@ export function assembleNodeArgs(script: string, runArgs: string[]): string[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Debug configuration — a bundled js-debug launch config that runs the selected
+// npm script (Human: debug the script). No extension needed — js-debug ships with
+// VSCode and resolves `npm`/`pnpm`/`yarn` (the .cmd shim) as the runtimeExecutable.
+// Pure/testable; the adapter supplies pm/script/cwd/env.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A js-debug `node` launch config that runs an npm script; structurally a DebugConfiguration. */
+export interface NodeLaunchConfig {
+  type: 'node';
+  request: 'launch';
+  name: string;
+  cwd: string;
+  runtimeExecutable: string; // 'npm' | 'pnpm' | 'yarn' — js-debug resolves the .cmd shim
+  runtimeArgs: string[]; // ['run', <script>] (+ '--' + runArgs)
+  console: 'integratedTerminal';
+  skipFiles: string[];
+  sourceMaps: boolean;
+  env?: Record<string, string>;
+}
+
+/**
+ * Assemble a js-debug launch config that debugs the selected npm script via the package
+ * manager (runtimeExecutable). runArgs ride in runtimeArgs after `--` (assembleNodeArgs).
+ * `console: 'integratedTerminal'` gives the script a real stdin; `sourceMaps: true` lets a
+ * TS script's breakpoints resolve when its runner emits sourcemaps (tsx / ts-node / a build).
+ * Mirrors buildDelveConfig / buildDebugpyConfig.
+ */
+export function buildNodeDebugConfig(
+  projectName: string | undefined,
+  pm: string,
+  script: string,
+  runArgs: string[],
+  cwd: string,
+  env?: Record<string, string>,
+): NodeLaunchConfig {
+  return {
+    type: 'node',
+    request: 'launch',
+    name: projectName ? `Debug ${projectName}` : 'Debug',
+    cwd,
+    runtimeExecutable: pm,
+    runtimeArgs: assembleNodeArgs(script, runArgs),
+    console: 'integratedTerminal',
+    skipFiles: ['<node_internals>/**'],
+    sourceMaps: true,
+    ...(env ? { env } : {}),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // node CLI I/O boundary — the only part that touches the process boundary.
 // vscode-free and exec-injected (NodeExec) so tests run hermetically. Mirrors
 // GoBridge's I/O half (TASK-043).
