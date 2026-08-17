@@ -25,7 +25,7 @@
 
 | Intent ID | 제목 | 상태 | 우선순위 | 현재 초점 Phase | 관련 Milestone | 문서 경로 | 비고 |
 |-----------|------|------|----------|-----------------|----------------|----------|------|
-| INT-001 | 다언어 통합 상태바 UX VSCode 확장 (DevSwitcher Tools) | Approved | Must | Build | MS-001~018 → MS-014(v1.0.0) | `intents/INT-001_다언어_통합_상태바_UX_VSCode_확장.md` | 2026-08-13 Human 승인. v1.0.0 완주 로드맵 진행 중(D-21) |
+| INT-001 | 다언어 통합 상태바 UX VSCode 확장 (DevSwitcher Tools) | **Closed (완주)** | Must | Deliver | MS-001~018·MS-014 전부 Done | `intents/INT-001_다언어_통합_상태바_UX_VSCode_확장.md` | 2026-08-13 Human 승인 → **2026-08-17 v1.0.0 완주(D-23, 세션 #015)**: Marketplace 게시(`lim8603.devswitcher-tools`)·GitHub Release·repo public·docs 13종 |
 | INT-002 | 원격·크로스 개발 환경 확장 (Remote & Cross-Environment) | Draft | Should | Define | MS-019, MS-020 | `intents/INT-002_원격_크로스_개발_환경_확장.md` | 2026-08-17 세션 #012 신설(D-22). **v1.0.0 이후 착수.** §16 v2+ 백로그(원격 디버그·크로스 컴파일·호스트 칩) |
 
 - `상태`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
@@ -36,9 +36,9 @@
 
 ## 활성 Intent 요약
 
-- 현재 활성 Intent: INT-001 (Approved — v1.0.0 완주 로드맵 진행)
-- 다음 승인 대상: INT-002 (Draft — v1.0.0 완주 후 정식 착수)
-- Human 확인 필요 사항: 없음
+- 현재 활성 Intent: **없음** — INT-001은 v1.0.0 완주로 Closed(2026-08-17, 세션 #015)
+- 다음 승인 대상: INT-002 (Draft — v1.0.0 완주 완료, 착수 여부는 Human 결정)
+- Human 확인 필요 사항: INT-002 착수 여부
 
 ---
 

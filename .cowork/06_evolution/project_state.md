@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Deliver** (MS-014 — **v1.0.0 완주 선언(D-23)·릴리즈 진행**. MS-001~018 Done·Gate 5(v1.0.0) Pass·docs/ 산출물 13종 완료) |
-| 활성 Intent | INT-001 (Approved — **v1.0.0 완주 선언(Human, D-23, 세션 #015)**. MS-014 완료 시 INT-001 종료) |
-| 활성 Milestone | **MS-014** (In Progress) — v1.0.0 최종점검(✅ EV-019)+docs 산출(✅)+repo public+GitHub Release+Marketplace 게시 |
-| 활성 Task | TASK-054(최종점검+docs, **Done**) · **TASK-055**(DELIVER: repo public→Release→Marketplace, In Progress) |
+| 현재 Phase | **Evolve** (**v1.0.0 완주 — INT-001 Closed**, 세션 #015. MS-001~018·MS-014 전부 Done. 다음 사이클은 Human 결정: INT-002 승인 여부·B-3·TC-11 해소) |
+| 활성 Intent | **없음** — INT-001 **Closed(v1.0.0 완주, D-23)**. INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
+| 활성 Milestone | **없음** — MS-014 Done(v1.0.0 완주). 후보: MS-019/020(INT-002 승인 시) |
+| 활성 Task | **없음** — TASK-001~055 전부 Done |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -27,7 +27,7 @@
 | 마지막 갱신일 | 2026-08-17 |
 | 마지막 갱신자 | AI |
 | 참조 세션 로그 | session_2026-08-17_015.md |
-| 최신 배포 | **v1.0.0** (`devswitcher-tools-1.0.0.vsix` 15파일 274.91KB 스모크 ✅) — 첫 안정판. repo public·GitHub Release·Marketplace 게시 = TASK-055 진행 |
+| 최신 배포 | **v1.0.0 — Marketplace 게시 완료** (`lim8603.devswitcher-tools`, `vsce publish` DONE) + **GitHub Release v1.0.0**(vsix 첨부) + **repo public**. 첫 안정판·첫 공개 배포 |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -43,14 +43,14 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **v1.0.0 완주 선언(Human, D-23, 세션 #015) → MS-014 실행 중.** TC-11(WSL)은 Known Issue 수용(릴리즈 비차단). 최종점검(EV-019: unit 268·통합 3·게이트 클린) ✅ · **docs/ 공식 산출물 13종 생성** ✅(deliverable_plan 활성 전체·release_note/user_manual 소스 승격) · Gate 5(v1.0.0) Pass · v1.0.0 vsix 스모크 ✅. 잔여 = TASK-055: 커밋·태그·push → repo public+설정 → GitHub Release → Marketplace 게시(`vsce publish`, PAT는 Human). **원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002**(D-22).
+- **🏁 v1.0.0 완주(2026-08-17, 세션 #015, D-23) — INT-001 Closed.** 최종점검(EV-019)·docs 13종·Gate 5 Pass → `v1.0.0` 태그 → **repo public**(+기여 차단: PR 자동닫기·CONTRIBUTING·Issues 유지) → **GitHub Release**(vsix) → **Marketplace 게시**(`lim8603.devswitcher-tools`, EV-020). TC-11(WSL)=Known Issue. 다음 사이클은 Human 결정: **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인 여부 · B-3(언어별 enable) · TC-11 해소.
 
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- **진행(세션 #015)**: **MS-014 v1.0.0 완주** — Human 선언(D-23)·TC-11 Known Issue 수용. TASK-054 완료(EV-019 최종점검·v1.0.0 스탬프·**docs/ 공식 산출물 13종**·Gate 5 Pass·vsix 스모크). TASK-055 진행(커밋·태그 → repo public → GitHub Release → Marketplace).
+- **완료(세션 #015)**: **🏁 MS-014 v1.0.0 완주 — INT-001 Closed.** TASK-054(최종점검 EV-019·docs 13종·Gate 5) + TASK-055(repo public·기여차단·GitHub Release·**Marketplace 게시**). Human 온보딩(Azure DevOps 조직→PAT→publisher `lim8603`→`vsce login`) 후 `vsce publish` DONE.
 - **완료(세션 #014)**: MS-018 준비 감지 → v0.8.0 배포 + B-2 Project 카드 + README 스크린샷 6언어 리프레시. 상세는 핸드오프.
-- **다음**: TASK-055 완료 확인 → **MS-014 Done → INT-001 완주 종료**. 이후는 Human 결정(INT-002 착수 여부·B-3).
+- **다음**: Human 결정 대기 — ① INT-002(원격·크로스) 승인·착수 ② B-3(언어별 enable) ③ TC-11(WSL) 검증으로 Known Issue 해소 ④ Marketplace 반응 후 폴리시.
 
 ---
 
@@ -59,8 +59,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-054 | v1.0.0 최종점검 + docs/ 산출물 생성 | AI | Done | 2026-08-17 | 완료 — EV-019(unit 268·통합 3)·TC-11 Known Issue 처리·version 1.0.0 스탬프·docs 13종·Gate 5 Pass |
-| TASK-055 | v1.0.0 DELIVER: repo public + Release + Marketplace | AI | In Progress | 2026-08-17 | vsix 스모크 ✅ → 커밋·`v1.0.0` 태그·push → repo public+설정 → GitHub Release(vsix 첨부) → `vsce publish`(PAT는 Human 제공) |
+| (없음) | TASK-001~055 전부 Done — v1.0.0 완주 | — | — | 2026-08-17 | 다음 Task는 Human 결정(INT-002·B-3·TC-11) 후 등록 |
 
 > **TASK-001~050 Done(039 제외)·MS-017 키보드 단축키 완료·v0.7.0 배포**(세션 #013, unit **235**, 통합 16커맨드). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → MS-017 단축키(✅ v0.7.0) → **MS-018 준비감지(TASK-039, 다음)** → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). MS-017 상세(단축키·stop·Stop버튼)는 session #013. C-3 폐기(D-15). TC-11(WSL) Deferred. 백로그 B-2·B-3.
 
@@ -72,8 +71,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **TASK-055 마무리 확인** — repo public·GitHub Release v1.0.0·Marketplace 게시(`vsce publish`) 완료 여부 확인. Marketplace는 PAT 필요(Human 제공, publisher `lim8603` 존재 필요). 완료 시 **MS-014 Done → INT-001 완주 종료**.
-2. post-1.0: INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 착수 여부는 Human 결정. 백로그 B-3(언어별 enable, 저우선). TC-11(WSL)은 Known Issue — 검증 시 해소.
+1. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② B-3(언어별 enable, 저우선) ③ TC-11(WSL) 검증으로 Known Issue 해소. 별도: Marketplace 등재 확인(게시 직후 검증 몇 분 소요)·사용자 반응 모니터링.
+2. 유지보수 트랙: Marketplace 버그 신고(Issues) 대응 → 패치는 v1.0.x, 기능은 v1.x.0(SemVer).
 
 ---
 
@@ -113,7 +112,7 @@
 > 다음 세션이 바로 이어받는 데 필요한 핵심만 2~5줄로 남긴다.
 
 - DevSwitcher Tools = 다언어(Rust·C++·C#·Python·Go·Node/TS) 통합 상태바 UX VSCode 확장. 핵심 설계는 `LanguageAdapter` + `ChipDescriptor[]`(ADR-003), SSOT 파사드(ADR-007), workspaceState 저장(ADR-001), Task API 실행(ADR-002), cargo가 실행 경로 해석(ADR-005).
-- **세션 #015 — MS-014 v1.0.0 완주(D-23)**: Human "v1.0.0 완주 + TC-11은 Known Issue + DELIVER=repo public→Release→Marketplace" 선언. ► **TASK-054**: 베이스라인 재검증(check-types·lint·unit **268**·통합 3·esbuild, EV-019) → TC-11 Known Issue 처리(test_case ❗·EV-008·GAP-001·README Known limitations·CHANGELOG) → version 1.0.0 스탬프(package.json·CHANGELOG [1.0.0]·README Install=Marketplace 우선) → **docs/ 공식 산출물 13종 병렬 생성**(전담 에이전트 12기, export_spec 헤더·추적성·미확정 표기 규칙. 12 운영서=해당없음. release_note·user_manual은 빈 템플릿→소스 승격 후 export. docs/README.md 인덱스) → deliverable_plan 수집상태 전항목 완료 → Gate 5(v1.0.0) Pass 기록. ► **TASK-055**: `devswitcher-tools-1.0.0.vsix`(15파일 274.91KB) 격리 스모크 ✅·비밀정보 스캔(추적 파일+전체 이력 173커밋) 클린 → 커밋·`v1.0.0` 태그·push → **repo private→public**(gh)+설정(description·topics·homepage) → **GitHub Release v1.0.0**(vsix 첨부) → **Marketplace `vsce publish`**(저장된 자격증명 없음 → **PAT는 Human 제공 필요**, publisher `lim8603`).
+- **세션 #015 — MS-014 v1.0.0 완주(D-23)**: Human "v1.0.0 완주 + TC-11은 Known Issue + DELIVER=repo public→Release→Marketplace" 선언. ► **TASK-054**: 베이스라인 재검증(check-types·lint·unit **268**·통합 3·esbuild, EV-019) → TC-11 Known Issue 처리(test_case ❗·EV-008·GAP-001·README Known limitations·CHANGELOG) → version 1.0.0 스탬프(package.json·CHANGELOG [1.0.0]·README Install=Marketplace 우선) → **docs/ 공식 산출물 13종 병렬 생성**(전담 에이전트 12기, export_spec 헤더·추적성·미확정 표기 규칙. 12 운영서=해당없음. release_note·user_manual은 빈 템플릿→소스 승격 후 export. docs/README.md 인덱스) → deliverable_plan 수집상태 전항목 완료 → Gate 5(v1.0.0) Pass 기록. ► **TASK-055**: `devswitcher-tools-1.0.0.vsix`(15파일 274.91KB) 격리 스모크 ✅·비밀정보 스캔(추적 파일+전체 이력 173커밋) 클린 → 커밋·`v1.0.0` 태그·push → **repo private→public**(gh)+설정(description·topics·homepage) → **GitHub Release v1.0.0**(vsix 첨부) → Human 온보딩(portal 리다이렉트 이슈 → `aex.dev.azure.com` 직행 안내·조직 생성·PAT[All orgs·Marketplace Manage]·publisher `lim8603` 생성·`vsce login` 성공) → **`vsce publish` DONE → 🏁 MS-014 Done·INT-001 Closed**. ► **기여 차단(Human 추가 지시·선택: PR만 차단)**: Wiki/Projects/Discussions off·**Issues 유지**·`CONTRIBUTING.md`·PR 자동닫기 워크플로(`pull_request_target`+github-script, PR 코드 미체크아웃)·README 노트·vsix 재패키징(275.03KB)·Release 자산 교체(`3e8dd02`).
 - **세션 #014 — MS-018 Run Group 준비 감지 완주·v0.8.0 배포 + B-2 Project 카드 + README 스크린샷 리프레시**: 작업 순서(Human)=B-2 → TASK-039. ► **B-2**: 설정 Project 탭을 카드형으로(어댑터 무지 INV-2 유지=선언적) — displayName·매니페스트·**툴체인 ✅/❌**(Doctor probe, 어댑터별 캐시)·프로파일·칩 요약+개수. 순수 `projectCard.ts`(`deriveToolchain` 이름중복 dedup·`formatChipValue` 가드)·단위테스트. F5 "아주 좋아". ► **MS-018(TASK-051/052/053)**: **ADR-018**(준비=프로세스 시작→포트 open/HTTP 상태코드 게이트). **모델** `RunGroupMember.readiness?`(port/http, additive) + 순수 `core/readiness.ts`(`pollUntilReady` now/sleep/signal 주입·`readinessProblems`·`describeReadiness`) + I/O `core/readinessProbe.ts`(`probePort` net·`probeHttp` http/https·`waitForReadiness`, Node 내장만) + `validateGroup` 준비검사 + 순수 `withMemberReadiness`. **게이트**: `groupSequencer` AbortLike signal + `startMember` `gateReadiness`(spawn 후 `waitForReadiness`·타임아웃/취소=`started:false`→**abort+teardown**) + `runGroup` **cancellable** withProgress(Token→AbortController→signal·진행 메시지·실패 멤버명). **Human 결정**: 타임아웃=abort+teardown·HTTP=지정코드(기본200)·취소 가능. **Run Groups UI 재설계**(Human "성의없다"→"깔끔해"): 전체 체크박스 나열 → **멤버 카드**(Stage 정렬·Remove) + **Add 드롭다운**(비멤버만·중복 방지) + 준비 편집기. **seedMemberDefaults**(그룹 멤버 기본값 시드, Script 미선택 차단 해소). **F5 통과**: `svc-a`(부팅 ~4s→포트 7801)→`svc-b` **4초 뒤 시작**(게이트 작동). 픽스처 `fixtures/node/svc-a`·`svc-b`. **README 스크린샷 재생성**(Human 지적): 히어로 "FOUR"→**"SIX toolchains"** 6행·Go/Node 개별 신규·Rust 트리플 `x86_64-pc-windows-msvc`(unknown 제거·Rust만 features 칩 빼서 길이 균형)·install 0.8.0. codicon 폰트 Edge 헤드리스 2x. unit **268**·통합 3·`v0.8.0.vsix`(15파일 274KB) 스모크. **main FF 병합·`v0.8.0` 태그·push 완료.** 다음=MS-014 v1.0.0 최종점검+게시(Human 선언).
 - **세션 #013 (계속) — MS-017 키보드 단축키 완주·v0.7.0 배포**: 정적 `contributes.keybindings`(Build/Run/Stop/Debug/Switch/Groups/Settings=Ctrl+Alt+B/R/S/D/P/G/,·mac 변형·`when:devSwitcher.hasProjects`)·orchestrator `refresh` setContext·General 탭 "Keyboard shortcuts"(확장 packageJSON을 SSOT로 `buildShortcutList` 나열 + `openGlobalKeybindings` 딥링크 + 행별 Edit + 리맵 안내). **ADR-017**: VSCode 런타임 키바인딩 API 부재→정적+네이티브 편집기, 내장키(F5/Ctrl+Shift+B) 불간섭·리맵 안내만(Human). **F5 유래 추가**: ① **`devSwitcher.stop`**(Ctrl+Alt+S)=활성 프로젝트 태스크(`devSwitcher.*` taskDef+projectId 매칭 terminate)+**디버그 세션** 종료·user-stop은 실패토스트 억제 ② **Run Groups**=Ctrl+Alt+G ③ **상태바 Stop 버튼**(`$(debug-stop)`·Run 뒤·실행 중일 때만). **버그 fix**: `onDidTerminateDebugSession`에서 `activeDebugSession`이 stale→Stop 버튼 잔존 → 디버그 세션을 Map(`session.id→project`)으로 명시 추적(start/end 이벤트, extension.ts). F5 전부 통과(단축키·stop[run+디버그]·상태바 버튼 토글). unit **235**·통합 **16커맨드**·`v0.7.0.vsix`(13파일 241.55KB) 스모크. **main FF 병합·`v0.7.0` 태그·origin push·브랜치 삭제 완료.** 다음=MS-018 준비 감지(v0.8.0). 백로그 B-2(Project 탭)·B-3(언어별 enable).
 - **세션 #013 — MS-016 Node/TS 어댑터 완주·v0.6.0 배포(6개 언어 완성)**: `nodeBridge`(순수 `parseScripts`·`nodeProjectName`·`packageManagerFromLockfile` + I/O `checkToolchain`·DI·vscode-free)·`nodeAdapter`·`nodeTemplate`(F20). 감지(`package.json`·`.vscode-test`/node_modules 제외)·**script 칩**(npm scripts·start/dev/serve 기본)·**packageManager 칩**(npm/pnpm/yarn·lockfile 자동감지)·`<pm> run <script>`/`<pm> run build`·**js-debug 디버그**(`buildNodeDebugConfig`·`runtimeExecutable:<pm>`·확장 불요)·Doctor(node). **ADR-016/NFR-002b**(핵심): 구현 중 Node 24가 셸 없이 `npm.cmd` spawn을 `EINVAL`로 거부함을 실측 → **배열형 `ShellExecution`**(인자 인용=인젝션 차단, NFR-002 목표 유지). 나머지 5언어는 ProcessExecution 유지. **코어 신규 `ActionCapabilities.debugRequiresBuild`**(Node=false: 디버그 전 강제 build 스킵·npm prestart/prebuild가 처리·build 스크립트 없는 JS도 디버그 가능; 기본=build-first로 5언어 보존). **F5 유래 fix**: `**/package.json`이 `.vscode-test`(통합테스트 VSCode 다운로드·내장확장·`node_modules.asar`) 수백 개를 잡아 스위처 범람 → 공유 `EXCLUDE_GLOB`에 `.vscode-test` 추가(스캔 제외·속도↑). **F5 전부 통과**(감지 정리·2칩·`npm run start`·js-debug 중단점 index.js:2 정지·확장 프롬프트 없음). unit **231**·통합 3·실 node24 셸 스모크·`devswitcher-tools-0.6.0.vsix`(13파일 239.61KB) 스모크. 커밋 7개(046 feat/docs·047 feat/docs·048 feat/docs·`.vscode-test` fix). **main FF 병합·`v0.6.0` 태그·origin push·브랜치 삭제 완료.** 다음=MS-017 키보드 단축키(v0.7.0).
