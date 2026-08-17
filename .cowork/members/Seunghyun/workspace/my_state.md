@@ -10,7 +10,7 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-012 C++(CMake)** (C-7 3/3) — TASK-033·034·035·041 **전부 F5 통과**, main 병합 대기 |
+| 활성 Milestone | **없음** — MS-012 C++(CMake) **Done·main 병합 완료**(C-7 완주). 다음: MS-013 Run Group / v1.3 릴리즈 (논의) |
 | 마지막 갱신일 | 2026-08-17 |
 | 참조 세션 로그 | session_2026-08-17_010.md |
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| TASK-041 | CMakePresets.json 지원 (Preset 칩) | MS-012 | Done | F5 통과·커밋(feat+docs) | 없음 |
+| 없음 | (MS-012 완료·병합) | — | — | 다음 세션 방향 논의 | 없음 |
 
-> **TASK-001~035·041 완료.** MS-012 CMake = 전 Task F5 통과(switch/build/run/debug + 프리셋). TASK-041: `ChipDescriptor.appliesTo` 동적 대체(Preset 칩↔profile/arch) + `parseConfigurePresets`/`resolvePresetBinaryDir`(순수) + `cmake --preset` configure(binaryDir·--config 생략) + target/디버거 자동판별 재사용. 프리셋 파일 workspace.fs 읽기전용(ADR-013). unit **172**·실 cmake 프리셋 스모크·**실 F5**(msvc-x64 build/run/debug 중단점). **다음: MS-012 main 병합**(브랜치 `feature/ms-012-cmake-adapter`) → Done(C-7 완주). 이후 C-6(MS-013 Run Group).
+> **TASK-001~035·041 완료 · MS-012 main FF 병합(2026-08-17) → C-7 완주**(Rust·C#·Python·C++ 4개 언어 전부 스위처 실동작). 세션 #010: TASK-041 CMakePresets(`ChipDescriptor.appliesTo` 동적 대체·`cmake --preset`·프리셋 binaryDir 스레드·target/디버거 재사용) F5 통과(msvc-x64/x86/clangcl) + 설정 페이지 appliesTo 일관성·profile read-only 문구 정정. 14커밋 병합·병합 브랜치(ms-011·012) 삭제. unit 172. **다음 세션 논의**: C-6(MS-013 Run Group, INT-001 마지막 조건) / v1.3 릴리즈 / KB 정리 / origin push.
 
 ---
 
