@@ -41,6 +41,7 @@
 | ADR-014 | CMake 어댑터는 자체 `cmake` CLI 구동 (CMake Tools 미위임, File API) | Accepted | 2026-08-16 | INT-001 | MS-012 | `adrs/ADR-014_CMake_자체_CLI_구동_File_API.md` | 세션 #008 신규. cargo/dotnet/python 선례·§8 `-D`/`--config` 주입·KB #8 경로해석. requiredExtensions=디버거(TASK-035) |
 | ADR-015 | Run Group 실행 모델 (준비=프로세스 시작, 계층적 위상정렬, Run 전용) | Accepted | 2026-08-17 | INT-001 | MS-013 | `adrs/ADR-015_Run_Group_실행_모델.md` | 세션 #011 신규. 준비 신호=`onDidStartTaskProcess`(종료 아님). 헬스체크=후속 마이너(TASK-039). 저장=workspaceState.groups(ADR-001). D-19(버전 정책) 연계 |
 | ADR-016 | Node 스크립트는 배열형 ShellExecution으로 실행 (NFR-002 문서화된 예외) | Accepted | 2026-08-17 | INT-001 | MS-016 | `adrs/ADR-016_Node_스크립트_ShellExecution_배열형_실행.md` | 세션 #013 신규. npm/pnpm/yarn=`.cmd` 심 → 셸-less spawn 불가(Node 24 EINVAL 실측). 배열형 ShellExecution은 인자별 인용으로 인젝션 차단(NFR-002 보안 목표 유지) — NFR-002a와 동급 예외. 나머지 5언어는 ProcessExecution 유지 |
+| ADR-017 | 키보드 단축키 = 정적 기본값 + 네이티브 편집기 딥링크 | Accepted | 2026-08-17 | INT-001 | MS-017 | `adrs/ADR-017_키보드_단축키_정적_기본값_네이티브_편집기.md` | 세션 #013 신규. VSCode 런타임 키바인딩 등록 API 부재 → 정적 `contributes.keybindings`(Ctrl+Alt+글자·`when:hasProjects`) + General 탭 딥링크(`openGlobalKeybindings` 확장 필터). 인페이지 재바인딩/keybindings.json 편집 비채택(취약·ADR-013 반함) |
 
 > ADR-001~009 = 상세설계서 §2 DD-01~09 승격(제목에 DD 번호 병기). ADR-010 = 세션 #001 신규. ADR-011·012 = 세션 #002 신규(호출 구성 오버레이·설정 페이지). ADR-013 = 세션 #007 신규(C-3 폐기·파일 무편집 불변식).
 
