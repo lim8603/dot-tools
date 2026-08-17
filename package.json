@@ -79,6 +79,11 @@
         "category": "DevSwitcher"
       },
       {
+        "command": "devSwitcher.stop",
+        "title": "Stop",
+        "category": "DevSwitcher"
+      },
+      {
         "command": "devSwitcher.debug",
         "title": "Debug",
         "category": "DevSwitcher"
@@ -148,9 +153,21 @@
         "when": "devSwitcher.hasProjects"
       },
       {
+        "command": "devSwitcher.stop",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
         "command": "devSwitcher.debug",
         "key": "ctrl+alt+d",
         "mac": "cmd+alt+d",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
+        "command": "devSwitcher.groups",
+        "key": "ctrl+alt+g",
+        "mac": "cmd+alt+g",
         "when": "devSwitcher.hasProjects"
       },
       {

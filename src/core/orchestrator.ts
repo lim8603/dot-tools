@@ -34,6 +34,10 @@ export class Orchestrator {
    *  `appliesTo` predicate in renderActive and reused by the inline renders below. */
   private hiddenChips: ReadonlySet<string> = new Set();
 
+  /** projectIds the user just stopped (devSwitcher.stop) — so runCargoTask reports the
+   *  terminated task as a stop, not a failure (no error toast). Cleared after the run settles. */
+  private readonly stopping = new Set<string>();
+
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
@@ -207,6 +211,35 @@ export class Orchestrator {
     const context = this.activeContext();
     if (context) {
       await this.runCargoTask(context.project, context.adapter, 'run');
+    }
+  }
+
+  /**
+   * Stop the active project's running DevSwitcher task (F16 companion to Run). A single-
+   * project `run` awaits the process, so a long-lived service (a web server, a watcher) keeps
+   * the task and the busy spinner up until it is stopped. This finds the running task(s) for
+   * the active project by their DevSwitcher task definition and terminates them; ending the
+   * process releases the TaskRunner lock and clears the spinner. Marks the project as
+   * user-stopped so runCargoTask does not surface the termination as a build/run failure.
+   */
+  async stop(): Promise<void> {
+    const activeId = this.store.activeProjectId;
+    const project = activeId ? this.registry.project(activeId) : undefined;
+    if (!activeId || !project) {
+      void vscode.window.showInformationMessage('DevSwitcher: no active project to stop.');
+      return;
+    }
+    const executions = vscode.tasks.taskExecutions.filter((execution) => {
+      const def = execution.task.definition as { type?: string; projectId?: string };
+      return typeof def.type === 'string' && def.type.startsWith('devSwitcher.') && def.projectId === activeId;
+    });
+    if (executions.length === 0) {
+      void vscode.window.showInformationMessage(`DevSwitcher: nothing running for ${project.name}.`);
+      return;
+    }
+    this.stopping.add(activeId); // suppress the run-failed toast for this user-initiated stop
+    for (const execution of executions) {
+      execution.terminate();
     }
   }
 
@@ -476,7 +509,9 @@ export class Orchestrator {
       if (action === 'run' && adapter.actions.runRequiresBuild) {
         const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
         if (!build.succeeded) {
-          await this.showTaskFailure('build', build.exitCode);
+          if (!this.stopping.has(project.id)) {
+            await this.showTaskFailure('build', build.exitCode);
+          }
           return;
         }
       }
@@ -487,12 +522,17 @@ export class Orchestrator {
           : adapter.createRunTask(project, selection, config);
       const result = await this.taskRunner.run(task, project.id);
       if (!result.succeeded) {
-        await this.showTaskFailure(action, result.exitCode);
+        // A user-initiated stop (devSwitcher.stop) ends the task as "not succeeded"; that is
+        // not a failure, so skip the error toast for it.
+        if (!this.stopping.has(project.id)) {
+          await this.showTaskFailure(action, result.exitCode);
+        }
         return;
       }
       // Post-build commands run only after the build/run succeeds.
       await this.runBuildEvents(project, config.postBuild, 'post');
     } finally {
+      this.stopping.delete(project.id);
       await this.renderActive(); // clear the busy spinner
     }
   }
