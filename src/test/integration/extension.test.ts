@@ -25,6 +25,9 @@ const CONTRIBUTED_COMMANDS = [
   'devSwitcher.rescan',
   'devSwitcher.toggleCompact',
   'devSwitcher.newProject',
+  'devSwitcher.groups',
+  'devSwitcher.runGroup',
+  'devSwitcher.stopGroup',
 ];
 
 describe('DevSwitcher — activation smoke', () => {

@@ -5,7 +5,16 @@ import { defaultChipFormat } from './statusBarFormat';
 const PROJECT_CHIP = 'project';
 const SETTINGS_CHIP = 'settings';
 const TOOLCHAIN_CHIP = 'toolchain';
+const GROUP_CHIP = 'group';
 const ACTION_CHIPS = ['build', 'debug', 'run'] as const;
+
+/**
+ * Fixed display orders for the trailing controls so their left→right order stays stable
+ * regardless of how many chips precede them (chips use the running counter 0..k, always a
+ * higher priority = further left). Sequence: build · debug · run · group · settings. The
+ * group launcher (managed independently by setGroups) slots between run and the gear.
+ */
+const TRAILING_ORDER = { build: 900, debug: 901, run: 902, group: 903, settings: 904 } as const;
 
 /** Options that colour special states on top of a normal render (F6 / §5.4). */
 export interface RenderOptions {
@@ -94,19 +103,23 @@ export class StatusBarController {
       item.show();
     }
 
-    this.renderAction('build', '$(tools)', 'Build', 'devSwitcher.build', adapter.actions.build, order++);
-    this.renderAction('debug', '$(debug-alt)', 'Debug', 'devSwitcher.debug', true, order++);
-    this.renderAction('run', '$(play)', 'Run', 'devSwitcher.run', true, order++);
+    this.renderAction('build', '$(tools)', 'Build', 'devSwitcher.build', adapter.actions.build, TRAILING_ORDER.build);
+    this.renderAction('debug', '$(debug-alt)', 'Debug', 'devSwitcher.debug', true, TRAILING_ORDER.debug);
+    this.renderAction('run', '$(play)', 'Run', 'devSwitcher.run', true, TRAILING_ORDER.run);
 
-    const gear = this.upsert(SETTINGS_CHIP, '$(gear)', 'DevSwitcher Settings', 'devSwitcher.openSettings', undefined, order++);
+    // The run-group launcher (TRAILING_ORDER.group) sits between Run and the gear; it is
+    // shown/hidden by setGroups, not here, so it survives the no-active-project state.
+    const gear = this.upsert(SETTINGS_CHIP, '$(gear)', 'DevSwitcher Settings', 'devSwitcher.openSettings', undefined, TRAILING_ORDER.settings);
     gear.show();
 
-    // Hide any chip left over from a previously active adapter. The toolchain (E1)
-    // chip is owned by setToolchainWarning, so it is always exempt from this sweep.
+    // Hide any chip left over from a previously active adapter. The toolchain (E1) and
+    // group (C-6) chips are owned by setToolchainWarning/setGroups, so they are always
+    // exempt from this sweep.
     const visible = new Set<string>([
       PROJECT_CHIP,
       SETTINGS_CHIP,
       TOOLCHAIN_CHIP,
+      GROUP_CHIP,
       ...shownChipIds,
       ...ACTION_CHIPS,
     ]);
@@ -133,6 +146,26 @@ export class StatusBarController {
   }
 
   /**
+   * Show or hide the run-group launcher (C-6 / MS-013). Independent of render() — groups
+   * are workspace-level, so the launcher persists across project switches and the no-active-
+   * project state (like the toolchain chip). Hidden when no group is defined. Icon-only
+   * (`$(run-all)`, plus a running count) — clicking opens the group menu (run / stop / stop-all).
+   */
+  setGroups(defined: number, running: number): void {
+    if (defined === 0) {
+      this.items.get(GROUP_CHIP)?.hide();
+      return;
+    }
+    const tooltip =
+      running > 0
+        ? `DevSwitcher: ${running} run group(s) running — click to run or stop a group`
+        : 'DevSwitcher: run groups';
+    const text = running > 0 ? `$(run-all) ${running}` : '$(run-all)';
+    const item = this.upsert(GROUP_CHIP, text, tooltip, 'devSwitcher.groups', undefined, TRAILING_ORDER.group);
+    item.show();
+  }
+
+  /**
    * Show an action button as busy — spinner, no command (§5.4). Cleared by the next
    * render(), which the orchestrator calls when the task finishes.
    */
@@ -144,11 +177,11 @@ export class StatusBarController {
     }
   }
 
-  /** Hide the project UI (no projects, or extension idle — §5.4). Keeps the E1
-   *  toolchain chip, whose visibility setToolchainWarning owns. */
+  /** Hide the project UI (no projects, or extension idle — §5.4). Keeps the E1 toolchain
+   *  and group launcher chips, whose visibility setToolchainWarning/setGroups own. */
   hideAll(): void {
     for (const [id, item] of this.items) {
-      if (id !== TOOLCHAIN_CHIP) {
+      if (id !== TOOLCHAIN_CHIP && id !== GROUP_CHIP) {
         item.hide();
       }
     }

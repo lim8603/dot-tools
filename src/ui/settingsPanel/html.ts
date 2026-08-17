@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import type * as vscode from 'vscode';
 
 /**
  * The settings-page webview document (TASK-013). Self-contained: inline CSS/JS gated
@@ -92,6 +92,12 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   .opt textarea { flex: 1 1 100%; min-width: 320px; max-width: 820px; min-height: 3.4em; }
   .preview { background: var(--vscode-textCodeBlock-background); padding: 10px 12px;
     border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+  h4.cat { margin: 16px 0 4px; font-size: .9em; opacity: .85; }
+  .member-row { gap: 6px; }
+  .member-label { display: inline-flex; align-items: center; gap: 4px; min-width: 260px; }
+  .stage-lbl { margin-left: 4px; }
+  .group-stage { width: 56px; }
+  #new-group-name { min-width: 220px; }
 </style>
 </head>
 <body>
@@ -109,6 +115,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   const vscode = acquireVsCodeApi();
   let state = null;
   let activeTab = 'project';
+  let selectedGroupId = null;
 
   function post(msg) { vscode.postMessage(msg); }
   function esc(s) {
@@ -123,6 +130,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     if (chip('features')) tabs.push({ id: 'features', label: 'Features' });
     if (chip('profile')) tabs.push({ id: 'profile', label: 'Profile' });
     if (state.configCategories.length) tabs.push({ id: 'invocation', label: 'Invocation' });
+    // Run Groups is workspace-level (not per-project), so it always shows.
+    tabs.push({ id: 'groups', label: 'Run Groups' });
     tabs.push({ id: 'general', label: 'General' });
     return tabs;
   }
@@ -151,6 +160,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   }
 
   function renderDetail() {
+    // Run Groups is workspace-level — it renders even with no active project.
+    if (activeTab === 'groups') return renderGroups();
     if (!state.activeProjectId) {
       return '<div class="empty">No project detected. Open a folder with a Cargo.toml.</div>';
     }
@@ -190,7 +201,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       (it.description ? '<span class="badge">' + esc(it.description) + '</span>' : '') +
       (it.id === state.profile ? '<span class="badge">active</span>' : '') + '</div>').join('');
     return '<h2>Profiles <span class="muted">(read-only)</span></h2>' + rows +
-      '<p class="muted">Profiles come from your project\'s build files. DevSwitcher switches ' +
+      '<p class="muted">Profiles come from the project build files. DevSwitcher switches ' +
       'between them but never edits them.</p>';
   }
 
@@ -278,6 +289,70 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     return html;
   }
 
+  function renderGroups() {
+    const groups = state.groups || [];
+    // Keep a valid selection (falls back to the first group).
+    if (!groups.some((g) => g.id === selectedGroupId)) {
+      selectedGroupId = groups.length ? groups[0].id : null;
+    }
+    let html = '<h2>Run groups</h2>' +
+      '<p class="muted">Start several projects together in dependency order (e.g. auth → api → web). ' +
+      'Members start in layers: a member starts once the members it depends on have started ' +
+      '(readiness = the process launched).</p>';
+    html += '<div class="row">' +
+      '<input type="text" id="new-group-name" aria-label="New group name" placeholder="New group name" />' +
+      '<button data-action="create-group">Add group</button></div>';
+    if (!groups.length) {
+      return html + '<div class="muted">No run groups yet.</div>';
+    }
+    html += groups.map((g) =>
+      '<div class="row item' + (g.id === selectedGroupId ? ' active' : '') +
+      '" data-action="select-group" data-group-id="' + esc(g.id) + '">' + esc(g.name) +
+      '<span class="badge">' + g.members.length + ' member(s)</span>' +
+      (g.running ? '<span class="badge">running</span>' : '') +
+      (g.problems.length ? '<span class="badge">⚠ ' + g.problems.length + '</span>' : '') +
+      '</div>').join('');
+    const selected = groups.find((g) => g.id === selectedGroupId);
+    return html + (selected ? renderGroupEditor(selected) : '');
+  }
+
+  function renderGroupEditor(g) {
+    const stageOf = {};
+    g.members.forEach((m) => { stageOf[m.projectId] = m.stage; });
+    const memberIds = new Set(g.members.map((m) => m.projectId));
+    let html = '<h3 class="cat">Editing: ' + esc(g.name) + '</h3>';
+    html += '<div class="row">' +
+      '<input type="text" class="group-rename" data-group-id="' + esc(g.id) + '" aria-label="Group name" value="' + esc(g.name) + '" />' +
+      (g.running
+        ? '<button data-action="stop-group" data-group-id="' + esc(g.id) + '">Stop</button>'
+        : '<button data-action="run-group" data-group-id="' + esc(g.id) + '">Run</button>') +
+      '<button class="secondary" data-action="delete-group" data-group-id="' + esc(g.id) + '">Delete</button>' +
+      '</div>';
+    if (g.problems.length) {
+      html += '<div class="muted">⚠ ' + g.problems.map(esc).join(' &nbsp;·&nbsp; ') + '</div>';
+    }
+
+    // Members: check to include, and set each member's Stage (order). Same stage number
+    // runs in parallel; a higher stage starts after every lower stage is ready.
+    html += '<h4 class="cat">Members <span class="muted">(check to include · Stage sets order — same number runs together)</span></h4>';
+    html += state.projects.length
+      ? state.projects.map((p) => {
+          const isMember = memberIds.has(p.id);
+          return '<div class="row member-row">' +
+            '<label class="member-label"><input type="checkbox" class="group-member" data-group-id="' + esc(g.id) +
+            '" data-project-id="' + esc(p.id) + '"' + (isMember ? ' checked' : '') + ' /> ' +
+            esc(p.name) + '<span class="badge">' + esc(p.adapterId) + '</span></label>' +
+            (isMember
+              ? '<span class="muted stage-lbl">Stage</span><input type="number" class="group-stage" min="1" ' +
+                'aria-label="Stage for ' + esc(p.name) + '" data-group-id="' + esc(g.id) + '" data-project-id="' + esc(p.id) +
+                '" value="' + esc(stageOf[p.id]) + '" />'
+              : '') +
+            '</div>';
+        }).join('')
+      : '<div class="muted">No projects detected.</div>';
+    return html;
+  }
+
   function renderGeneral() {
     const sb = state.statusBar || {};
     return '<h2>General</h2>' +
@@ -298,6 +373,14 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     const action = el.dataset.action;
     if (action === 'tab') { activeTab = el.dataset.tab; render(); }
     else if (action === 'switch-project') { post({ type: 'switchProject', projectId: el.dataset.projectId }); }
+    else if (action === 'select-group') { selectedGroupId = el.dataset.groupId; render(); }
+    else if (action === 'create-group') {
+      const input = document.getElementById('new-group-name');
+      post({ type: 'createGroup', name: input ? input.value : '' });
+    }
+    else if (action === 'delete-group') { post({ type: 'deleteGroup', groupId: el.dataset.groupId }); }
+    else if (action === 'run-group') { post({ type: 'runGroup', groupId: el.dataset.groupId }); }
+    else if (action === 'stop-group') { post({ type: 'stopGroup', groupId: el.dataset.groupId }); }
   });
 
   document.addEventListener('change', (e) => {
@@ -318,6 +401,12 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'setStatusBarPref', key: 'compact', value: el.checked });
     } else if (el.id === 'sb-selectedonly') {
       post({ type: 'setStatusBarPref', key: 'selectedOnly', value: el.checked });
+    } else if (el.classList.contains('group-rename')) {
+      post({ type: 'renameGroup', groupId: el.dataset.groupId, name: el.value });
+    } else if (el.classList.contains('group-member')) {
+      post({ type: 'setGroupMember', groupId: el.dataset.groupId, projectId: el.dataset.projectId, member: el.checked });
+    } else if (el.classList.contains('group-stage')) {
+      post({ type: 'setMemberStage', groupId: el.dataset.groupId, projectId: el.dataset.projectId, stage: Number(el.value) });
     } else if (el.dataset && el.dataset.action === 'set-option') {
       const id = el.dataset.optionId;
       const type = el.dataset.type;

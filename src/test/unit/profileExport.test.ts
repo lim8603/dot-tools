@@ -4,7 +4,7 @@ import { DevSwitcherError, PROFILE_EXPORT_VERSION } from '../../core/types';
 import type { PersistedState, ProfileExport } from '../../core/types';
 
 function state(partial: Partial<PersistedState> = {}): PersistedState {
-  return { selections: {}, invocation: {}, ...partial };
+  return { selections: {}, invocation: {}, groups: [], ...partial };
 }
 
 const sample = state({

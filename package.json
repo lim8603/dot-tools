@@ -105,6 +105,21 @@
         "category": "DevSwitcher"
       },
       {
+        "command": "devSwitcher.groups",
+        "title": "Run Groups…",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.runGroup",
+        "title": "Run Group…",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.stopGroup",
+        "title": "Stop Run Group…",
+        "category": "DevSwitcher"
+      },
+      {
         "command": "devSwitcher.toggleCompact",
         "title": "Toggle Compact Status Bar",
         "category": "DevSwitcher"

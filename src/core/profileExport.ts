@@ -86,6 +86,7 @@ export function mergeImport(
     activeProjectId: current.activeProjectId,
     selections: structuredClone(current.selections ?? {}),
     invocation: structuredClone(current.invocation ?? {}),
+    groups: structuredClone(current.groups ?? []), // run groups are workspace-local; the import carries none (F12)
   };
   const applied: string[] = [];
   const skipped: string[] = [];

@@ -129,6 +129,31 @@ export interface TaskResult {
   succeeded: boolean; // exitCode === 0
 }
 
+/**
+ * Readiness of a task started by TaskRunner.start (C-6 / ADR-015). `started` is true
+ * once the task's process has spawned (the run-group readiness signal); false when the
+ * task ended before any process started (untrusted workspace, or an immediate failure).
+ */
+export interface StartResult {
+  started: boolean;
+}
+
+/**
+ * A long-lived task started (not awaited-to-exit) by TaskRunner.start for a run group
+ * (C-6 / MS-013 / ADR-015). The group advances on `ready` (process spawn) rather than
+ * on exit, and `terminate()` stops the task during teardown. The per-project lock is
+ * held for the task's whole lifetime and released when it exits or is terminated.
+ */
+export interface StartedTask {
+  readonly lockKey: string;
+  /** Resolves when the process spawns, or {started:false} if the task ended first. */
+  readonly ready: Promise<StartResult>;
+  /** Resolves when the task's process exits (or the task ends without one). */
+  readonly done: Promise<TaskResult>;
+  /** Stop the running task (teardown). */
+  terminate(): void;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // §5. Project creation (F20 / ADR-010)
 // File creation is delegated to the native tool; the extension only orchestrates.
@@ -324,6 +349,39 @@ export interface LanguageAdapter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// §9. Run Group (C-6 / MS-013 / ADR-015) — start several projects together in
+// dependency order (e.g. auth → api → web). Each member is a long-lived `run`
+// (a service); a member starts once every member it depends on has started, where
+// "started" = its task process spawned (readiness = process spawn, ADR-015).
+// Teardown terminates the started executions. Run-only in v1 (no build/debug
+// members). The topological plan derivation is pure (core/runGroupPlan.ts).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One member of a run group — a detected project started as part of the group.
+ * Members are `run` only (v1); a prior build is handled by the adapter's own
+ * runRequiresBuild, not modelled here.
+ */
+export interface RunGroupMember {
+  /** ProjectInfo.id of a detected project. Unique within a group (a service is started once). */
+  projectId: string;
+  /**
+   * projectIds of sibling members that must start before this one (topological order).
+   * Every id must reference another member of the same group; a self-dependency, a
+   * dangling reference, or a cycle is rejected by validateGroup (core/runGroupPlan.ts).
+   */
+  dependsOn: string[];
+}
+
+/** A named set of projects started together in dependency order (C-6, ADR-015). */
+export interface RunGroup {
+  /** Stable id (e.g. `group:<token>`) — the key for save/delete/getGroup. */
+  id: string;
+  name: string; // display name
+  members: RunGroupMember[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Persisted state — workspaceState (Memento), no DB (data_model §2 / ADR-001)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -344,6 +402,13 @@ export interface PersistedState {
    * selections[projectId]['profile'].
    */
   invocation: Record<string, Record<string, InvocationConfig>>;
+  /**
+   * Run groups defined in this workspace (C-6 / MS-013). Additive field: state
+   * persisted before MS-013 has no `groups`, so StateStore normalizes it to []
+   * on load. Groups are workspace-local orchestration and are not part of the
+   * profile export (F12) in v1.
+   */
+  groups: RunGroup[];
 }
 
 /** Schema version stamped into every exported profile file (F12). */

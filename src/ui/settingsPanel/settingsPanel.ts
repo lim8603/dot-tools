@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
+import type { GroupOrchestrator } from '../../core/groupOrchestrator';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
-import type { ChipItem, ChipValue, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo } from '../../core/types';
+import { memberStages, validateGroup, withMember, withMemberStage } from '../../core/runGroupPlan';
+import type { ChipItem, ChipValue, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, RunGroup } from '../../core/types';
 import { getSettingsHtml } from './html';
 
 /** One chip rendered in the settings page (options + current value). */
@@ -14,6 +16,16 @@ export interface ChipView {
   required: boolean;
   items: ChipItem[];
   value: ChipValue | undefined;
+}
+
+/** One run group as the webview renders it (members with their stage + running/validation state). */
+export interface GroupView {
+  id: string;
+  name: string;
+  /** Members with their 1-based stage (order); same stage = parallel. */
+  members: Array<{ projectId: string; stage: number }>;
+  running: boolean;
+  problems: string[];
 }
 
 /** The full state the webview renders (rebuilt and re-sent after every change). */
@@ -29,6 +41,7 @@ export interface SettingsState {
   invocation: InvocationConfig;
   commandPreview: string;
   statusBar: { compact: boolean; selectedOnly: boolean };
+  groups: GroupView[];
 }
 
 /** Messages the webview sends to the extension (상세설계서 §10.3). */
@@ -40,7 +53,15 @@ type InMessage =
   | { type: 'clearOption'; optionId: string }
   | { type: 'setRunArgs'; line: string }
   | { type: 'setBuildEvent'; event: 'preBuild' | 'postBuild'; text: string }
-  | { type: 'setStatusBarPref'; key: 'compact' | 'selectedOnly'; value: boolean };
+  | { type: 'setStatusBarPref'; key: 'compact' | 'selectedOnly'; value: boolean }
+  // Run groups (C-6 / MS-013) — workspace-level, independent of the active project.
+  | { type: 'createGroup'; name: string }
+  | { type: 'renameGroup'; groupId: string; name: string }
+  | { type: 'deleteGroup'; groupId: string }
+  | { type: 'setGroupMember'; groupId: string; projectId: string; member: boolean }
+  | { type: 'setMemberStage'; groupId: string; projectId: string; stage: number }
+  | { type: 'runGroup'; groupId: string }
+  | { type: 'stopGroup'; groupId: string };
 
 /**
  * SettingsPanel — the WebviewPanel settings page (TASK-013, F21 / ADR-012 / 상세설계서 §10).
@@ -58,6 +79,7 @@ export class SettingsPanel {
   constructor(
     private readonly registry: AdapterRegistry,
     private readonly store: StateStore,
+    private readonly groups: GroupOrchestrator,
     private readonly onChanged: () => void,
   ) {}
 
@@ -95,6 +117,13 @@ export class SettingsPanel {
 
   private async onMessage(message: InMessage): Promise<void> {
     if (message.type === 'ready') {
+      await this.postState();
+      return;
+    }
+
+    // Run-group messages are workspace-level (no active project needed).
+    if (await this.handleGroupMessage(message)) {
+      this.onChanged();
       await this.postState();
       return;
     }
@@ -140,6 +169,62 @@ export class SettingsPanel {
     await this.postState();
   }
 
+  /**
+   * Handle a run-group message (C-6). Returns true when the message was a group message
+   * (so the caller skips the per-project handling). Group edits mutate the stored group
+   * and persist; run/stop delegate to the GroupOrchestrator.
+   */
+  private async handleGroupMessage(message: InMessage): Promise<boolean> {
+    switch (message.type) {
+      case 'createGroup': {
+        const name = message.name.trim() || 'New group';
+        await this.store.saveGroup({ id: makeGroupId(), name, members: [] });
+        return true;
+      }
+      case 'renameGroup': {
+        const group = this.store.getGroup(message.groupId);
+        if (group) {
+          await this.store.saveGroup({ ...group, name: message.name.trim() || group.name });
+        }
+        return true;
+      }
+      case 'deleteGroup': {
+        if (this.groups.isRunning(message.groupId)) {
+          void vscode.window.showWarningMessage('DevSwitcher: stop the run group before deleting it.');
+          return true;
+        }
+        await this.store.deleteGroup(message.groupId);
+        return true;
+      }
+      case 'setGroupMember': {
+        await this.editGroup(message.groupId, (group) => withMember(group, message.projectId, message.member));
+        return true;
+      }
+      case 'setMemberStage': {
+        await this.editGroup(message.groupId, (group) =>
+          withMemberStage(group, message.projectId, message.stage),
+        );
+        return true;
+      }
+      case 'runGroup':
+        await this.groups.runGroup(message.groupId);
+        return true;
+      case 'stopGroup':
+        await this.groups.stopGroup(message.groupId);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /** Apply a pure edit to a stored group and persist it. */
+  private async editGroup(groupId: string, edit: (group: RunGroup) => RunGroup): Promise<void> {
+    const group = this.store.getGroup(groupId);
+    if (group) {
+      await this.store.saveGroup(edit(group));
+    }
+  }
+
   /** Apply an overlay edit for the active (project × profile) and persist it. */
   private async editInvocation(
     projectId: string,
@@ -179,6 +264,8 @@ export class SettingsPanel {
       adapterId: p.adapterId,
     }));
 
+    const groups = this.buildGroupViews();
+
     const activeId = this.store.activeProjectId;
     const project = activeId ? this.registry.project(activeId) : undefined;
     const adapter = project ? this.registry.adapterFor(project) : undefined;
@@ -193,6 +280,7 @@ export class SettingsPanel {
         invocation: {},
         commandPreview: '',
         statusBar: this.statusBarPrefs(),
+        groups,
       };
     }
 
@@ -236,7 +324,22 @@ export class SettingsPanel {
       invocation,
       commandPreview: this.commandPreview(adapter, project, invocation),
       statusBar: this.statusBarPrefs(),
+      groups,
     };
+  }
+
+  /** The stored run groups annotated with each member's stage + running/validation state (C-6). */
+  private buildGroupViews(): GroupView[] {
+    return this.store.getGroups().map((group) => {
+      const stages = memberStages(group);
+      return {
+        id: group.id,
+        name: group.name,
+        members: group.members.map((m) => ({ projectId: m.projectId, stage: stages.get(m.projectId) ?? 1 })),
+        running: this.groups.isRunning(group.id),
+        problems: validateGroup(group),
+      };
+    });
   }
 
   /** Current global status-bar display prefs (the same VSCode config the native UI edits). */
@@ -302,6 +405,11 @@ export class SettingsPanel {
       this.disposables.pop()?.dispose();
     }
   }
+}
+
+/** A stable, unique run-group id. */
+function makeGroupId(): string {
+  return `group:${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 }
 
 /** CSP nonce — a per-load random token so only our inline script/style run. */

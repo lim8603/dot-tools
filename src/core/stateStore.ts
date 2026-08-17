@@ -1,6 +1,6 @@
 import type { Memento } from 'vscode';
 import { PERSISTED_STATE_KEY } from './types';
-import type { ChipValue, InvocationConfig, PersistedState, Selection } from './types';
+import type { ChipValue, InvocationConfig, PersistedState, RunGroup, Selection } from './types';
 import { reconcileValues, resolveActiveProject } from './stateReconcile';
 
 /**
@@ -15,9 +15,15 @@ export class StateStore {
   private state: PersistedState;
 
   constructor(private readonly memento: Memento) {
-    this.state = memento.get<PersistedState>(PERSISTED_STATE_KEY) ?? {
-      selections: {},
-      invocation: {},
+    // Normalize every field: state persisted before a field existed (e.g. `groups`,
+    // added in MS-013) reads back without it, so default each map/list here rather
+    // than sprinkling `?? []` at every call site.
+    const stored = memento.get<PersistedState>(PERSISTED_STATE_KEY);
+    this.state = {
+      activeProjectId: stored?.activeProjectId,
+      selections: stored?.selections ?? {},
+      invocation: stored?.invocation ?? {},
+      groups: stored?.groups ?? [],
     };
   }
 
@@ -70,6 +76,37 @@ export class StateStore {
     await this.persist();
   }
 
+  // ── Run groups (C-6 / MS-013) ───────────────────────────────────────────────
+
+  /** All run groups defined in this workspace (empty when none). */
+  getGroups(): RunGroup[] {
+    return this.state.groups;
+  }
+
+  getGroup(id: string): RunGroup | undefined {
+    return this.state.groups.find((group) => group.id === id);
+  }
+
+  /** Insert a new group or replace an existing one with the same id. */
+  async saveGroup(group: RunGroup): Promise<void> {
+    const index = this.state.groups.findIndex((existing) => existing.id === group.id);
+    if (index >= 0) {
+      this.state.groups[index] = group;
+    } else {
+      this.state.groups.push(group);
+    }
+    await this.persist();
+  }
+
+  /** Remove a group by id (no-op when it doesn't exist). */
+  async deleteGroup(id: string): Promise<void> {
+    const next = this.state.groups.filter((group) => group.id !== id);
+    if (next.length !== this.state.groups.length) {
+      this.state.groups = next;
+      await this.persist();
+    }
+  }
+
   /** A deep copy of the full persisted state — the source for a profile export (F12). */
   getState(): PersistedState {
     return structuredClone(this.state);
@@ -85,6 +122,7 @@ export class StateStore {
       activeProjectId: this.state.activeProjectId,
       selections: merged.selections,
       invocation: merged.invocation,
+      groups: this.state.groups, // run groups are not part of the profile import (F12) — keep the current ones
     };
     await this.persist();
   }
