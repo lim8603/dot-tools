@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { cmakeProjectFiles } from '../../adapters/cmake/cmakeTemplate';
+import { goProjectFiles } from '../../adapters/go/goTemplate';
 import { pythonProjectFiles } from '../../adapters/python/pythonTemplate';
 
 describe('cmakeProjectFiles', () => {
@@ -31,5 +32,21 @@ describe('pythonProjectFiles', () => {
     const main = files.find((f) => f.relativePath === 'main.py')!;
     assert.match(main.content, /Hello from demo_pkg!/);
     assert.match(main.content, /if __name__ == "__main__":/);
+  });
+});
+
+describe('goProjectFiles', () => {
+  it('emits go.mod and main.go with the project name embedded', () => {
+    const files = goProjectFiles('widget');
+    const paths = files.map((f) => f.relativePath).sort();
+    assert.deepEqual(paths, ['go.mod', 'main.go']);
+
+    const gomod = files.find((f) => f.relativePath === 'go.mod')!;
+    assert.match(gomod.content, /^module widget$/m);
+    assert.match(gomod.content, /^go \d+\.\d+$/m);
+
+    const main = files.find((f) => f.relativePath === 'main.go')!;
+    assert.match(main.content, /package main/);
+    assert.match(main.content, /Hello from widget!/);
   });
 });

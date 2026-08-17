@@ -44,7 +44,8 @@
     "workspaceContains:**/Cargo.toml",
     "workspaceContains:**/*.csproj",
     "workspaceContains:**/pyproject.toml",
-    "workspaceContains:**/CMakeLists.txt"
+    "workspaceContains:**/CMakeLists.txt",
+    "workspaceContains:**/go.mod"
   ],
   "main": "./dist/extension.js",
   "contributes": {
