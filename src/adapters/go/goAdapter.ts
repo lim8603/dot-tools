@@ -8,9 +8,8 @@ import {
   ProjectInfo,
   Selection,
 } from '../../core/types';
-import { notImplemented } from '../notImplemented';
 import { goProjectFiles } from './goTemplate';
-import { GoBridge, assembleGoArgs, goProjectName, parseModulePath } from './goBridge';
+import { GoBridge, assembleGoArgs, buildDelveConfig, goProjectName, parseModulePath } from './goBridge';
 
 const bridge = new GoBridge();
 
@@ -81,9 +80,10 @@ async function readModulePath(manifestPath: string): Promise<string | undefined>
  * Go adapter (MS-015, v0.5.0 — INT-001 5th language). Detection + the target chip are real:
  * `go.mod` modules list via a glob scan and GoBridge reads the module's `main` packages with
  * `go list`. Go has no native Debug/Release profile, so the only chip is `target` (Human:
- * target-only) — build flags (-ldflags/-race/-tags) live in the settings-page catalog
- * (TASK-044). build/run injection lands in TASK-044; debug (delve) in TASK-045. F20 project
- * creation writes go.mod + main.go (D-13). The extension never edits them (ADR-013).
+ * target-only) — build flags (-ldflags/-race/-tags) live in the settings-page catalog.
+ * build/run inject the compiler overlay as `go build`/`go run` flags; debug launches via
+ * delve (golang.go, `type: 'go'`). F20 project creation writes go.mod + main.go (D-13). The
+ * extension never edits them (ADR-013).
  */
 export const goAdapter: LanguageAdapter = {
   id: 'go',
@@ -222,8 +222,16 @@ export const goAdapter: LanguageAdapter = {
     return makeGoTask('run', project, sel, config);
   },
 
-  // Debug (delve) lands in TASK-045.
-  createDebugConfig: (_project, _sel, _config) => notImplemented('GoAdapter.createDebugConfig', 'TASK-045'),
+  async createDebugConfig(project, sel, config) {
+    // delve mode:'debug' compiles the target package itself, so program = the package dir
+    // (resolveExecutable). The debug flow (§7.4) has already ensured golang.go and run a
+    // build. Pass build tags (not the release ldflags, which would strip debug symbols) and
+    // the env overlay so a picked CGO_ENABLED etc. carries into the debug session.
+    const program = await this.resolveExecutable(project, sel, config);
+    const tags = typeof config.compiler?.tags === 'string' ? config.compiler.tags.trim() : '';
+    const buildFlags = tags ? `-tags ${tags}` : undefined;
+    return buildDelveConfig(project.name, program, config.runArgs ?? [], moduleDirOf(project), taskEnv(config), buildFlags);
+  },
 
   async resolveExecutable(project, sel, _config) {
     // For delve `mode: debug` the "program" is the target package's directory (delve builds

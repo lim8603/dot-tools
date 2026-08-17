@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import {
   assembleGoArgs,
+  buildDelveConfig,
   goBuildFlags,
   goProjectName,
   parseMainPackages,
@@ -88,5 +89,36 @@ describe('assembleGoArgs', () => {
 
   it('build with an empty overlay is just build + target', () => {
     assert.deepEqual(assembleGoArgs('build', '.', {}), ['build', '.']);
+  });
+});
+
+describe('buildDelveConfig', () => {
+  it('builds a go delve launch config (mode debug, program = package dir)', () => {
+    assert.deepEqual(
+      buildDelveConfig('hello', '/w/hello', ['--flag'], '/w/hello', { CGO_ENABLED: '1' }, '-tags dev'),
+      {
+        type: 'go',
+        request: 'launch',
+        name: 'Debug hello',
+        mode: 'debug',
+        program: '/w/hello',
+        args: ['--flag'],
+        cwd: '/w/hello',
+        env: { CGO_ENABLED: '1' },
+        buildFlags: '-tags dev',
+      },
+    );
+  });
+
+  it('omits env/buildFlags when not provided and falls back to a generic name', () => {
+    assert.deepEqual(buildDelveConfig(undefined, '/x', [], '/x'), {
+      type: 'go',
+      request: 'launch',
+      name: 'Debug',
+      mode: 'debug',
+      program: '/x',
+      args: [],
+      cwd: '/x',
+    });
   });
 });

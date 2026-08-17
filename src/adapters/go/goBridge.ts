@@ -141,6 +141,51 @@ export function assembleGoArgs(action: 'build' | 'run', target: string, config: 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Debug configuration — delve launch config (golang.go). Pure/testable.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** A delve `go` launch config (golang.go); structurally a DebugConfiguration. */
+export interface DelveLaunchConfig {
+  type: 'go';
+  request: 'launch';
+  name: string;
+  mode: 'debug';
+  program: string; // the package to debug — delve compiles it (so this is the package dir)
+  args: string[];
+  cwd: string;
+  env?: Record<string, string>;
+  buildFlags?: string;
+}
+
+/**
+ * Assemble a delve `go` launch config. mode:'debug' has delve compile the target package
+ * itself, so `program` is the package directory (not a pre-built binary). buildFlags carries
+ * only build tags — the release ldflags (-s -w) that strip the symbol table are deliberately
+ * left out so breakpoints still resolve. Pure so it is unit-testable; the adapter supplies
+ * program/cwd/env. Mirrors buildCoreclrConfig / buildDebugpyConfig.
+ */
+export function buildDelveConfig(
+  projectName: string | undefined,
+  program: string,
+  args: string[],
+  cwd: string,
+  env?: Record<string, string>,
+  buildFlags?: string,
+): DelveLaunchConfig {
+  return {
+    type: 'go',
+    request: 'launch',
+    name: projectName ? `Debug ${projectName}` : 'Debug',
+    mode: 'debug',
+    program,
+    args,
+    cwd,
+    ...(env ? { env } : {}),
+    ...(buildFlags ? { buildFlags } : {}),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // go CLI I/O boundary — the only part that touches the process boundary.
 // vscode-free and exec-injected (GoExec) so tests run hermetically. Mirrors
 // DotnetBridge's I/O half (TASK-005/027).
