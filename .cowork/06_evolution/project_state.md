@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | Build (MS-001~008 Done · v0.2.0 / **INT-001 완주 로드맵 착수** MS-009~013) |
 | 활성 Intent | INT-001 (Approved — 완료 조건 = C-7 다언어 실구현 + C-6 Run Group) |
-| 활성 Milestone | **없음** — MS-012 C++(CMake) **Done·main 병합 완료**(C-7 완주). 다음 후보: MS-013 Run Group(C-6) 또는 v0.3.0 릴리즈 |
-| 활성 Task | **없음** — 다음 세션 논의(MS-013 TASK-036부터 / v0.3.0 vsix / KB 정리) |
+| 활성 Milestone | **없음** — MS-012 Done + **v0.3.0 릴리즈 완료**(C-7 번들). 다음: MS-013 Run Group(C-6, → v1.0.0) |
+| 활성 Task | **없음** — 다음: MS-013 TASK-036(그룹 상태 모델 ADR 채번부터) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -47,8 +47,8 @@
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- **완료(세션 #010)**: **TASK-041 CMakePresets.json F5 통과 → MS-012 main FF 병합**(14커밋, `034e6cb`→`03610f8`, origin 미푸시). Preset 칩 동적 대체·`cmake --preset` build/run/debug(msvc-x64/x86/**clangcl** 실 F5) + 설정 페이지 appliesTo 일관성·profile read-only 문구 정정. 병합 브랜치 삭제(ms-011·012). unit **172**.
-- **다음(논의)**: **C-6 Run Group(MS-013, TASK-036~040)** 착수 / **v0.3.0 릴리즈**(C-7 3언어 번들 vsix) 중 택. (위생 완료: **KB 17→15 통합 정리** · 버전 라벨 SemVer 정정 · **origin push**). (SemVer: 현재 0.2.0 → C-7 = 0.3.0 MINOR → INT-001 완주 = 1.0.0)
+- **완료(세션 #010)**: TASK-041 CMakePresets F5 → **MS-012 main 병합 → C-7 완주** + **v0.3.0 릴리즈**(README 전면 영문 재작성·실사용 상태바 이미지·activation fix·아이콘, `devswitcher-tools-0.3.0.vsix` 설치 스모크 통과). 위생: KB 17→15·SemVer 라벨 정정·origin push.
+- **다음**: **C-6 Run Group(MS-013, TASK-036~040)** — INT-001 마지막 조건 → 완주 시 **v1.0.0**. (SemVer: 0.2.0 → 0.3.0(C-7) → 1.0.0(INT-001 완주))
 
 ---
 
@@ -72,8 +72,8 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **다음 세션 방향 논의** — 택1: **C-6 MS-013 Run Group**(TASK-036~040·그룹 상태 모델 ADR 채번부터, INT-001 마지막 조건 → **v1.0.0**) / **v0.3.0 릴리즈**(C-7 3언어 번들 vsix·CHANGELOG·README·version 0.2.0→0.3.0).
-2. (위생 완료, 세션 #010) KB 17→15 통합 · 버전 라벨 SemVer 정정 · origin push. 별도 트랙: TC-11(WSL, Deferred, GAP-001).
+1. **C-6 / MS-013 Run Group** (TASK-036~040) — 그룹 상태 모델 ADR 채번부터. INT-001 마지막 조건 → 완주 시 **v1.0.0**.
+2. (완료, 세션 #010) v0.3.0 릴리즈 · MS-012 병합 · KB 17→15 · SemVer 라벨 · origin push. 별도 트랙: TC-11(WSL, Deferred, GAP-001).
 
 ---
 
@@ -169,6 +169,7 @@
 | D-13 | MS-008 — OQ-001=자동 활성전환(생성 후 새 프로젝트 활성화). 계약 일반화 `createProject(target): {kind:'task'} \| {kind:'files'}`. cargo/dotnet=네이티브 new(task). **CMake/Python=확장이 `workspace.fs`로 템플릿 작성(files)** — 최초 "ShellExecution" 안에서 **셸 종류 미제어·C++ `<>` 리다이렉션 충돌** 발견해 workspace.fs로 개정(구현 중 우려 1회). ADR-010은 "네이티브 있으면 위임, 없으면 확장 작성"으로 해석. **v1 스위처 자동등장=Rust만**(scope A) | `interface_contract.md §5`, TASK-023 | 2026-08-16 |
 | D-14 | v0.2.0 릴리즈 — F20 마법사 + 수동검증 중 발견한 버그 2건 수정(features 칩 토글/카운트/none 보존, untrusted 워크스페이스 무한스피너) 포함. `devswitcher-tools-0.2.0.vsix` 산출·설치 스모크 통과. version 0.1.0→0.2.0, CHANGELOG [Unreleased]→[0.2.0], README 마법사 반영 | `CHANGELOG.md`, `package.json` | 2026-08-16 |
 | D-16 | **MS-012 CMake = 자체 `cmake` CLI 구동** (CMake Tools 확장 미위임). configure/build 2단계 `-D`/`--config` 호출시 주입, 타깃·실행경로=CMake File API(codemodel-v2), 디버그만 디버거 확장. cargo/dotnet/python 선례·§8·ADR-013(파일 무편집)에 부합. requiredExtensions=디버거(TASK-035 확정) | `ADR-014` | 2026-08-16 |
+| D-18 | **v0.3.0 릴리즈** — C-7(C#/Python/C++ 실구현) 번들. version 0.2.0→0.3.0. **릴리즈 필수 fix**: `activationEvents`에 `.csproj`/`pyproject.toml`/`CMakeLists.txt` 추가(멀티언어 자동활성) + 확장 아이콘(icon-256) + keywords 확장. **README 전면 영문 재작성**(GitHub 랜딩 기준·유명 OSS 밀도·"Rust만" outdated 제거) + 실사용 상태바 이미지 재생성(codicon 폰트 렌더, hero 4언어 + 언어별 4). `devswitcher-tools-0.3.0.vsix`(13파일 230KB) 설치 스모크 통과. **SemVer: INT-001 완주 시 v1.0.0** | `package.json`, `CHANGELOG.md`, `README.md` | 2026-08-17 |
 | D-17 | **CMakePresets = Preset 칩 동적 대체**(TASK-041). `ChipDescriptor.appliesTo` 제네릭 predicate 추가(false=칩 숨김+필수/기본 시딩 생략, UI 언어 무지 유지) → 프리셋 有 시 Preset 칩이 profile/architecture 대체(프리셋이 컴파일러+제너레이터+빌드타입 인코딩), 無 시 현행 `-S -B -D` 폴백. `cmake --preset <name>` configure는 프리셋 binaryDir(`${sourceDir}`/`${presetName}` 확장·`inherits` 해소)로·`--config` 생략. 프리셋 파일 workspace.fs 읽기전용(ADR-013). target 칩·디버거 자동판별 재사용. **F5 통과** | `ADR-014`, `interface_contract §2·§4` | 2026-08-17 |
 | D-15 | **C-3 폐기(Won't Do)** — 오버레이를 캐노니컬 파일에 영구 편집/승격하는 기능을 v2 백로그에서 제거. 근거: ①ADR-011 근간이 "파일 무편집" ②영속화·공유는 프로파일 export/import(F12)가 이미 해결 ③TOML 손상·머지충돌 리스크. 후속: `LanguageAdapter.persistSetting` 계약 제거(TASK-026). "파일 무편집 = 영구 불변식"을 ADR-013으로 기록. **INT-001 완료 조건 = C-7(다언어 실구현)+C-6(Run Group)** 확정, 완주 로드맵 MS-009~013 착수 | `ADR-013`, `milestone_registry.md` | 2026-08-16 |
 
@@ -239,7 +240,8 @@
 | Milestone | MS-012 | C++ (CMake) 어댑터 실구현 | Done | C-7 3/3 **완주**. ADR-014. TASK-033·034·035·041 전부 F5·**main FF 병합(2026-08-17)**. Preset 칩 동적 대체·`cmake --preset`. **4개 언어 전부 스위처 실동작.** |
 | Milestone | MS-013 | Run Group (C-6) | Planned | **완주 = v1.0.0**(INT-001). TASK-036~040. C-7 이후 |
 | Release | v0.1.0 | `devswitcher-tools-0.1.0.vsix` | Superseded | 최초 개인 릴리즈 |
-| Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Done | F20 마법사 + features/untrusted 수정. 9파일 37.47KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.2.0`) |
+| Release | v0.2.0 | `devswitcher-tools-0.2.0.vsix` | Superseded | F20 마법사 + features/untrusted 수정 |
+| Release | v0.3.0 | `devswitcher-tools-0.3.0.vsix` | Done | **C-7 3언어 실구현 번들**(C#/Python/C++·CMake presets·Rescan·다언어 activation·아이콘). **README 전면 영문 재작성** + 실사용 상태바 이미지(hero + 언어별 4). 13파일 230KB. 설치 스모크 통과(`lim8603.devswitcher-tools@0.3.0`) |
 
 - `Intent`: `Draft` / `Approved` / `Superseded` / `Split` / `Closed`
 - `Milestone`: `Planned` / `In Progress` / `Review` / `Done`
