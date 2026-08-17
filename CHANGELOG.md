@@ -3,6 +3,30 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.0] - 2026-08-17
+
+**First stable release.** DevSwitcher Tools is now published on the Visual Studio Marketplace
+and the repository is public on GitHub.
+
+v1.0.0 wraps up the 0.x line — six supported toolchains (Rust, C++/CMake, C#, Python, Go,
+Node.js/TypeScript) behind one status-bar UX, with per-project option chips, file-untouched
+invocation overlays, profiles export/import, a full settings page, run groups with readiness
+gates, keyboard shortcuts, the New Project wizard, and Doctor diagnostics.
+
+### Added
+
+- **Marketplace distribution** — install directly from the Visual Studio Marketplace
+  (`lim8603.devswitcher-tools`); the `.vsix` remains available from GitHub Releases.
+- **Official project documentation** under `docs/` (requirements, functional spec,
+  architecture, API contract, WBS, test docs, release notes, user manual — in Korean).
+
+### Known issues
+
+- **WSL / Remote manual verification is pending** — the extension is built remote-safe
+  (`workspace.fs`, `extensionKind: ["workspace"]`), but the WSL manual test pass (TC-11) has
+  not been run for this release. Tracked as a known issue; see *Known limitations* in the
+  README.
+
 ## [0.8.0] - 2026-08-17
 
 ### Added

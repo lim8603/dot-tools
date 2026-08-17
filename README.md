@@ -114,13 +114,18 @@ Run **`DevSwitcher: Doctor`** at any time to see what's detected and what's miss
 
 ## Install
 
-This extension is distributed as a `.vsix`:
+From the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=lim8603.devswitcher-tools):
+search for **DevSwitcher Tools** in the Extensions view, or:
 
 ```bash
-code --install-extension devswitcher-tools-0.8.0.vsix
+code --install-extension lim8603.devswitcher-tools
 ```
 
-Or in VS Code: **Extensions** view → `⋯` menu → **Install from VSIX…** → pick the file.
+Alternatively, grab the `.vsix` from [GitHub Releases](https://github.com/lim8603/dot-tools/releases):
+
+```bash
+code --install-extension devswitcher-tools-1.0.0.vsix
+```
 
 ## Usage
 
@@ -227,6 +232,10 @@ rest of the group still starts.
   windows (Windows / WSL) instead.
 - On **WSL**, a repo under `/mnt/...` (9p filesystem) builds slowly — keep it inside the WSL
   filesystem.
+- **WSL manual verification is pending** (known issue, v1.0.0) — the extension is built
+  remote-safe (`workspace.fs`, runs on the workspace side), but the dedicated WSL manual test
+  pass has not been run for this release. If you hit a WSL-specific problem, please
+  [open an issue](https://github.com/lim8603/dot-tools/issues).
 
 ## Development
 
