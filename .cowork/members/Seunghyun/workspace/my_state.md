@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — **🏁 v1.0.0 완주(세션 #015)·INT-001 Closed.** MS-001~018·MS-014 전부 Done. 다음 사이클은 Human 결정(INT-002·B-3·TC-11) |
-| 마지막 갱신일 | 2026-08-17 |
-| 참조 세션 로그 | session_2026-08-17_015.md |
+| 활성 Milestone | **없음** — **🚀 v1.1.0 게시 완료(세션 #016)·MS-021 Done.** MS-001~021 전부 Done. 다음 사이클은 Human 결정(INT-002·B-3·TC-11) |
+| 마지막 갱신일 | 2026-08-19 |
+| 참조 세션 로그 | session_2026-08-18_016.md |
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| (없음) | TASK-001~055 전부 Done — v1.0.0 완주 | — | — | — | 다음 Task는 Human 결정 후 등록 |
+| (없음) | TASK-001~062 전부 Done — v1.1.0 게시 완료 | — | — | — | 다음 Task는 Human 결정 후 등록 |
 
-> **🏁 v1.0.0 완주(D-23, 세션 #015) — INT-001 Closed.** Human 완주 선언 → MS-014: 최종점검(EV-019)·TC-11=Known Issue·**docs/ 공식 산출물 13종**·Gate 5 Pass → `v1.0.0` 태그 → **repo public**(+기여 차단: PR 자동닫기·Issues 유지) → **GitHub Release**(vsix) → **Marketplace 게시**(`lim8603.devswitcher-tools`). 버전 이력: v0.1.0→…→v0.8.0→**v1.0.0**(첫 공개 배포). 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft).
+> **🚀 v1.1.0 게시(세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건: CMake 중첩 하위 프로젝트(VS 솔루션식)·lib 타겟+차단 토스트·All targets·**런그룹 멤버 디버그**·Ctrl+Alt+T·설정창 블랭크 fix·아이콘 투명화. F5 2회 통과 → Marketplace 게시+GitHub Release. 버전 이력: …→v1.0.0→**v1.1.0**. 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft, v1.2.0+ 후보).
 
 ---
 
@@ -45,13 +45,14 @@
 | #013 | 2026-08-17 | **MS-016 Node/TS(v0.6.0)+MS-017 키보드 단축키(v0.7.0) 완주.** MS-016: script+packageManager 칩·**배열형 ShellExecution**(ADR-016/NFR-002b·Node24 `.cmd` EINVAL 실측)·js-debug·`.vscode-test` 스캔제외 fix. MS-017: 정적 키바인딩(Ctrl+Alt+B/R/S/D/P/G/,·`when:hasProjects`)·General 탭 딥링크(**ADR-017**·내장키 불간섭)·F5 유래 `devSwitcher.stop`(태스크+디버그세션)·상태바 Stop 버튼(세션 Map 추적·stale 버그 fix). **F5 전부 통과.** unit 235·통합 16커맨드. main FF·`v0.6.0`/`v0.7.0` 태그·push | MS-016·017 | TASK-046~050 | 완료·배포. 다음: MS-018 준비감지 |
 | #014 | 2026-08-17 | **B-2 Project 카드 + MS-018 준비 감지(v0.8.0) 완주 + README 스크린샷 리프레시.** B-2: 어댑터 무지 카드(툴체인 ✅/❌·칩 요약)·순수 `projectCard.ts`. MS-018(**ADR-018**): 포트 open/HTTP 상태코드 게이트·순수 `readiness.ts`+I/O `readinessProbe.ts`·타임아웃/취소=abort+teardown·**취소 가능**·Run Groups UI 재설계(멤버 카드·Add 드롭다운)·seedMemberDefaults. F5(svc-a→svc-b 포트 게이트 4s 대기). README: SIX 히어로·Go/Node 신규·clean triple. unit 268·통합 3·`v0.8.0.vsix` 스모크. **main FF·`v0.8.0` 태그·push.** KB 패턴#10·안티패턴#10. **v1.0.0 로드맵 4개 MINOR 전부 완료** | B-2·MS-018 | 051·052·053 | 완료·배포. 다음: 품질점검→MS-014 |
 | #015 | 2026-08-17 | **🏁 MS-014 v1.0.0 완주 — INT-001 Closed·첫 Marketplace 게시.** Human 완주 선언(D-23·TC-11=Known Issue). 최종 재검증(EV-019)·v1.0.0 스탬프·**docs/ 공식 산출물 13종**(에이전트 12기 병렬·소스 승격 2종)·Gate 5 Pass → `v1.0.0` 태그·**repo public**(+기여 차단: PR 자동닫기·CONTRIBUTING·Issues 유지)·**GitHub Release**(vsix)·Human 온보딩(aex 직행·PAT·publisher) 후 **`vsce publish` DONE**. 트러블슈팅: README 이미지=GitHub 전역 장애(레포 정상)·리스팅 404=검증 지연(→200). KB 패턴#11 | MS-014 | TASK-042·054·055 | **v1.0.0 완주.** 다음: Human 결정(INT-002·B-3·TC-11) |
+| #016 | 2026-08-18~19 | **🚀 MS-021 v1.1.0 실사용 피드백 완주 — 두 번째 Marketplace 게시.** 회사 실사용 7건(Human): ① 중첩 CMake 하위 프로젝트(**ADR-019**: 루트=솔루션·타겟 선언 디렉토리=하위·`paths.source` 스코프·`ProjectInfo.parentId/library`) ② lib 타겟+`validateAction` 차단 토스트+`projects.showLibraries` ③ 설정창 블랭크 fix(퀵 페인트·가드·에러 배너) ④ 아이콘 투명화(flood fill+밝기×거리 페이드) ⑤ Ctrl+Alt+T(`pickTarget`, Node=script 폴백) ⑥ All targets(`--target` 생략) ⑦ **런그룹 멤버 Launch Run/Debug**(**ADR-020**, ADR-015 "Run 전용" 대체)+`N running` 표기. D-24(3결정). F5 2회 통과·unit 286·통합 3·실 cmake 스모크 → v1.1.0 스탬프·vsix 스모크·main 병합·태그·**`vsce publish` DONE**·**GitHub Release**. nested 픽스처 신설 | MS-021 | TASK-056~062 | **v1.1.0 게시 완료.** 다음: Human 결정(INT-002·B-3·TC-11) |
 
 ---
 
 ## 다음 시작점
 
 1. **다음 사이클 결정(Human)**: ① **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② B-3(언어별 enable, 저우선) ③ TC-11(WSL) 검증으로 Known Issue 해소. 급하지 않음 — Marketplace 반응 보며 결정.
-2. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.0.x·기능 v1.x.0. GitHub 장애(2026-08-17, raw 콘텐츠) 해소 후 README 이미지 정상 표시 확인.
+2. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.1.x·기능 v1.x.0. v1.1.0 등재 반영 확인(게시 직후 몇 분)·회사 실사용에서 v1.1.0 기능 계속 검증(추가 피드백 시 다음 마이너로).
 
 ---
 
