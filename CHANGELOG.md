@@ -19,6 +19,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - **Show libraries preference** (`devSwitcher.projects.showLibraries`, default on; also
   in the settings **General** tab) — turn off to hide library-only sub-projects from the
   project switcher and library targets from the Target picker.
+- **All targets** — a root CMake project's Target picker gains an **All targets** entry
+  that builds the whole tree (`cmake --build` with no `--target`). Run/Debug with it
+  selected asks for a single executable target instead.
+- **Debug a run-group member** — each run-group member card gains a **Launch** mode
+  (Run / **Debug**): a Debug member starts under its toolchain's debugger during the
+  group launch, with the same readiness gating and group teardown (stopping the group
+  stops the debug session too).
+- **Switch Target shortcut** — `Ctrl+Alt+T` (`Cmd+Alt+T`) opens the active project's
+  target picker (Node: the npm script picker).
 
 ### Fixed
 

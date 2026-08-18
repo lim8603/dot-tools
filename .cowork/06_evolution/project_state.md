@@ -18,8 +18,8 @@
 | 협업 실행 모드 | solo |
 | 현재 Phase | **Evolve** (유지보수 트랙 — **MS-021 v1.1.0 실사용 피드백** 진행 중, 세션 #016. INT-002 승인 여부·B-3·TC-11은 여전히 Human 결정 대기) |
 | 활성 Intent | **없음** — INT-001 Closed(v1.0.0, D-23). **MS-021은 무Intent 유지보수 트랙**. INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
-| 활성 Milestone | **MS-021** (v1.1.0 실사용 피드백 1차: 중첩 하위 프로젝트·lib 타겟·설정창 fix·아이콘) — In Progress, 코드 완료·**F5 대기** |
-| 활성 Task | TASK-056·057·058 (Review, F5 대기) · TASK-059 (Done) |
+| 활성 Milestone | **MS-021** (v1.1.0 실사용 피드백 7건) — In Progress: 1차 4건 F5 통과, 2차 3건 코드 완료·**F5 대기** |
+| 활성 Task | TASK-056~059 (Done) · TASK-060·061·062 (Review, F5 대기) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -43,7 +43,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **MS-021 v1.1.0 실사용 피드백 코드 완료(2026-08-18, 세션 #016, D-24/ADR-019) — F5 대기.** 회사 실사용 4건: ① CMake 중첩 하위 프로젝트(루트=솔루션·타겟 선언 디렉토리=하위·인덴트) ② lib 타겟 노출+run/debug 차단 토스트+`projects.showLibraries` ③ 설정창 블랭크 fix ④ 아이콘 투명화(Done). unit 280·실 cmake 스모크 통과, 브랜치 `feature/ms-021-v1.1.0` 미병합. F5 통과 시 v1.1.0 게시.
+- **MS-021 v1.1.0 실사용 피드백 7건(2026-08-18, 세션 #016, D-24/ADR-019/ADR-020).** 1차 4건(중첩 하위 프로젝트·lib 타겟·설정창 블랭크 fix·아이콘 투명화) **F5 통과·Done**. 2차 3건(Ctrl+Alt+T Switch Target·루트 "All targets" 전체 빌드·**런그룹 멤버별 Launch Run/Debug**) 코드 완료·**F5 대기**. unit 286·통합 3·실 cmake 스모크. 브랜치 `feature/ms-021-v1.1.0` 미병합. 2차 F5 통과 시 v1.1.0 게시.
 - (직전) **🏁 v1.0.0 완주(2026-08-17, 세션 #015, D-23) — INT-001 Closed.** repo public·GitHub Release·**Marketplace 게시**(`lim8603.devswitcher-tools`). TC-11(WSL)=Known Issue. INT-002(Draft) 승인 여부·B-3은 Human 결정 대기.
 
 ### 현재 작업 스트림
@@ -60,9 +60,9 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-056 | CMake 중첩 하위 프로젝트 감지·계층 표시 | AI | Review | 2026-08-18 | F5(Human): nested 픽스처 계층 표시·하위 exe build/run/debug |
-| TASK-057 | lib 타겟 노출 + run/debug 차단 토스트 | AI | Review | 2026-08-18 | F5(Human): mathlib 빌드 성공·Run/Debug 토스트·showLibraries off 필터 |
-| TASK-058 | 설정 페이지 블랭크 버그 수정 | AI | Review | 2026-08-18 | F5(Human): 타겟 미선택 상태 설정 열기 → 로딩 후 정상 렌더 |
+| TASK-060 | Switch Target 단축키 (Ctrl+Alt+T) | AI | Review | 2026-08-18 | F5(Human): 타겟 퀵픽(Node=script 폴백) |
+| TASK-061 | CMake 루트 "All targets" 전체 빌드 | AI | Review | 2026-08-18 | F5(Human): 전체 빌드·run/debug 안내 토스트 |
+| TASK-062 | 런그룹 멤버별 Launch (Run/Debug) | AI | Review | 2026-08-18 | F5(Human): Debug 멤버 중단점·게이트·그룹 Stop 시 세션 종료 |
 
 > **TASK-001~050 Done(039 제외)·MS-017 키보드 단축키 완료·v0.7.0 배포**(세션 #013, unit **235**, 통합 16커맨드). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → MS-017 단축키(✅ v0.7.0) → **MS-018 준비감지(TASK-039, 다음)** → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). MS-017 상세(단축키·stop·Stop버튼)는 session #013. C-3 폐기(D-15). TC-11(WSL) Deferred. 백로그 B-2·B-3.
 
@@ -74,7 +74,7 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **MS-021 F5 수동검증(Human)** — 세션 로그 #016 체크리스트 6항목(계층 표시·하위 exe 3동작·mathlib 빌드+차단 토스트·showLibraries off 필터·타겟 미선택 설정창 정상·아이콘). 통과 → version 1.1.0 스탬프·test_case/EV 기록·vsix 스모크·main 병합·태그·**Marketplace 게시**·GitHub Release.
+1. **MS-021 2차 F5 수동검증(Human)** — 세션 로그 #016 체크리스트 3항목(Ctrl+Alt+T·All targets 빌드/차단·런그룹 멤버 Debug 기동/게이트/teardown). 통과 → version 1.1.0 스탬프·test_case/EV 기록·vsix 스모크·main 병합·태그·**Marketplace 게시**·GitHub Release.
 2. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② B-3(언어별 enable, 저우선) ③ TC-11(WSL) 검증으로 Known Issue 해소.
 3. 유지보수 트랙: Marketplace 버그 신고(Issues) 대응 → 패치는 v1.1.x, 기능은 v1.x.0(SemVer).
 

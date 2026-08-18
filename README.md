@@ -45,8 +45,9 @@ paths from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt
 - **Nested CMake projects, Visual-Studio style.** A `project()` root shows its
   `add_subdirectory` directories that declare targets as indented **sub-projects** in the
   switcher and settings. A sub-project builds through the root's build tree, and its
-  **Target** picker is scoped to its own targets. Library targets (static/shared) are
-  listed and buildable too — running or debugging one shows a friendly toast instead,
+  **Target** picker is scoped to its own targets, and the root's picker adds an
+  **All targets** entry that builds the whole tree at once. Library targets (static/shared)
+  are listed and buildable too — running or debugging one shows a friendly toast instead,
   just like a VS library project (hide libraries via `devSwitcher.projects.showLibraries`).
 - **Doctor.** One command diagnoses your toolchains and debug extensions and points you to
   the fix; a warning chip lights up when something critical is missing.
@@ -54,7 +55,8 @@ paths from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt
   web` — from one click. Each member runs in a **stage**; same stage starts in parallel, a
   higher stage waits until the previous stage is **ready**. "Ready" is the process launching by
   default, or — per member — a **port opening** or an **HTTP health check** passing (with a
-  timeout). Stop them all with one command.
+  timeout). Any member can **launch under the debugger** instead of a plain run (its readiness
+  gate and group teardown apply the same). Stop them all with one command.
 - **Profiles export / import.** Share your chip selections and per-config overlays as a
   portable `devswitcher.profile.json`.
 - **New Project wizard.** `DevSwitcher: New Project…` scaffolds a starter project in any
@@ -180,11 +182,13 @@ present, so they never clash in unrelated workspaces):
 | Stop | `Ctrl+Alt+S` | `Cmd+Alt+S` |
 | Debug | `Ctrl+Alt+D` | `Cmd+Alt+D` |
 | Switch Project | `Ctrl+Alt+P` | `Cmd+Alt+P` |
+| Switch Target | `Ctrl+Alt+T` | `Cmd+Alt+T` |
 | Run Groups | `Ctrl+Alt+G` | `Cmd+Alt+G` |
 | Open Settings | `Ctrl+Alt+,` | `Cmd+Alt+,` |
 
 **Stop** terminates the active project's running task (handy for a long-lived `run` — a dev
-server or watcher). **Run Groups** opens the group menu (run / stop / stop all).
+server or watcher). **Switch Target** opens the active project's target picker (Node: the npm
+script picker). **Run Groups** opens the group menu (run / stop / stop all).
 
 Change any of them in VS Code's **Keyboard Shortcuts** editor — the settings page's **General**
 tab lists them and links straight there (filtered to DevSwitcher). VS Code's built-in keys
@@ -203,10 +207,11 @@ canonical build files stay untouched (profiles are read-only here by design).
 ### Run groups
 
 Open the settings page → **Run Groups** tab to define a group: name it, then **add projects**
-from the dropdown. Each member is a card with a **Stage** number and a **Ready when** gate.
-Members with the same stage start together; a higher stage waits until every lower stage is
-ready — so `auth (1) → api (2) → web (3)` starts each service in order, while two members
-sharing a stage run in parallel.
+from the dropdown. Each member is a card with a **Launch** mode (Run, or **Debug** to start it
+under its toolchain's debugger — breakpoints work while the rest of the group runs normally),
+a **Stage** number, and a **Ready when** gate. Members with the same stage start together; a
+higher stage waits until every lower stage is ready — so `auth (1) → api (2) → web (3)` starts
+each service in order, while two members sharing a stage run in parallel.
 
 **Ready when** decides what counts as "ready" for a member's dependents:
 
