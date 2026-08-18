@@ -5,6 +5,7 @@ import {
   validateGroup,
   withMember,
   withMemberDependencies,
+  withMemberLaunch,
   withMemberReadiness,
   withMemberStage,
 } from '../../core/runGroupPlan';
@@ -159,6 +160,40 @@ describe('withMemberReadiness', () => {
   it('preserves dependsOn when setting readiness', () => {
     const next = withMemberReadiness(group({ a: [], b: ['a'] }), 'b', { kind: 'port', port: 9000, timeoutMs: 10000 });
     assert.deepEqual(next.members.find((m) => m.projectId === 'b')?.dependsOn, ['a']);
+  });
+
+  it('clearing readiness preserves the debug launch flag (ADR-020)', () => {
+    const debugged = withMemberLaunch(group({ a: [] }), 'a', true);
+    const withGate = withMemberReadiness(debugged, 'a', { kind: 'port', port: 3000, timeoutMs: 5000 });
+    const cleared = withMemberReadiness(withGate, 'a', undefined);
+    const a = cleared.members.find((m) => m.projectId === 'a');
+    assert.equal(a?.debug, true);
+    assert.ok(!('readiness' in (a ?? {})));
+  });
+});
+
+// ── withMemberLaunch (ADR-020 run/debug launch mode) ────────────────────────────
+
+describe('withMemberLaunch', () => {
+  it('sets and clears a member debug launch flag (cleared = field removed)', () => {
+    const debugged = withMemberLaunch(group({ a: [], b: [] }), 'b', true);
+    assert.equal(debugged.members.find((m) => m.projectId === 'b')?.debug, true);
+    assert.ok(!('debug' in (debugged.members.find((m) => m.projectId === 'a') ?? {})));
+    const cleared = withMemberLaunch(debugged, 'b', false);
+    assert.ok(!('debug' in (cleared.members.find((m) => m.projectId === 'b') ?? {})));
+  });
+
+  it('preserves readiness and dependsOn when toggling launch mode', () => {
+    const withGate = withMemberReadiness(group({ a: [], b: ['a'] }), 'b', { kind: 'port', port: 9000, timeoutMs: 10000 });
+    const debugged = withMemberLaunch(withGate, 'b', true);
+    const b = debugged.members.find((m) => m.projectId === 'b');
+    assert.deepEqual(b?.dependsOn, ['a']);
+    assert.deepEqual(b?.readiness, { kind: 'port', port: 9000, timeoutMs: 10000 });
+  });
+
+  it('is a no-op for a non-member', () => {
+    const g = group({ a: [] });
+    assert.deepEqual(withMemberLaunch(g, 'ghost', true).members, g.members);
   });
 });
 

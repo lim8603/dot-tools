@@ -444,13 +444,20 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     return (state.projects || []).find((p) => p.id === pid) || { id: pid, name: pid, adapterId: '?' };
   }
 
-  // One member as a card: name + adapter, its Stage, a Remove button, and the readiness gate.
+  // One member as a card: name + adapter, its launch mode (Run/Debug, ADR-020), its Stage,
+  // a Remove button, and the readiness gate.
   function memberCard(g, m) {
     const p = projectMeta(m.projectId);
     return '<div class="mcard">' +
       '<div class="mcard-head">' +
       '<b>' + esc(p.name) + '</b><span class="badge">' + esc(p.adapterId) + '</span>' +
       '<span class="mcard-spacer"></span>' +
+      '<span class="muted">Launch</span>' +
+      '<select class="member-launch" aria-label="Launch mode for ' + esc(p.name) + '" ' +
+      'data-group-id="' + esc(g.id) + '" data-project-id="' + esc(m.projectId) + '">' +
+      '<option value="run"' + (m.debug ? '' : ' selected') + '>Run</option>' +
+      '<option value="debug"' + (m.debug ? ' selected' : '') + '>Debug</option>' +
+      '</select>' +
       '<span class="muted stage-lbl">Stage</span>' +
       '<input type="number" class="group-stage" min="1" aria-label="Stage for ' + esc(p.name) + '" ' +
       'data-group-id="' + esc(g.id) + '" data-project-id="' + esc(m.projectId) + '" value="' + esc(m.stage) + '" />' +
@@ -499,8 +506,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       html += '<div class="muted">No projects detected.</div>';
     }
     html += '<p class="muted mcard-hint">Same Stage runs in parallel; a higher Stage starts after every ' +
-      'lower Stage is ready. <b>Ready when</b> sets what counts as ready — the process launching, ' +
-      'or a port / HTTP health check.</p>';
+      'lower Stage is ready. <b>Launch</b> starts the member as a plain run or under the debugger. ' +
+      '<b>Ready when</b> sets what counts as ready — the process launching, or a port / HTTP health check.</p>';
     return html;
   }
 
@@ -577,6 +584,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       if (el.value) post({ type: 'setGroupMember', groupId: el.dataset.groupId, projectId: el.value, member: true });
     } else if (el.classList.contains('group-stage')) {
       post({ type: 'setMemberStage', groupId: el.dataset.groupId, projectId: el.dataset.projectId, stage: Number(el.value) });
+    } else if (el.classList.contains('member-launch')) {
+      post({ type: 'setMemberLaunch', groupId: el.dataset.groupId, projectId: el.dataset.projectId, debug: el.value === 'debug' });
     } else if (el.classList.contains('rd-kind')) {
       // Switching type seeds sensible defaults so the inputs appear pre-filled and valid.
       const box = el.closest('.readiness');

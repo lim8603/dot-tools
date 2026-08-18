@@ -320,16 +320,20 @@ export function configureArgs(srcDir: string, buildDir: string, opts: ConfigureO
 }
 
 /**
- * Build args: `cmake --build <build> [--config <cfg>] --target <target>` (no shell, NFR-002).
- * `config` is omitted for preset builds (TASK-041) — the preset already fixed the generator
- * and build type, so `--config` would be redundant (multi-config) or ignored (single-config).
+ * Build args: `cmake --build <build> [--config <cfg>] [--target <target>]` (no shell,
+ * NFR-002). `config` is omitted for preset builds (TASK-041) — the preset already fixed the
+ * generator and build type, so `--config` would be redundant (multi-config) or ignored
+ * (single-config). `target` omitted builds the generator's default target — i.e. everything
+ * (ALL_BUILD on VS, `all` on Ninja/Makefiles) — which is how "All targets" builds (MS-021).
  */
-export function buildArgs(buildDir: string, config: string | undefined, target: string): string[] {
+export function buildArgs(buildDir: string, config: string | undefined, target?: string): string[] {
   const args = ['--build', buildDir];
   if (config) {
     args.push('--config', config);
   }
-  args.push('--target', target);
+  if (target !== undefined) {
+    args.push('--target', target);
+  }
   return args;
 }
 

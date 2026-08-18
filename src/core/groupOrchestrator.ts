@@ -7,7 +7,7 @@ import { sequenceGroup, type MemberHandle } from './groupSequencer';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { InvocationConfig, LanguageAdapter, ProjectInfo, ReadinessProbe, RunGroup, StartedTask } from './types';
+import type { InvocationConfig, LanguageAdapter, ProjectInfo, ReadinessProbe, RunGroup, Selection, StartedTask, TaskResult } from './types';
 
 /**
  * GroupOrchestrator — starts and stops run groups (TASK-037, C-6 / MS-013 / ADR-015).
@@ -288,12 +288,25 @@ export class GroupOrchestrator {
 
       const selection = this.store.getSelection(projectId);
       const config = this.activeConfig(project);
+      const member = group.members.find((m) => m.projectId === projectId);
+      const launchDebug = member?.debug === true;
 
       // Two-stage adapters (CMake) configure with the overlay first (§7.4 / ADR-014).
       await adapter.prepareInvocation?.(project, selection, config);
-      // A run that executes a pre-built artifact (CMake) builds first; a build failure
-      // aborts this member (and therefore its dependents).
-      if (adapter.actions.runRequiresBuild) {
+      // Adapter veto (ADR-019) — e.g. a CMake library target can be built but never
+      // run/debugged; failing fast here names the member instead of a dead run task.
+      const blocked = await adapter.validateAction?.(launchDebug ? 'debug' : 'run', project, selection, config);
+      if (blocked) {
+        throw new DevSwitcherError('GROUP_MEMBER_BLOCKED', `${project.name}: ${blocked}`);
+      }
+      // Compiled members build a runnable/debuggable artifact first; a build failure
+      // aborts this member (and therefore its dependents). Run members build when the
+      // run executes a pre-built artifact (CMake); debug members follow the debug rule
+      // (every build-capable adapter except Node's debugRequiresBuild:false, ADR-016).
+      const needsBuild = launchDebug
+        ? adapter.actions.build && adapter.actions.debugRequiresBuild !== false
+        : adapter.actions.runRequiresBuild === true;
+      if (needsBuild) {
         const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), projectId);
         if (!build.succeeded) {
           throw new DevSwitcherError(
@@ -303,14 +316,15 @@ export class GroupOrchestrator {
         }
       }
 
-      const startedTask = await this.taskRunner.start(adapter.createRunTask(project, selection, config), projectId);
+      const startedTask = launchDebug
+        ? await this.startDebugMember(project, adapter, selection, config)
+        : await this.taskRunner.start(adapter.createRunTask(project, selection, config), projectId);
       tracked.push(startedTask);
       // Prune when the member exits on its own (crash / one-shot) so `running` reflects reality.
       void startedTask.done.then(() => this.prune(group.id, tracked, startedTask));
 
-      const readiness = group.members.find((m) => m.projectId === projectId)?.readiness;
       return {
-        ready: this.gateReadiness(startedTask.ready, readiness, project.name, signal, report),
+        ready: this.gateReadiness(startedTask.ready, member?.readiness, project.name, signal, report),
         terminate: () => startedTask.terminate(),
       };
     } catch (error) {
@@ -318,6 +332,59 @@ export class GroupOrchestrator {
       void vscode.window.showErrorMessage(`DevSwitcher: ${message}`);
       throw error;
     }
+  }
+
+  /**
+   * Launch a member under the debugger (MS-021 / ADR-020) and wrap the session in the
+   * same StartedTask shape a run member gets, so tracking / pruning / teardown are
+   * uniform: `ready` resolves once VS Code reports the session started, `done` when the
+   * session terminates, and `terminate` stops the session (group teardown). The session
+   * is matched by its config name (`Debug <project>` — every adapter's naming), captured
+   * from onDidStartDebugSession because startDebugging itself returns only a boolean.
+   */
+  private async startDebugMember(
+    project: ProjectInfo,
+    adapter: LanguageAdapter,
+    selection: Selection,
+    config: InvocationConfig,
+  ): Promise<StartedTask> {
+    const debugConfig = await adapter.createDebugConfig(project, selection, config);
+    let session: vscode.DebugSession | undefined;
+    let finishDone: () => void = () => {};
+    const done = new Promise<TaskResult>((resolve) => {
+      finishDone = () => resolve({ exitCode: undefined, succeeded: true });
+    });
+    const startSub = vscode.debug.onDidStartDebugSession((s) => {
+      if (s.name === debugConfig.name && !session) {
+        session = s;
+        startSub.dispose();
+      }
+    });
+    const endSub = vscode.debug.onDidTerminateDebugSession((s) => {
+      if (session ? s.id === session.id : s.name === debugConfig.name) {
+        startSub.dispose();
+        endSub.dispose();
+        finishDone();
+      }
+    });
+    const started = await vscode.debug.startDebugging(project.workspaceFolder, debugConfig);
+    if (!started) {
+      startSub.dispose();
+      endSub.dispose();
+      throw new DevSwitcherError('GROUP_MEMBER_DEBUG_FAILED', `debugger failed to start for ${project.name}.`);
+    }
+    return {
+      lockKey: project.id,
+      ready: Promise.resolve({ started: true }),
+      done,
+      terminate: () => {
+        // No captured session (name mismatch — shouldn't happen) → nothing safe to stop:
+        // stopDebugging(undefined) would kill EVERY session, including ones we don't own.
+        if (session) {
+          void vscode.debug.stopDebugging(session);
+        }
+      },
+    };
   }
 
   /**

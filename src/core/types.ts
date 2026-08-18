@@ -425,6 +425,12 @@ export interface RunGroupMember {
    * a probe that times out aborts the group start (like a failed start).
    */
   readiness?: ReadinessProbe;
+  /**
+   * Launch this member under the debugger instead of a plain run (MS-021 / ADR-020,
+   * supersedes ADR-015's run-only members). Absent/false = run. The member's readiness
+   * gate and teardown apply the same way (teardown stops the debug session).
+   */
+  debug?: boolean;
 }
 
 /** A named set of projects started together in dependency order (C-6, ADR-015). */

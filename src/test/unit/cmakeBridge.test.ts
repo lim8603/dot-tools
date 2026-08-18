@@ -285,6 +285,10 @@ describe('configureArgs / buildArgs / overlayDefines', () => {
     ]);
   });
 
+  it('buildArgs omits --target to build everything (All targets, MS-021)', () => {
+    assert.deepEqual(buildArgs('/src/build', 'Debug'), ['--build', '/src/build', '--config', 'Debug']);
+  });
+
   it('overlayDefines maps compiler/linker flags, ignoring empty values', () => {
     assert.deepEqual(overlayDefines({ 'cxx-flags': '-O2 -Wall' }, { 'exe-linker-flags': '/DEBUG' }), {
       CMAKE_CXX_FLAGS: '-O2 -Wall',

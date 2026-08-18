@@ -49,4 +49,10 @@ describe('getSettingsHtml', () => {
     assert.match(html, /gen-showlibs/);
     assert.match(html, /setShowLibraries/);
   });
+
+  it('renders the per-member launch mode selector (ADR-020)', () => {
+    const html = getSettingsHtml(webview, 'TESTNONCE');
+    assert.match(html, /member-launch/);
+    assert.match(html, /setMemberLaunch/);
+  });
 });

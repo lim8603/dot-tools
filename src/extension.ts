@@ -43,6 +43,7 @@ export function activate(context: vscode.ExtensionContext): void {
     settingsPanel,
     vscode.commands.registerCommand('devSwitcher.switchProject', () => orchestrator.switchProject()),
     vscode.commands.registerCommand('devSwitcher.pickChip', (chipId?: string) => orchestrator.pickChip(chipId)),
+    vscode.commands.registerCommand('devSwitcher.pickTarget', () => orchestrator.pickTarget()),
     vscode.commands.registerCommand('devSwitcher.build', () => orchestrator.build()),
     vscode.commands.registerCommand('devSwitcher.run', () => orchestrator.run()),
     vscode.commands.registerCommand('devSwitcher.stop', () => orchestrator.stop()),

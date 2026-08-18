@@ -41,6 +41,10 @@ const CMAKE_PLATFORMS = ['x64', 'Win32', 'ARM64'];
 /** Architecture-chip sentinel: pick this to clear the platform back to the generator default. */
 const HOST_DEFAULT_PLATFORM = '__host_default__';
 
+/** Target-chip sentinel: build every target in the tree (`cmake --build` without --target,
+ *  MS-021). Offered on root projects only; run/debug with it selected is vetoed. */
+const ALL_TARGETS = '__all__';
+
 /** The folder holding this project's own CMakeLists.txt (a sub-project's nested dir). */
 function srcDirOf(project: ProjectInfo): string {
   return dirname(project.manifestPath);
@@ -258,7 +262,10 @@ function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: Invoca
   const preset = peekActivePreset(project, sel);
   const buildDir = preset ? preset.binaryDir : buildDirFor(srcDir, config);
   const buildConfig = preset ? undefined : activeCfg(sel);
-  const target = activeTarget(sel) ?? 'ALL_BUILD'; // the required chip guarantees a value before build
+  // 'All targets' (and an unset chip, which the required prompt normally prevents) drops
+  // --target: the generator's default target builds everything (MS-021).
+  const picked = activeTarget(sel);
+  const target = picked === ALL_TARGETS ? undefined : picked;
   const execution = new vscode.ProcessExecution('cmake', buildArgs(buildDir, buildConfig, target), {
     cwd: srcDir,
     env: taskEnv(config),
@@ -290,6 +297,11 @@ function makeCmakeRunTask(project: ProjectInfo, sel: Selection, config: Invocati
   const buildDir = preset ? preset.binaryDir : buildDirFor(rootDir, config);
   const cfg = preset ? undefined : activeCfg(sel);
   const target = activeTarget(sel) ?? '';
+  if (target === ALL_TARGETS) {
+    // Unreachable through Run (validateAction vetoes first); guards the command preview,
+    // which otherwise would render a bogus `…/__all__` run line.
+    throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `'All targets' has no runnable artifact.`);
+  }
   const rel = bridge.peekArtifact(buildDir, cfg, target);
   const exe = rel ? join(buildDir, rel) : join(buildDir, cfg ?? '', target); // cache miss → conventional path
   const execution = new vscode.ProcessExecution(exe, config.runArgs ?? [], {
@@ -442,16 +454,27 @@ export const cmakeAdapter: LanguageAdapter = {
       required: true,
       // Executable + library targets from the CMake File API codemodel (ADR-014/ADR-019),
       // scoped to a sub-project's own dir. Libraries are annotated ("static library") —
-      // they build but never run/debug (validateAction). Single-target projects
+      // they build but never run/debug (validateAction). Root projects also get an
+      // "All targets" entry (build the whole tree, MS-021). Single-target projects
       // auto-select via defaultValue.
       listItems: async (project) => {
         const targets = await listSwitcherTargetsFor(project);
-        return targets.map((t) => ({ id: t.name, label: t.name, description: describeTargetType(t.type) }));
+        const items: ChipItem[] = targets.map((t) => ({
+          id: t.name,
+          label: t.name,
+          description: describeTargetType(t.type),
+        }));
+        if (project.parentId === undefined && items.length > 0) {
+          items.unshift({ id: ALL_TARGETS, label: 'All targets', description: 'build everything' });
+        }
+        return items;
       },
       defaultValue: async (project) => {
         const targets = await listSwitcherTargetsFor(project);
         return targets.length === 1 ? targets[0].name : undefined;
       },
+      // Chip caption for the sentinel — 'All' reads better than the raw '__all__' id.
+      format: (value) => (value === ALL_TARGETS ? 'All' : String(value)),
     },
   ],
 
@@ -560,13 +583,16 @@ export const cmakeAdapter: LanguageAdapter = {
     if (!target) {
       return undefined;
     }
+    const verb = action === 'run' ? 'run' : 'debugged';
+    if (target === ALL_TARGETS) {
+      return `'All targets' builds everything — pick a single executable target to be ${verb}.`;
+    }
     const { targets } = await configuredTargets(project, sel, config);
     const found = targets.find((t) => t.name === target);
     const kind = found ? describeTargetType(found.type) : undefined;
     if (!kind) {
       return undefined;
     }
-    const verb = action === 'run' ? 'run' : 'debugged';
     return `'${target}' is a ${kind} — it can be built, but not ${verb}.`;
   },
 

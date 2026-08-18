@@ -162,10 +162,14 @@ export function withMemberReadiness(
     if (member.projectId !== projectId) {
       return member;
     }
-    // Rebuild without `readiness` so clearing falls back to process-spawn readiness.
-    return readiness === undefined
-      ? { projectId: member.projectId, dependsOn: member.dependsOn }
-      : { ...member, readiness };
+    if (readiness === undefined) {
+      // Drop only `readiness` (falls back to process-spawn) — other member fields
+      // (debug launch mode, dependsOn) survive the clear.
+      const rest = { ...member };
+      delete rest.readiness;
+      return rest;
+    }
+    return { ...member, readiness };
   });
   return { ...group, members };
 }
@@ -192,6 +196,26 @@ export function memberStages(group: RunGroup): Map<string, number> {
     }
   }
   return stages;
+}
+
+/**
+ * Set one member's launch mode (MS-021 / ADR-020): debug=true launches it under the
+ * debugger during a group start; false clears back to a plain run (the flag is dropped,
+ * keeping the persisted member additive-minimal). Ignores a non-member (pure).
+ */
+export function withMemberLaunch(group: RunGroup, projectId: string, debug: boolean): RunGroup {
+  const members = group.members.map((member) => {
+    if (member.projectId !== projectId) {
+      return member;
+    }
+    if (!debug) {
+      const rest = { ...member };
+      delete rest.debug;
+      return rest;
+    }
+    return { ...member, debug: true };
+  });
+  return { ...group, members };
 }
 
 /** Set one member's stage (>= 1) and rebuild every member's dependsOn from the resulting

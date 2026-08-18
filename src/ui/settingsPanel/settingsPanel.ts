@@ -4,7 +4,7 @@ import type { StateStore } from '../../core/stateStore';
 import type { GroupOrchestrator } from '../../core/groupOrchestrator';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
 import { orderByHierarchy } from '../../core/projectTree';
-import { memberStages, validateGroup, withMember, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
+import { memberStages, validateGroup, withMember, withMemberLaunch, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
 import type { ChipDescriptor, ChipItem, ChipValue, DiagnosticProbe, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, ReadinessProbe, RunGroup } from '../../core/types';
 import { deriveToolchain, formatChipValue, ToolchainStatus } from './projectCard';
 import { getSettingsHtml } from './html';
@@ -28,9 +28,9 @@ export interface ChipView {
 export interface GroupView {
   id: string;
   name: string;
-  /** Members with their 1-based stage (order; same stage = parallel) and optional readiness
-   *  gate (MS-018). readiness omitted = process-spawn readiness. */
-  members: Array<{ projectId: string; stage: number; readiness?: ReadinessProbe }>;
+  /** Members with their 1-based stage (order; same stage = parallel), optional readiness
+   *  gate (MS-018; omitted = process-spawn), and launch mode (ADR-020; debug omitted = run). */
+  members: Array<{ projectId: string; stage: number; readiness?: ReadinessProbe; debug?: boolean }>;
   running: boolean;
   problems: string[];
 }
@@ -121,6 +121,8 @@ type InMessage =
   | { type: 'setMemberStage'; groupId: string; projectId: string; stage: number }
   // Per-member readiness gate (MS-018) — undefined clears it back to process-spawn readiness.
   | { type: 'setMemberReadiness'; groupId: string; projectId: string; readiness: ReadinessProbe | undefined }
+  // Per-member launch mode (MS-021 / ADR-020) — debug=false clears back to a plain run.
+  | { type: 'setMemberLaunch'; groupId: string; projectId: string; debug: boolean }
   | { type: 'runGroup'; groupId: string }
   | { type: 'stopGroup'; groupId: string };
 
@@ -297,6 +299,12 @@ export class SettingsPanel {
       case 'setMemberReadiness': {
         await this.editGroup(message.groupId, (group) =>
           withMemberReadiness(group, message.projectId, message.readiness),
+        );
+        return true;
+      }
+      case 'setMemberLaunch': {
+        await this.editGroup(message.groupId, (group) =>
+          withMemberLaunch(group, message.projectId, message.debug),
         );
         return true;
       }
@@ -578,6 +586,7 @@ export class SettingsPanel {
           projectId: m.projectId,
           stage: stages.get(m.projectId) ?? 1,
           readiness: m.readiness,
+          debug: m.debug,
         })),
         running: this.groups.isRunning(group.id),
         problems: validateGroup(group),

@@ -213,6 +213,25 @@ export class Orchestrator {
     this.renderBar(adapter, project);
   }
 
+  /**
+   * Keyboard entry point (Ctrl+Alt+T, MS-021): open the active project's "what runs"
+   * chip — `target` on five adapters, Node's `script` — honouring per-project chip
+   * visibility. No matching chip (or no active project) is a silent no-op, like the
+   * other chip shortcuts.
+   */
+  async pickTarget(): Promise<void> {
+    const context = this.activeContext();
+    if (!context) {
+      return;
+    }
+    const chip =
+      context.adapter.chips.find((c) => c.id === 'target') ??
+      context.adapter.chips.find((c) => c.id === 'script');
+    if (chip && !this.hiddenChips.has(chip.id)) {
+      await this.pickChip(chip.id);
+    }
+  }
+
   async build(): Promise<void> {
     const context = this.activeContext();
     if (context && context.adapter.actions.build) {

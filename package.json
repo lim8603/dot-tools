@@ -69,6 +69,11 @@
         "category": "DevSwitcher"
       },
       {
+        "command": "devSwitcher.pickTarget",
+        "title": "Switch Target",
+        "category": "DevSwitcher"
+      },
+      {
         "command": "devSwitcher.build",
         "title": "Build",
         "category": "DevSwitcher"
@@ -174,6 +179,12 @@
         "command": "devSwitcher.switchProject",
         "key": "ctrl+alt+p",
         "mac": "cmd+alt+p",
+        "when": "devSwitcher.hasProjects"
+      },
+      {
+        "command": "devSwitcher.pickTarget",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t",
         "when": "devSwitcher.hasProjects"
       },
       {
