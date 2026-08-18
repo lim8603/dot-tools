@@ -150,8 +150,9 @@ export class StatusBarController {
   /**
    * Show or hide the run-group launcher (C-6 / MS-013). Independent of render() — groups
    * are workspace-level, so the launcher persists across project switches and the no-active-
-   * project state (like the toolchain chip). Hidden when no group is defined. Icon-only
-   * (`$(run-all)`, plus a running count) — clicking opens the group menu (run / stop / stop-all).
+   * project state (like the toolchain chip). Hidden when no group is defined. Icon-only when
+   * idle (D-20); while groups run it reads `N running` — a bare number was ambiguous
+   * (group count vs running count, MS-021 feedback). Clicking opens the group menu.
    */
   setGroups(defined: number, running: number): void {
     if (defined === 0) {
@@ -162,7 +163,7 @@ export class StatusBarController {
       running > 0
         ? `DevSwitcher: ${running} run group(s) running — click to run or stop a group`
         : 'DevSwitcher: run groups';
-    const text = running > 0 ? `$(run-all) ${running}` : '$(run-all)';
+    const text = running > 0 ? `$(run-all) ${running} running` : '$(run-all)';
     const item = this.upsert(GROUP_CHIP, text, tooltip, 'devSwitcher.groups', undefined, TRAILING_ORDER.group);
     item.show();
   }
