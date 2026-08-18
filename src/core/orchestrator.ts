@@ -5,6 +5,7 @@ import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
 import type { ChipValue, DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
+import { orderByHierarchy, visibleInSwitcher } from './projectTree';
 import { pickChipValue } from '../ui/picks';
 import { pickDiagnostic } from '../ui/doctorPick';
 import { runNewProjectWizard } from '../ui/newProjectWizard';
@@ -152,12 +153,19 @@ export class Orchestrator {
   }
 
   async switchProject(): Promise<void> {
-    const projects = this.registry.getProjects();
+    // Hierarchical list (ADR-019): sub-projects indent under their parent; library-only
+    // sub-projects can be hidden via the show-libraries preference (General tab).
+    const show = vscode.workspace.getConfiguration('devSwitcher').get<boolean>('projects.showLibraries', true);
+    const projects = orderByHierarchy(this.registry.getProjects()).filter((p) => visibleInSwitcher(p, show));
     if (projects.length === 0) {
       return;
     }
     const picked = await vscode.window.showQuickPick(
-      projects.map((p) => ({ label: p.name, description: p.id, projectId: p.id })),
+      projects.map((p) => ({
+        label: p.parentId !== undefined ? `    ↳ ${p.name}` : p.name,
+        description: p.library === true ? `${p.id} · library` : p.id,
+        projectId: p.id,
+      })),
       { placeHolder: 'Select active project' },
     );
     if (!picked) {
@@ -345,6 +353,14 @@ export class Orchestrator {
     try {
       // Two-stage adapters (CMake) configure with the overlay before the build (§7.4).
       await adapter.prepareInvocation?.(project, selection, config);
+      // Adapter veto (ADR-019) — e.g. a CMake library target cannot be debugged.
+      if (adapter.validateAction) {
+        const blocked = await adapter.validateAction('debug', project, selection, config);
+        if (blocked) {
+          void vscode.window.showInformationMessage(`DevSwitcher: ${blocked}`);
+          return;
+        }
+      }
       // Compiled languages build a debuggable artifact first; Node opts out
       // (debugRequiresBuild:false) — it debugs the npm script directly (ADR-016).
       if (adapter.actions.build && adapter.actions.debugRequiresBuild !== false) {
@@ -558,6 +574,15 @@ export class Orchestrator {
         const message = error instanceof Error ? error.message : String(error);
         void vscode.window.showErrorMessage(`DevSwitcher: ${action} preparation failed — ${message}`);
         return;
+      }
+      // Adapter veto (ADR-019) — e.g. a CMake library target runs nowhere (build-only).
+      // Checked after prepareInvocation so the metadata cache answering it is warm.
+      if (action === 'run' && adapter.validateAction) {
+        const blocked = await adapter.validateAction('run', project, selection, config);
+        if (blocked) {
+          void vscode.window.showInformationMessage(`DevSwitcher: ${blocked}`);
+          return;
+        }
       }
       // Pre-build commands (F21/C-5) run first; a failure aborts the build.
       if (!(await this.runBuildEvents(project, config.preBuild, 'pre'))) {

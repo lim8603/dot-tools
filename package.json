@@ -196,6 +196,11 @@
           "default": false,
           "description": "Show only chips that have a value; hide unselected optional chips (required chips stay visible). Default shows all chips."
         },
+        "devSwitcher.projects.showLibraries": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show library projects and library targets (static/shared) in the project switcher and Target picker. Libraries build but cannot be run or debugged."
+        },
         "devSwitcher.cmake.debugger": {
           "type": "string",
           "enum": [

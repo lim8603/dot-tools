@@ -3,6 +3,7 @@ import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
 import type { GroupOrchestrator } from '../../core/groupOrchestrator';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
+import { orderByHierarchy } from '../../core/projectTree';
 import { memberStages, validateGroup, withMember, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
 import type { ChipDescriptor, ChipItem, ChipValue, DiagnosticProbe, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, ReadinessProbe, RunGroup } from '../../core/types';
 import { deriveToolchain, formatChipValue, ToolchainStatus } from './projectCard';
@@ -57,6 +58,10 @@ export interface ProjectCard {
   /** Manifest path relative to the workspace (multi-root aware). */
   manifestPath: string;
   active: boolean;
+  /** True for a nested sub-project (ADR-019) — rendered indented under its parent. */
+  sub: boolean;
+  /** True for a library-only project (builds, never runs) — rendered with a badge. */
+  library: boolean;
   /** Effective active profile (the 'profile' chip's value/default), when the adapter has one. */
   profile?: string;
   /** Per-chip summary, excluding the profile chip (surfaced separately as `profile`). */
@@ -66,7 +71,8 @@ export interface ProjectCard {
 
 /** The full state the webview renders (rebuilt and re-sent after every change). */
 export interface SettingsState {
-  projects: Array<{ id: string; name: string; adapterId: string }>;
+  /** Hierarchy-ordered (ADR-019): sub-projects (`sub: true`) directly follow their parent. */
+  projects: Array<{ id: string; name: string; adapterId: string; sub?: boolean }>;
   /** Enriched per-project cards for the Project tab (B-2). */
   projectCards: ProjectCard[];
   activeProjectId?: string;
@@ -79,9 +85,18 @@ export interface SettingsState {
   invocation: InvocationConfig;
   commandPreview: string;
   statusBar: { compact: boolean; selectedOnly: boolean };
+  /** Other General-tab preferences (ADR-019). */
+  general: { showLibraries: boolean };
   groups: GroupView[];
   /** Default keyboard shortcuts (MS-017 / ADR-017) shown in the General tab. */
   shortcuts: ShortcutRow[];
+  /** True on the fast first paint — chip items/counts and toolchain probes are still
+   *  loading (a CMake target list means running `cmake` configure, which can take a
+   *  while on first open); the full state follows in a second message (TASK-058). */
+  loading?: boolean;
+  /** Set when building the full state failed — the page shows the error instead of
+   *  silently staying blank (TASK-058). */
+  error?: string;
 }
 
 /** Messages the webview sends to the extension (상세설계서 §10.3). */
@@ -94,6 +109,8 @@ type InMessage =
   | { type: 'setRunArgs'; line: string }
   | { type: 'setBuildEvent'; event: 'preBuild' | 'postBuild'; text: string }
   | { type: 'setStatusBarPref'; key: 'compact' | 'selectedOnly'; value: boolean }
+  // General-tab preference: show library projects/targets in pickers (ADR-019).
+  | { type: 'setShowLibraries'; value: boolean }
   // Keyboard shortcuts (MS-017) — deep-link the native editor (optionally filtered).
   | { type: 'openKeybindings'; query?: string }
   // Run groups (C-6 / MS-013) — workspace-level, independent of the active project.
@@ -169,6 +186,10 @@ export class SettingsPanel {
 
   private async onMessage(message: InMessage): Promise<void> {
     if (message.type === 'ready') {
+      // Fast first paint (TASK-058): chip item listing can be slow (CMake's target list
+      // runs `cmake` configure on a cold tree), so paint the cheap state immediately and
+      // follow with the full one — the page never sits blank.
+      await this.postState(true);
       await this.postState();
       return;
     }
@@ -200,6 +221,10 @@ export class SettingsPanel {
       await vscode.workspace
         .getConfiguration('devSwitcher')
         .update(`statusBar.${message.key}`, message.value, vscode.ConfigurationTarget.Global);
+    } else if (message.type === 'setShowLibraries') {
+      await vscode.workspace
+        .getConfiguration('devSwitcher')
+        .update('projects.showLibraries', message.value, vscode.ConfigurationTarget.Global);
     } else if (activeId !== undefined) {
       switch (message.type) {
         case 'setChipValue':
@@ -319,24 +344,63 @@ export class SettingsPanel {
     return typeof value === 'string' ? value : 'dev';
   }
 
-  private async postState(): Promise<void> {
+  private async postState(quick = false): Promise<void> {
     if (!this.panel) {
       return;
     }
-    await this.panel.webview.postMessage({ type: 'state', ...(await this.buildState()) });
+    let state: SettingsState;
+    try {
+      state = await this.buildState(quick);
+    } catch (error) {
+      // Never leave the page blank (TASK-058): a state-building failure (an adapter
+      // hook throwing on this workspace's metadata) surfaces as an in-page error.
+      state = {
+        projects: this.registry.getProjects().map((p) => ({ id: p.id, name: p.name, adapterId: p.adapterId })),
+        projectCards: [],
+        profile: 'dev',
+        actionsBuild: false,
+        chips: [],
+        configCategories: [],
+        optionCatalog: [],
+        invocation: {},
+        commandPreview: '',
+        statusBar: this.statusBarPrefs(),
+        general: this.generalPrefs(),
+        groups: [],
+        shortcuts: [],
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+    await this.panel.webview.postMessage({ type: 'state', ...state });
   }
 
-  private async buildState(): Promise<SettingsState> {
-    const projects = this.registry.getProjects().map((p) => ({
+  /** A chip's applicability, fail-open like the status bar (TASK-041/TASK-058): a
+   *  predicate that throws keeps the chip visible rather than killing the whole state. */
+  private async chipApplies(chip: ChipDescriptor, project: ProjectInfo): Promise<boolean> {
+    if (!chip.appliesTo) {
+      return true;
+    }
+    try {
+      return await chip.appliesTo(project);
+    } catch {
+      return true;
+    }
+  }
+
+  /** Build the webview state. `quick` skips the slow parts (chip item listing, toolchain
+   *  probes) for the fast first paint — the full state follows right after (TASK-058). */
+  private async buildState(quick: boolean): Promise<SettingsState> {
+    const projects = orderByHierarchy(this.registry.getProjects()).map((p) => ({
       id: p.id,
       name: p.name,
       adapterId: p.adapterId,
+      sub: p.parentId !== undefined || undefined,
     }));
 
     const groups = this.buildGroupViews();
 
     const activeId = this.store.activeProjectId;
-    const projectCards = await this.buildProjectCards(activeId);
+    const projectCards = await this.buildProjectCards(activeId, quick);
     const project = activeId ? this.registry.project(activeId) : undefined;
     const adapter = project ? this.registry.adapterFor(project) : undefined;
     if (!project || !adapter) {
@@ -351,8 +415,10 @@ export class SettingsPanel {
         invocation: {},
         commandPreview: '',
         statusBar: this.statusBarPrefs(),
+        general: this.generalPrefs(),
         groups,
         shortcuts: this.shortcuts(),
+        loading: quick || undefined,
       };
     }
 
@@ -363,14 +429,16 @@ export class SettingsPanel {
     for (const chip of adapter.chips) {
       // Respect the same per-project visibility as the status bar (TASK-041): a chip that
       // doesn't apply (e.g. profile/architecture when a CMake preset is active) gets no tab.
-      if (chip.appliesTo && !(await chip.appliesTo(project))) {
+      if (!(await this.chipApplies(chip, project))) {
         continue;
       }
       let items: ChipItem[] = [];
-      try {
-        items = await chip.listItems(project);
-      } catch {
-        // metadata/toolchain unavailable — render the chip with its stored value only
+      if (!quick) {
+        try {
+          items = await chip.listItems(project);
+        } catch {
+          // metadata/toolchain unavailable — render the chip with its stored value only
+        }
       }
       chips.push({
         id: chip.id,
@@ -397,8 +465,10 @@ export class SettingsPanel {
       invocation,
       commandPreview: this.commandPreview(adapter, project, invocation),
       statusBar: this.statusBarPrefs(),
+      general: this.generalPrefs(),
       groups,
       shortcuts: this.shortcuts(),
+      loading: quick || undefined,
     };
   }
 
@@ -408,35 +478,40 @@ export class SettingsPanel {
    * (formatted value + detected item count), and a toolchain ✅/❌ from Doctor probes —
    * all from declarative adapter data, so the Project tab stays language-agnostic (INV-2).
    */
-  private async buildProjectCards(activeId: string | undefined): Promise<ProjectCard[]> {
+  private async buildProjectCards(activeId: string | undefined, quick: boolean): Promise<ProjectCard[]> {
     const cards: ProjectCard[] = [];
-    for (const project of this.registry.getProjects()) {
+    // Hierarchy order (ADR-019): each top-level project followed by its sub-projects.
+    for (const project of orderByHierarchy(this.registry.getProjects())) {
       const adapter = this.registry.adapterFor(project);
-      const toolchain = await this.toolchainStatus(adapter);
+      const toolchain = quick
+        ? { status: 'unknown' as const, label: adapter?.displayName ?? project.adapterId }
+        : await this.toolchainStatus(adapter);
       const chips: CardChip[] = [];
       let profile: string | undefined;
       if (adapter) {
         for (const chip of adapter.chips) {
           // Respect the same per-project visibility as the status bar (TASK-041): a chip
           // that doesn't apply (e.g. profile when a CMake preset is active) is skipped.
-          if (chip.appliesTo && !(await chip.appliesTo(project))) {
+          if (!(await this.chipApplies(chip, project))) {
             continue;
           }
           let count = 0;
-          try {
-            // Count readily-available items only: `secondary` items (e.g. cargo's ~100
-            // not-installed rustup targets, hidden behind the QuickPick toggle) would
-            // otherwise inflate the architecture count into the hundreds.
-            const items = await chip.listItems(project);
-            count = items.filter((it) => !it.secondary).length;
-          } catch {
-            // metadata/toolchain unavailable — leave the count at 0
+          if (!quick) {
+            try {
+              // Count readily-available items only: `secondary` items (e.g. cargo's ~100
+              // not-installed rustup targets, hidden behind the QuickPick toggle) would
+              // otherwise inflate the architecture count into the hundreds.
+              const items = await chip.listItems(project);
+              count = items.filter((it) => !it.secondary).length;
+            } catch {
+              // metadata/toolchain unavailable — leave the count at 0
+            }
           }
           const raw = this.store.getValue(project.id, chip.id);
           // The active profile gets its own card line (not a chip row); fall back to the
           // chip's default so an unset-but-effective profile still shows.
           if (chip.id === 'profile') {
-            const value = raw ?? (await this.chipDefault(chip, project));
+            const value = raw ?? (quick ? undefined : await this.chipDefault(chip, project));
             if (value !== undefined) {
               profile = formatChipValue(chip, value);
             }
@@ -453,6 +528,8 @@ export class SettingsPanel {
         displayName: adapter?.displayName ?? project.adapterId,
         manifestPath: vscode.workspace.asRelativePath(project.manifestPath),
         active: project.id === activeId,
+        sub: project.parentId !== undefined,
+        library: project.library === true,
         profile,
         chips,
         toolchain,
@@ -527,6 +604,12 @@ export class SettingsPanel {
       compact: config.get<boolean>('statusBar.compact', false),
       selectedOnly: config.get<boolean>('statusBar.selectedOnly', false),
     };
+  }
+
+  /** Other General-tab preferences (ADR-019). */
+  private generalPrefs(): { showLibraries: boolean } {
+    const config = vscode.workspace.getConfiguration('devSwitcher');
+    return { showLibraries: config.get<boolean>('projects.showLibraries', true) };
   }
 
   /**

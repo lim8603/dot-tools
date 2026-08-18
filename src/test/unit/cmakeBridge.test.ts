@@ -6,11 +6,15 @@ import {
   CMakeBridge,
   type CMakeExec,
   buildArgs,
+  classifyManifests,
   cmakeProjectName,
   configureArgs,
   debuggerFor,
+  describeTargetType,
   detectCompilerId,
   executableArtifact,
+  hasExecutableCommand,
+  hasLibraryCommand,
   hasProjectCommand,
   overlayDefines,
   parseCMakeVersion,
@@ -152,12 +156,96 @@ describe('parseTargetInfo / executableArtifact', () => {
     assert.deepEqual(info.artifacts, []);
     assert.equal(executableArtifact(info), undefined);
   });
+
+  it('reads the declaring source dir (paths.source) for sub-project scoping', () => {
+    const info = parseTargetInfo(JSON.stringify({
+      name: 'mathlib',
+      type: 'STATIC_LIBRARY',
+      nameOnDisk: 'mathlib.lib',
+      artifacts: [{ path: 'libs/mathlib/Debug/mathlib.lib' }],
+      paths: { build: 'libs/mathlib', source: 'libs/mathlib' },
+    }));
+    assert.equal(info.sourceDir, 'libs/mathlib');
+    // A static library's primary artifact IS the .lib (nameOnDisk match wins over the skip list).
+    assert.equal(executableArtifact(info), 'libs/mathlib/Debug/mathlib.lib');
+  });
+});
+
+describe('describeTargetType', () => {
+  it('labels library kinds and stays silent for executables', () => {
+    assert.equal(describeTargetType('EXECUTABLE'), undefined);
+    assert.equal(describeTargetType('STATIC_LIBRARY'), 'static library');
+    assert.equal(describeTargetType('SHARED_LIBRARY'), 'shared library');
+    assert.equal(describeTargetType('MODULE_LIBRARY'), 'module library');
+  });
+});
+
+describe('hasExecutableCommand / hasLibraryCommand', () => {
+  it('detects target declarations, ignoring comments', () => {
+    assert.equal(hasExecutableCommand('add_executable(app main.cpp)'), true);
+    assert.equal(hasExecutableCommand('# add_executable(app main.cpp)'), false);
+    assert.equal(hasLibraryCommand('add_library(mathlib STATIC a.cpp)'), true);
+    assert.equal(hasLibraryCommand('add_executable(app main.cpp)'), false);
+    assert.equal(hasExecutableCommand('ADD_EXECUTABLE(app main.cpp)'), true); // case-insensitive
+  });
+});
+
+describe('classifyManifests (nested sub-projects, ADR-019)', () => {
+  const ROOT = 'nested/CMakeLists.txt';
+  const entries = [
+    { rel: ROOT, content: 'project(nested-demo CXX)\nadd_subdirectory(app)' },
+    { rel: 'nested/app/CMakeLists.txt', content: 'add_executable(nested-app main.cpp)' },
+    { rel: 'nested/libs/mathlib/CMakeLists.txt', content: 'add_library(mathlib STATIC mathlib.cpp)' },
+    { rel: 'nested/tools/cli/CMakeLists.txt', content: 'add_executable(nested-cli main.cpp)' },
+  ];
+
+  it('classifies the project() root and its target-declaring dirs as subs', () => {
+    const roles = classifyManifests(entries);
+    assert.deepEqual(roles.find((r) => r.rel === ROOT), {
+      rel: ROOT, role: 'root', name: 'nested-demo', library: false,
+    });
+    assert.deepEqual(roles.find((r) => r.rel === 'nested/app/CMakeLists.txt'), {
+      rel: 'nested/app/CMakeLists.txt', role: 'sub', parentRel: ROOT, name: undefined, library: false,
+    });
+    assert.deepEqual(roles.find((r) => r.rel === 'nested/libs/mathlib/CMakeLists.txt'), {
+      rel: 'nested/libs/mathlib/CMakeLists.txt', role: 'sub', parentRel: ROOT, name: undefined, library: true,
+    });
+  });
+
+  it('a nested project() still nests under the outermost root (VS solution view)', () => {
+    const roles = classifyManifests([
+      ...entries,
+      { rel: 'nested/inner/CMakeLists.txt', content: 'project(inner)\nadd_executable(inner main.cpp)' },
+    ]);
+    const inner = roles.find((r) => r.rel === 'nested/inner/CMakeLists.txt');
+    assert.deepEqual(inner, {
+      rel: 'nested/inner/CMakeLists.txt', role: 'sub', parentRel: ROOT, name: 'inner', library: false,
+    });
+  });
+
+  it('drops target-less include leaves and standalone leaves with no ancestor root', () => {
+    const roles = classifyManifests([
+      ...entries,
+      { rel: 'nested/cmake/CMakeLists.txt', content: 'include(helpers.cmake)' }, // grouping leaf
+      { rel: 'stray/CMakeLists.txt', content: 'add_executable(stray main.cpp)' }, // no root above
+    ]);
+    assert.equal(roles.some((r) => r.rel === 'nested/cmake/CMakeLists.txt'), false);
+    assert.equal(roles.some((r) => r.rel === 'stray/CMakeLists.txt'), false);
+  });
+
+  it('keeps two independent roots independent (nearest-ancestor only)', () => {
+    const roles = classifyManifests([
+      { rel: 'a/CMakeLists.txt', content: 'project(a)\nadd_executable(a main.cpp)' },
+      { rel: 'b/CMakeLists.txt', content: 'project(b)\nadd_executable(b main.cpp)' },
+    ]);
+    assert.deepEqual(roles.map((r) => r.role), ['root', 'root']);
+  });
 });
 
 describe('readReplyDir (real reply fixture)', () => {
-  it('returns only the executable target, filtering ALL_BUILD/ZERO_CHECK', async () => {
+  it('returns the buildable target with its type/scope, filtering ALL_BUILD/ZERO_CHECK', async () => {
     assert.deepEqual(await readReplyDir(FIXTURE_REPLY, 'Debug'), [
-      { name: 'hello', artifactPath: 'Debug/hello.exe' },
+      { name: 'hello', type: 'EXECUTABLE', artifactPath: 'Debug/hello.exe', sourceDir: '.' },
     ]);
   });
 

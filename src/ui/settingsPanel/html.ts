@@ -117,6 +117,11 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   /* Project cards (B-2): one detected project per card, click to switch. */
   .card { border: 1px solid var(--vscode-panel-border); border-radius: 6px;
     padding: 10px 12px; margin: 8px 0; cursor: pointer; }
+  /* Nested sub-project cards (ADR-019) indent under their parent. */
+  .card.card-sub { margin-left: 26px; }
+  .error-banner { border: 1px solid var(--vscode-inputValidation-errorBorder, #f85149);
+    background: var(--vscode-inputValidation-errorBackground, transparent);
+    border-radius: 4px; padding: 8px 12px; margin-bottom: 12px; }
   .card:hover { background: var(--vscode-list-hoverBackground); }
   .card.active { border-color: var(--vscode-focusBorder);
     background: var(--vscode-list-inactiveSelectionBackground); }
@@ -141,7 +146,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   </div>
   <div class="layout">
     <div class="tabs" id="tabs"></div>
-    <div class="detail" id="detail"></div>
+    <!-- Static placeholder until the first state message lands (TASK-058) -->
+    <div class="detail" id="detail"><div class="empty">Loading DevSwitcher settings…</div></div>
   </div>
 
 <script nonce="${nonce}">
@@ -176,7 +182,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     const sel = document.getElementById('project-select');
     sel.innerHTML = state.projects
       .map((p) => '<option value="' + esc(p.id) + '"' +
-        (p.id === state.activeProjectId ? ' selected' : '') + '>' + esc(p.name) + '</option>')
+        (p.id === state.activeProjectId ? ' selected' : '') + '>' +
+        (p.sub ? '&nbsp;&nbsp;↳ ' : '') + esc(p.name) + '</option>')
       .join('');
     sel.disabled = state.projects.length === 0;
     document.getElementById('profile-label').textContent =
@@ -193,19 +200,24 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
   }
 
   function renderDetail() {
+    // A state-building failure surfaces in-page instead of a silent blank (TASK-058).
+    const banner = state.error
+      ? '<div class="error-banner">DevSwitcher settings failed to load: ' + esc(state.error) +
+        ' — close and reopen Settings to retry.</div>'
+      : (state.loading ? '<div class="muted">Loading project data…</div>' : '');
     // Run Groups and the Project list are workspace-level — they render even with no
     // active project (the Project cards let you pick one).
-    if (activeTab === 'groups') return renderGroups();
-    if (activeTab === 'project') return renderProjects();
+    if (activeTab === 'groups') return banner + renderGroups();
+    if (activeTab === 'project') return banner + renderProjects();
     if (!state.activeProjectId) {
-      return '<div class="empty">No project selected. Pick one from the Project tab, ' +
+      return banner + '<div class="empty">No project selected. Pick one from the Project tab, ' +
         'or open a folder with a project manifest.</div>';
     }
     switch (activeTab) {
-      case 'features': return renderFeatures();
-      case 'profile': return renderProfile();
-      case 'invocation': return renderInvocation();
-      default: return renderGeneral();
+      case 'features': return banner + renderFeatures();
+      case 'profile': return banner + renderProfile();
+      case 'invocation': return banner + renderInvocation();
+      default: return banner + renderGeneral();
     }
   }
 
@@ -228,10 +240,11 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
         '<span class="card-chip"><span class="muted">' + esc(ch.label) + ':</span> ' +
         (ch.value ? esc(ch.value) : '<span class="muted">—</span>') +
         ' <span class="badge" title="options available">' + esc(ch.count) + '</span></span>').join('');
-      return '<div class="card' + (c.active ? ' active' : '') +
+      return '<div class="card' + (c.active ? ' active' : '') + (c.sub ? ' card-sub' : '') +
         '" data-action="switch-project" data-project-id="' + esc(c.id) + '">' +
-        '<div class="card-head"><b>' + esc(c.name) + '</b>' +
+        '<div class="card-head"><b>' + (c.sub ? '<span class="muted">↳</span> ' : '') + esc(c.name) + '</b>' +
         '<span class="badge">' + esc(c.displayName) + '</span>' +
+        (c.library ? '<span class="badge">library</span>' : '') +
         (c.active ? '<span class="badge">active</span>' : '') + '</div>' +
         '<div class="muted card-manifest"><code>' + esc(c.manifestPath) + '</code></div>' +
         '<div class="card-line"><span class="tc ' + tcClass(tc.status) + '">' + tcGlyph(tc.status) +
@@ -493,6 +506,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
 
   function renderGeneral() {
     const sb = state.statusBar || {};
+    const gen = state.general || {};
     const shortcuts = state.shortcuts || [];
     const rows = shortcuts.map((s) =>
       '<div class="row"><code>' + esc(s.key) + '</code><span>' + esc(s.title) + '</span>' +
@@ -504,6 +518,9 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       ' /> Compact — icons only (hover / click for the value)</label>' +
       '<label class="row"><input type="checkbox" id="sb-selectedonly"' + (sb.selectedOnly ? ' checked' : '') +
       ' /> Selected chips only — hide unselected optional chips</label>' +
+      '<h3 class="cat">Projects</h3>' +
+      '<label class="row"><input type="checkbox" id="gen-showlibs"' + (gen.showLibraries ? ' checked' : '') +
+      ' /> Show library projects and targets — static/shared libraries build, but cannot run or debug</label>' +
       '<div class="muted">Also editable in VSCode Settings › DevSwitcher.</div>' +
       '<h3 class="cat">Keyboard shortcuts</h3>' +
       (rows || '<p class="muted">No default shortcuts.</p>') +
@@ -552,6 +569,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'setStatusBarPref', key: 'compact', value: el.checked });
     } else if (el.id === 'sb-selectedonly') {
       post({ type: 'setStatusBarPref', key: 'selectedOnly', value: el.checked });
+    } else if (el.id === 'gen-showlibs') {
+      post({ type: 'setShowLibraries', value: el.checked });
     } else if (el.classList.contains('group-rename')) {
       post({ type: 'renameGroup', groupId: el.dataset.groupId, name: el.value });
     } else if (el.id === 'add-member') {

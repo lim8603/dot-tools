@@ -60,6 +60,95 @@ function stripComments(content: string): string {
   return content.replace(/#[^\n]*/g, '');
 }
 
+/** Whether a CMakeLists.txt declares an executable target (`add_executable(...)`). */
+export function hasExecutableCommand(cmakeListsContent: string): boolean {
+  return /\badd_executable\s*\(/i.test(stripComments(cmakeListsContent));
+}
+
+/** Whether a CMakeLists.txt declares a library target (`add_library(...)`). */
+export function hasLibraryCommand(cmakeListsContent: string): boolean {
+  return /\badd_library\s*\(/i.test(stripComments(cmakeListsContent));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Nested project classification (MS-021 / ADR-019) — pure, path + content only.
+// One project() root = one build tree (VS "solution"); every nested CMakeLists
+// under it that declares targets (or its own project()) is a sub-project of the
+// NEAREST root, built through the root's tree with `--target`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One CMakeLists.txt handed to classifyManifests: workspace-relative path ('/'-separated)
+ *  plus its text content. */
+export interface CMakeManifestEntry {
+  rel: string;
+  content: string;
+}
+
+/** classifyManifests result: the manifest's role in the workspace project tree. */
+export interface CMakeManifestRole {
+  rel: string;
+  role: 'root' | 'sub';
+  /** For a sub: the rel path of the nearest root's CMakeLists.txt. */
+  parentRel?: string;
+  /** project() name when literally parseable (else the caller falls back to the dir name). */
+  name?: string;
+  /** True when the manifest declares only library targets (add_library, no add_executable). */
+  library: boolean;
+}
+
+/** The directory part of a '/'-separated rel path ('' for a workspace-root manifest). */
+function relDir(rel: string): string {
+  const idx = rel.lastIndexOf('/');
+  return idx === -1 ? '' : rel.slice(0, idx);
+}
+
+/** Whether `dir` is a strict ancestor directory of `sub` ('' = workspace root). */
+function isAncestorDir(dir: string, sub: string): boolean {
+  if (dir === sub) {
+    return false;
+  }
+  return dir === '' || sub.startsWith(`${dir}/`);
+}
+
+/**
+ * Classify a workspace's CMakeLists.txt files into roots and sub-projects (ADR-019).
+ * A **root** declares project() and has no project()-declaring ancestor. A **sub** sits
+ * under a root and either declares targets (add_executable / add_library — with or
+ * without its own project(), matching the VS solution view) or declares project()
+ * itself. Manifests that declare neither, and target-less leaves with no ancestor
+ * root, are dropped (nothing to build). Entries under build trees must be filtered
+ * out by the caller beforehand.
+ */
+export function classifyManifests(entries: CMakeManifestEntry[]): CMakeManifestRole[] {
+  const rootCandidates = entries.filter((e) => hasProjectCommand(e.content));
+  const roots = rootCandidates.filter(
+    (e) => !rootCandidates.some((other) => isAncestorDir(relDir(other.rel), relDir(e.rel))),
+  );
+  const rootDirs = roots
+    .map((r) => ({ dir: relDir(r.rel), rel: r.rel }))
+    .sort((a, b) => b.dir.length - a.dir.length); // longest dir first → nearest ancestor wins
+
+  const result: CMakeManifestRole[] = [];
+  for (const entry of entries) {
+    const name = parseProjectName(entry.content);
+    const library = hasLibraryCommand(entry.content) && !hasExecutableCommand(entry.content);
+    if (roots.some((r) => r.rel === entry.rel)) {
+      result.push({ rel: entry.rel, role: 'root', name, library });
+      continue;
+    }
+    const parent = rootDirs.find((r) => isAncestorDir(r.dir, relDir(entry.rel)));
+    if (!parent) {
+      continue; // no ancestor root and not a root itself — nothing standalone to build
+    }
+    const declaresTargets = hasExecutableCommand(entry.content) || hasLibraryCommand(entry.content);
+    if (!declaresTargets && !hasProjectCommand(entry.content)) {
+      continue; // a pure grouping/include leaf — not a sub-project
+    }
+    result.push({ rel: entry.rel, role: 'sub', parentRel: parent.rel, name, library });
+  }
+  return result;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CMake File API (codemodel-v2) — pure parsers (ADR-014)
 // The adapter drives `cmake` itself, so it discovers targets/paths from the File API
@@ -86,12 +175,34 @@ export interface CMakeTargetInfo {
   type: string; // EXECUTABLE | STATIC_LIBRARY | UTILITY | …
   nameOnDisk?: string; // e.g. hello.exe
   artifacts: string[]; // paths relative to the build dir (e.g. Debug/hello.exe)
+  /** Source dir the target is declared in, relative to the top source dir ('.' = root). */
+  sourceDir?: string;
 }
 
-/** An executable target resolved for the switcher (name + its binary path, build-relative). */
-export interface CMakeExeTarget {
+/** A buildable target resolved for the switcher: executables and libraries (MS-021).
+ *  `type` is the File API target type; libraries build but never run/debug (ADR-019). */
+export interface CMakeTarget {
   name: string;
+  type: string; // EXECUTABLE | STATIC_LIBRARY | SHARED_LIBRARY | MODULE_LIBRARY | OBJECT_LIBRARY
   artifactPath?: string;
+  /** Declaring source dir relative to the top source dir ('.' = root) — scopes the
+   *  Target chip of a nested sub-project to its own targets. */
+  sourceDir?: string;
+}
+
+/** The File API target types the switcher offers (UTILITY/INTERFACE noise stays out). */
+const SWITCHER_TARGET_TYPES = new Set([
+  'EXECUTABLE',
+  'STATIC_LIBRARY',
+  'SHARED_LIBRARY',
+  'MODULE_LIBRARY',
+  'OBJECT_LIBRARY',
+]);
+
+/** Human label for a non-executable target type ('static library', …); undefined for
+ *  EXECUTABLE — chips/toasts only annotate the library kinds. */
+export function describeTargetType(type: string): string | undefined {
+  return type === 'EXECUTABLE' ? undefined : type.toLowerCase().replace(/_/g, ' ');
 }
 
 /** From the reply index, the reply filename for one object kind (`reply[key].jsonFile`). */
@@ -146,12 +257,14 @@ export function parseTargetInfo(targetJson: string): CMakeTargetInfo {
     type?: string;
     nameOnDisk?: string;
     artifacts?: { path?: string }[];
+    paths?: { source?: string };
   };
   return {
     name: t.name ?? '',
     type: t.type ?? '',
     nameOnDisk: t.nameOnDisk,
     artifacts: (t.artifacts ?? []).map((a) => a.path).filter((p): p is string => typeof p === 'string'),
+    sourceDir: typeof t.paths?.source === 'string' ? t.paths.source : undefined,
   };
 }
 
@@ -451,14 +564,15 @@ export function execCapture(
 }
 
 /**
- * Read the executable targets from a CMake File API reply directory
+ * Read the switcher-relevant targets from a CMake File API reply directory
  * (`<buildDir>/.cmake/api/v1/reply`): newest index → codemodel → each target's json,
- * keeping type=EXECUTABLE. `config` picks the codemodel configuration (build type);
- * an unmatched name or a single-config generator falls back to the first configuration.
- * Returns [] when no reply exists yet. Node fs only (vscode-free) — the extension host
- * reads the local/remote build tree.
+ * keeping executables and libraries (SWITCHER_TARGET_TYPES — utility noise like
+ * ALL_BUILD/ZERO_CHECK drops out). `config` picks the codemodel configuration (build
+ * type); an unmatched name or a single-config generator falls back to the first
+ * configuration. Returns [] when no reply exists yet. Node fs only (vscode-free) —
+ * the extension host reads the local/remote build tree.
  */
-export async function readReplyDir(replyDir: string, config?: string): Promise<CMakeExeTarget[]> {
+export async function readReplyDir(replyDir: string, config?: string): Promise<CMakeTarget[]> {
   let entries: string[];
   try {
     entries = await readdir(replyDir);
@@ -479,7 +593,7 @@ export async function readReplyDir(replyDir: string, config?: string): Promise<C
     return [];
   }
   const chosen = (config ? configs.find((c) => c.name === config) : undefined) ?? configs[0];
-  const targets: CMakeExeTarget[] = [];
+  const targets: CMakeTarget[] = [];
   const seen = new Set<string>();
   for (const ref of chosen.targets) {
     let info: CMakeTargetInfo;
@@ -488,11 +602,16 @@ export async function readReplyDir(replyDir: string, config?: string): Promise<C
     } catch {
       continue; // missing/malformed target file — skip
     }
-    if (info.type !== 'EXECUTABLE' || seen.has(info.name)) {
+    if (!SWITCHER_TARGET_TYPES.has(info.type) || seen.has(info.name)) {
       continue; // utility targets (ALL_BUILD/ZERO_CHECK) and dups drop out
     }
     seen.add(info.name);
-    targets.push({ name: info.name, artifactPath: executableArtifact(info) });
+    targets.push({
+      name: info.name,
+      type: info.type,
+      artifactPath: executableArtifact(info),
+      sourceDir: info.sourceDir,
+    });
   }
   return targets;
 }
@@ -536,7 +655,7 @@ export class CMakeBridge {
   private readonly exec: CMakeExec;
   private cmakeVersion: string | null | undefined; // undefined = unprobed, null = absent
   private readonly configuredSig = new Map<string, string>(); // buildDir → last configure signature
-  private readonly targetCache = new Map<string, CMakeExeTarget[]>(); // `${buildDir}\0${config}` → targets
+  private readonly targetCache = new Map<string, CMakeTarget[]>(); // `${buildDir}\0${config}` → targets
 
   constructor(exec: CMakeExec = defaultExec) {
     this.exec = exec;
@@ -623,7 +742,7 @@ export class CMakeBridge {
     buildDir: string,
     opts: ConfigureOptions = {},
     config?: string,
-  ): Promise<CMakeExeTarget[]> {
+  ): Promise<CMakeTarget[]> {
     const key = `${buildDir}\0${config ?? ''}`;
     const cached = this.targetCache.get(key);
     if (cached) {
@@ -640,7 +759,7 @@ export class CMakeBridge {
    * whose listItems has no invocation overlay. The build/debug flows inject the overlay via
    * configure()/targetsFor() with real options (prepareInvocation, resolveExecutable).
    */
-  listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeExeTarget[]> {
+  listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeTarget[]> {
     return this.targetsFor(srcDir, buildDir, {}, config);
   }
 
@@ -654,7 +773,7 @@ export class CMakeBridge {
     presetName: string,
     binaryDir: string,
     config?: string,
-  ): Promise<CMakeExeTarget[]> {
+  ): Promise<CMakeTarget[]> {
     const key = `${binaryDir}\0${config ?? ''}`;
     const cached = this.targetCache.get(key);
     if (cached) {

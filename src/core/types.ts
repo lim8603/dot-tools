@@ -97,6 +97,19 @@ export interface ProjectInfo {
   adapterId: string;
   manifestPath: string; // absolute manifest path
   workspaceFolder: vscode.WorkspaceFolder; // multi-root aware
+  /**
+   * The root project this one nests under (ADR-019) — e.g. a CMake add_subdirectory
+   * target dir under its project() root. UIs render sub-projects indented beneath their
+   * parent; omitted for top-level projects. Declarative only — the UI never interprets
+   * the language behind it (INV-2).
+   */
+  parentId?: string;
+  /**
+   * True when the project only produces libraries (no runnable artifact) — e.g. a CMake
+   * add_library-only dir. Library-only sub-projects can be hidden from the project
+   * QuickPick via `devSwitcher.projects.showLibraries` (ADR-019).
+   */
+  library?: boolean;
 }
 
 /**
@@ -332,6 +345,21 @@ export interface LanguageAdapter {
    * aborts the invocation. (interface_contract §4)
    */
   prepareInvocation?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<void>;
+
+  /**
+   * Optional pre-flight veto for run/debug (ADR-019). Returns a user-facing reason when
+   * the action cannot apply to the current selection — CMake returns one when the picked
+   * target is a library ("build-only", the Visual Studio behaviour) — and undefined to
+   * proceed. The orchestrator shows the reason as an info toast and aborts, so adapters
+   * decide *why* and the UI stays language-ignorant (INV-2). Called after required chips
+   * are ensured and after prepareInvocation (metadata caches are warm).
+   */
+  validateAction?(
+    action: 'run' | 'debug',
+    project: ProjectInfo,
+    sel: Selection,
+    config: InvocationConfig,
+  ): Promise<string | undefined>;
 
   /**
    * F20 — scaffold a default-template project. Native tools return a `task`

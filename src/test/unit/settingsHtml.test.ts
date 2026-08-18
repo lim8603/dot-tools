@@ -33,4 +33,20 @@ describe('getSettingsHtml', () => {
     assert.match(html, /setMemberReadiness/);
     assert.match(html, /rd-kind/);
   });
+
+  it('never sits blank: static placeholder + loading/error banners (TASK-058)', () => {
+    const html = getSettingsHtml(webview, 'TESTNONCE');
+    // Static placeholder shows until the first state message; a failed state build
+    // surfaces as an in-page error banner instead of a silent blank page.
+    assert.match(html, /Loading DevSwitcher settings…/);
+    assert.match(html, /state\.error/);
+    assert.match(html, /error-banner/);
+  });
+
+  it('renders nested sub-project cards and the show-libraries preference (ADR-019)', () => {
+    const html = getSettingsHtml(webview, 'TESTNONCE');
+    assert.match(html, /card-sub/);
+    assert.match(html, /gen-showlibs/);
+    assert.match(html, /setShowLibraries/);
+  });
 });
