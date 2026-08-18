@@ -3,7 +3,10 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [1.1.0] - 2026-08-19
+
+First field-feedback release: nested CMake projects Visual-Studio style, library
+targets, run-group debug launch, and several fixes reported from real-world use.
 
 ### Added
 

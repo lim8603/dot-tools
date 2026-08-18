@@ -132,7 +132,7 @@ code --install-extension lim8603.devswitcher-tools
 Alternatively, grab the `.vsix` from [GitHub Releases](https://github.com/lim8603/dot-tools/releases):
 
 ```bash
-code --install-extension devswitcher-tools-1.0.0.vsix
+code --install-extension devswitcher-tools-1.1.0.vsix
 ```
 
 ## Usage
