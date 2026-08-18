@@ -63,6 +63,8 @@ export interface ProjectInfo {
   adapterId: string;
   manifestPath: string;              // 매니페스트 절대 경로
   workspaceFolder: vscode.WorkspaceFolder;   // 멀티루트 대응
+  parentId?: string;                 // 【신규 MS-021/ADR-019】 중첩 하위 프로젝트의 루트 프로젝트 id. UI는 인덴트 표시에만 사용(언어 무지, INV-2). 생략=최상위
+  library?: boolean;                 // 【신규 MS-021/ADR-019】 라이브러리 전용(실행 산출물 없음). `devSwitcher.projects.showLibraries` off 시 lib-only 하위만 퀵픽에서 숨김(루트는 항상 표시)
 }
 
 export interface Selection {
@@ -105,6 +107,9 @@ export interface LanguageAdapter {
 
   // 선택적 — 동기 단일 Task 모델로 표현 못 하는 2단계 툴체인의 사전 단계. 오케스트레이터가 build/run/debug Task 실행 전에 await한다. CMake가 여기서 configure(`cmake -S -B -D…`)로 오버레이 -D를 주입한다(ADR-014). 단일 명령 빌드(cargo/dotnet/python)는 미구현(생략). 실패 시 throw→오케스트레이터가 호출 중단.
   prepareInvocation?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<void>;   // 【신규 TASK-034】
+
+  // 선택적 — run/debug 사전 거부(veto). 현재 선택으로 액션이 불가하면 사용자용 사유 문자열을 반환(진행 가능이면 undefined). 오케스트레이터가 정보 토스트 후 중단 — 사유는 어댑터가, 표시는 UI가(INV-2). `prepareInvocation` 뒤(캐시 웜) 호출. CMake: lib 타겟 = "built, but not run/debugged"(VS 동작, ADR-019).
+  validateAction?(action: 'run' | 'debug', project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string | undefined>;   // 【신규 MS-021/ADR-019】
 
   // 캐노니컬 파일 편집 메서드는 없다 — 확장은 사용자 빌드 파일을 절대 편집하지 않는다(영구 불변식, ADR-013 / D-15, C-3 폐기). 설정 영속화·공유는 프로파일 export/import(F12), 오버레이는 호출 시 주입(ADR-011).
   invalidateCache(project?: ProjectInfo): void;                              // 매니페스트 변경 시 캐시 무효화(F17)

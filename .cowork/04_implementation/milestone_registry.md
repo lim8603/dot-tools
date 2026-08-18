@@ -48,8 +48,9 @@ Milestone은 `Phase`와 다르다.
 | MS-018 | Run Group 준비 감지 (v0.8.0) | INT-001 | Build | **Done** | TASK-051·052·053 | | **로드맵 v0.8.0(D-21) — v1.0.0 마지막 기능 완료.** TASK-039 승격·분해(→ TASK-051/052/053). Run Group 멤버 준비 신호를 프로세스 시작 → **포트 open/HTTP 상태코드**로 강화(멤버별 포트·URL·타임아웃). **ADR-018**(타임아웃=abort+teardown·HTTP=지정코드 기본200·취소 가능). F5 통과(svc-a→svc-b 포트 게이트 4초 대기)·UI 재설계(멤버 카드·Add 드롭다운)·seedMemberDefaults·README 스크린샷 리프레시. **v0.8.0 배포**(vsix 15파일 274KB). 다음=MS-014 v1.0.0 최종점검+게시 |
 | MS-019 | 원격 디버그 타깃 (INT-002) | INT-002 | Evolve | Deferred | (TASK 미분해) | | **INT-002 소속(D-22)·v1.0.0 이후 백로그** — v1.1.0 후보. 로컬 빌드 + 원격 실행·어태치(lldb-server/gdbserver/debugpy attach). 단위가 커 1.0 이후로 재스케줄 — 설계서 §16 원래 "v2+ 백로그·v1 범위 밖" 위치로 복귀. §12.4 "한 창=한 환경" 한계 도전. **INT-002 정식 착수 시 ADR + Task 분해.** MS-020과 순서/번호는 그때 확정 |
 | MS-020 | 크로스 컴파일 (도커 기반) (INT-002) | INT-002 | Evolve | Deferred | (TASK 미분해) | | **INT-002 소속(D-22)·v1.0.0 이후 백로그** — v1.2.0 후보(모델 크게 변경 시 v2.0.0). `cross` 연동 — 아키텍처 칩 확장, 도커 기반 타깃 빌드. 단위가 커 1.0 이후로 재스케줄 — 설계서 §16 원래 v2+ 위치. **INT-002 정식 착수 시 ADR + Task 분해** |
+| MS-021 | v1.1.0 실사용 피드백 1차 (중첩 하위 프로젝트·lib 타겟·설정창 fix·아이콘) | 없음(유지보수) | Evolve | In Progress | TASK-056·057·058·059 | 2026-08-18 | **v1.0.0 실사용 피드백(세션 #016, Human) — SemVer minor(v1.1.0, D-24 단일 릴리즈).** ① CMake 중첩 하위 프로젝트(ADR-019: 루트=솔루션·타겟 선언 디렉토리=하위·인덴트 표시) ② lib 타겟 노출+run/debug 차단 토스트+`projects.showLibraries` 옵션(기본 보임) ③ 설정창 블랭크 버그(타겟 미선택) fix ④ 아이콘 투명 배경(Done). 코드 완료·unit 280·실 cmake 스모크 — **F5(Human) 대기**. INT-002의 v1.1.0 후보 번호는 v1.2.0+로 밀림 |
 
-> 현재 등록 Milestone: MS-001~MS-020 (M0~M6 + F20 완료 / MS-009~013 = INT-001 등록조건 로드맵 / **MS-015~018 + MS-014 = INT-001 v1.0.0 완주 로드맵(D-21)**: Go → Node/TS → 단축키 → 준비감지 → 최종점검+게시 / **MS-019·020 = INT-002**(원격디버그·크로스컴파일, v1.0.0 이후, D-22))
+> 현재 등록 Milestone: MS-001~MS-021 (M0~M6 + F20 완료 / MS-009~013 = INT-001 등록조건 로드맵 / **MS-015~018 + MS-014 = INT-001 v1.0.0 완주 로드맵(D-21)**: Go → Node/TS → 단축키 → 준비감지 → 최종점검+게시 / **MS-019·020 = INT-002**(원격디버그·크로스컴파일, v1.0.0 이후, D-22) / **MS-021 = 유지보수 v1.1.0**(실사용 피드백, ADR-019))
 
 - `주 Phase`: `Define` / `Design` / `Build` / `Verify` / `Evolve` / `Deliver`
 - `상태`: `Planned` / `In Progress` / `Review` / `Done` / `Deferred`

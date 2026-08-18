@@ -3,6 +3,34 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- **Nested CMake sub-projects** — a `project()` root now shows the `add_subdirectory`
+  directories that declare targets as indented sub-projects (project switcher, settings
+  Project tab, and the settings project dropdown), Visual-Studio-solution style. A
+  sub-project configures and builds through its root's build tree, and its **Target**
+  picker only offers the targets declared under its own directory.
+- **Library targets** — the Target picker now lists static/shared/module libraries
+  (annotated, e.g. *static library*) so a library can be built on its own. Running or
+  debugging a library target shows a toast instead (like Visual Studio): it *builds,
+  but cannot run*.
+- **Show libraries preference** (`devSwitcher.projects.showLibraries`, default on; also
+  in the settings **General** tab) — turn off to hide library-only sub-projects from the
+  project switcher and library targets from the Target picker.
+
+### Fixed
+
+- **Settings page could open blank** when project metadata was slow or failed to load
+  (e.g. a CMake project whose first `cmake` configure takes a while, with no target
+  selected yet). The page now paints immediately, shows a loading hint while slow data
+  (target lists, toolchain probes) fills in, and surfaces an in-page error instead of
+  staying empty if state-building fails.
+- **Marketplace icon rendered as a black square** — the icon background was genuinely
+  opaque black; it is now transparent (with a tight drop shadow), so the icon sits
+  cleanly on light and dark Marketplace/GitHub backgrounds.
+
 ## [1.0.0] - 2026-08-17
 
 **First stable release.** DevSwitcher Tools is now published on the Visual Studio Marketplace

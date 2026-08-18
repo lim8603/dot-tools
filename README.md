@@ -42,6 +42,12 @@ paths from real build output, so **your `Cargo.toml`, `.csproj`, `CMakeLists.txt
 - **CMake presets, first-class.** When a project has `CMakePresets.json`, a **Preset** chip
   replaces the profile/architecture chips and `cmake --preset` drives configure — switch
   compilers (MSVC ↔ Clang-CL ↔ GCC) by picking a preset.
+- **Nested CMake projects, Visual-Studio style.** A `project()` root shows its
+  `add_subdirectory` directories that declare targets as indented **sub-projects** in the
+  switcher and settings. A sub-project builds through the root's build tree, and its
+  **Target** picker is scoped to its own targets. Library targets (static/shared) are
+  listed and buildable too — running or debugging one shows a friendly toast instead,
+  just like a VS library project (hide libraries via `devSwitcher.projects.showLibraries`).
 - **Doctor.** One command diagnoses your toolchains and debug extensions and points you to
   the fix; a warning chip lights up when something critical is missing.
 - **Run groups.** Start several projects together in dependency order — e.g. `auth → api →
@@ -223,6 +229,7 @@ rest of the group still starts.
 | --- | --- | --- |
 | `devSwitcher.statusBar.compact` | `false` | Show chips as icons only (value on hover/click). |
 | `devSwitcher.statusBar.selectedOnly` | `false` | Hide optional chips that have no value (required chips stay). |
+| `devSwitcher.projects.showLibraries` | `true` | List library projects/targets (static/shared) in the switcher and Target picker. They build, but cannot run or debug. |
 | `devSwitcher.cmake.debugger` | `auto` | Which debugger the CMake adapter uses: `auto` (from the compiler), `cpptools`, or `codelldb`. |
 
 ## Known limitations
