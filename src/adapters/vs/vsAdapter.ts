@@ -1,0 +1,390 @@
+import { dirname, join } from 'node:path';
+import * as vscode from 'vscode';
+import { DevSwitcherError } from '../../core/errors';
+import { ensureExtension } from '../../core/ensureExtension';
+import {
+  DiagnosticProbe,
+  InvocationConfig,
+  LanguageAdapter,
+  ProjectInfo,
+  Selection,
+} from '../../core/types';
+import { notImplemented } from '../notImplemented';
+import {
+  VsBridge,
+  VsManifestEntry,
+  classifyVsManifests,
+  describeVcxprojType,
+  filterGeneratedManifests,
+  manifestStem,
+  msbuildBuildArgs,
+  parseSolutionConfigurations,
+  parseVcxprojConfigurations,
+} from './vsBridge';
+
+const bridge = new VsBridge();
+
+const VS_TASK_TYPE = 'devSwitcher.vs';
+const CPPTOOLS_EXTENSION = 'ms-vscode.cpptools';
+
+/** Chip fallbacks when a manifest declares no configurations (fail-open defaults). */
+const DEFAULT_CONFIGURATIONS = ['Debug', 'Release'];
+const DEFAULT_PLATFORMS = ['x64', 'Win32'];
+
+/** Parsed per-manifest metadata cached from listProjects for the sync/chip paths. */
+interface VsProjectMeta {
+  kind: 'sln' | 'slnx' | 'vcxproj';
+  configurations: string[];
+  platforms: string[];
+  /** 'static library' / 'dynamic library' … for library vcxprojs; undefined = runnable. */
+  libraryKind?: string;
+}
+
+const metaCache = new Map<string, VsProjectMeta>(); // manifestPath (fsPath) → meta
+
+/** Whether a project entry is a solution root (.sln/.slnx) rather than a vcxproj. */
+function isSolution(project: ProjectInfo): boolean {
+  return /\.slnx?$/i.test(project.manifestPath);
+}
+
+/**
+ * The owning solution's directory for a member vcxproj (ADR-019: `parentId` is the
+ * solution's `vs:${rel}` id, so the dir derives without a registry lookup — the CMake
+ * rootSrcDirOf pattern). Injected as `/p:SolutionDir` so a member build/eval lands its
+ * output exactly where a whole-solution build does; undefined for standalone projects.
+ */
+function solutionDirOf(project: ProjectInfo): string | undefined {
+  if (project.parentId?.startsWith('vs:')) {
+    const rel = project.parentId.slice('vs:'.length);
+    return dirname(join(project.workspaceFolder.uri.fsPath, rel));
+  }
+  return undefined;
+}
+
+function manifestKind(path: string): 'sln' | 'slnx' | 'vcxproj' | undefined {
+  if (/\.sln$/i.test(path)) {
+    return 'sln';
+  }
+  if (/\.slnx$/i.test(path)) {
+    return 'slnx';
+  }
+  if (/\.vcxproj$/i.test(path)) {
+    return 'vcxproj';
+  }
+  return undefined;
+}
+
+/** Read a manifest's text via workspace.fs (remote-safe, ADR-008); undefined when unreadable. */
+async function readManifest(uri: vscode.Uri): Promise<string | undefined> {
+  try {
+    return new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
+  } catch {
+    return undefined; // unreadable — the watcher retries on save
+  }
+}
+
+/** Parse one manifest's chip metadata (configurations/platforms + library kind). */
+function parseMeta(kind: 'sln' | 'slnx' | 'vcxproj', content: string): VsProjectMeta {
+  if (kind === 'vcxproj') {
+    const { configurations, platforms } = parseVcxprojConfigurations(content);
+    return { kind, configurations, platforms, libraryKind: describeVcxprojType(content) };
+  }
+  const { configurations, platforms } = parseSolutionConfigurations(content, kind);
+  return { kind, configurations, platforms };
+}
+
+/** The project's cached metadata, re-read from disk on a cold cache (e.g. after restart
+ *  listProjects always ran first, so this is a defensive fallback). */
+async function metaFor(project: ProjectInfo): Promise<VsProjectMeta> {
+  const cached = metaCache.get(project.manifestPath);
+  if (cached) {
+    return cached;
+  }
+  const kind = manifestKind(project.manifestPath) ?? 'vcxproj';
+  const content = (await readManifest(vscode.Uri.file(project.manifestPath))) ?? '';
+  const meta = parseMeta(kind, content);
+  metaCache.set(project.manifestPath, meta);
+  return meta;
+}
+
+/** The active configuration (profile chip), default Debug. */
+function activeCfg(sel: Selection): string {
+  return typeof sel.values.profile === 'string' ? sel.values.profile : 'Debug';
+}
+
+/** The active platform (architecture chip), default x64. */
+function activePlatform(sel: Selection): string {
+  return typeof sel.values.architecture === 'string' ? sel.values.architecture : 'x64';
+}
+
+/** Task env from the overlay (config.env) — mirrors the other adapters; undefined when empty. */
+function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
+  const env: Record<string, string> = { ...(config.env ?? {}) };
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+/**
+ * C++ (Visual Studio) adapter — MS-022 / ADR-021. Native `.sln`/`.slnx`/`.vcxproj` projects
+ * driven by MSBuild directly (vswhere discovery, PATH fallback) — the same "vscode-free
+ * bridge + thin wiring + ProcessExecution + call-time overlay injection" pattern as the
+ * other adapters. Detection covers `.vcxproj` (C++) only: a solution's `.csproj` members
+ * stay owned by the dotnet adapter (A안), and manifests generated by CMake's VS generator
+ * are excluded via the CMakeCache.txt marker so the CMake adapter keeps its build trees.
+ * Solutions are hierarchy roots (ADR-019): build on a root builds the whole solution;
+ * run/debug apply to member projects (validateAction guides otherwise). The debugger is
+ * cppvsdbg (MSVC by definition). Effectively Windows-only — elsewhere Doctor shows ❌.
+ */
+export const vsAdapter: LanguageAdapter = {
+  id: 'vs',
+  displayName: 'C++ (Visual Studio)',
+  actions: { build: true, runRequiresBuild: true }, // run = build, then execute TargetPath
+  manifestGlobs: ['**/*.sln', '**/*.slnx', '**/*.vcxproj'],
+  // Build/run need no extension (ADR-009); cppvsdbg is ensured dynamically on debug.
+  requiredExtensions: [],
+  canCreateProject: false, // VS projects are created in Visual Studio — no scaffolder (F20)
+  configCategories: ['env', 'buildEvent', 'runArgs'],
+  optionCatalog: [],
+
+  chips: [
+    {
+      id: 'profile',
+      icon: 'layers',
+      label: 'Configuration',
+      // Configurations from the manifest's ProjectConfigurations (vcxproj) or solution
+      // configuration list (.sln/.slnx); Debug/Release fallback when undeclared.
+      listItems: async (project) => {
+        const meta = await metaFor(project);
+        const items = meta.configurations.length > 0 ? meta.configurations : DEFAULT_CONFIGURATIONS;
+        return items.map((name) => ({ id: name, label: name }));
+      },
+      defaultValue: async (project) => {
+        const meta = await metaFor(project);
+        const items = meta.configurations.length > 0 ? meta.configurations : DEFAULT_CONFIGURATIONS;
+        return items.includes('Debug') ? 'Debug' : items[0];
+      },
+    },
+    {
+      id: 'architecture',
+      icon: 'chip',
+      label: 'Platform',
+      listItems: async (project) => {
+        const meta = await metaFor(project);
+        const items = meta.platforms.length > 0 ? meta.platforms : DEFAULT_PLATFORMS;
+        return items.map((name) => ({ id: name, label: name }));
+      },
+      defaultValue: async (project) => {
+        const meta = await metaFor(project);
+        const items = meta.platforms.length > 0 ? meta.platforms : DEFAULT_PLATFORMS;
+        return items.includes('x64') ? 'x64' : items[0];
+      },
+    },
+  ],
+
+  async listProjects(manifests) {
+    // CMake's VS generator writes .sln/.slnx/.vcxproj into its build trees — always at or
+    // below a CMakeCache.txt. Collect those marker dirs once and filter the candidates
+    // (ADR-021), so the CMake adapter stays the sole owner of generated trees.
+    const candidates = new Map<string, { uri: vscode.Uri; folder: vscode.WorkspaceFolder; kind: 'sln' | 'slnx' | 'vcxproj' }>();
+    for (const uri of manifests) {
+      const kind = manifestKind(uri.fsPath);
+      const folder = vscode.workspace.getWorkspaceFolder(uri);
+      if (!kind || !folder) {
+        continue;
+      }
+      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      if (!candidates.has(rel)) {
+        candidates.set(rel, { uri, folder, kind });
+      }
+    }
+    const markers = await vscode.workspace.findFiles('**/CMakeCache.txt');
+    const markerDirs = markers.map((uri) => {
+      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const idx = rel.lastIndexOf('/');
+      return idx === -1 ? '' : rel.slice(0, idx);
+    });
+    const kept = filterGeneratedManifests([...candidates.keys()], markerDirs);
+
+    const entries: VsManifestEntry[] = [];
+    for (const rel of kept) {
+      const c = candidates.get(rel);
+      if (!c) {
+        continue;
+      }
+      const content = await readManifest(c.uri);
+      if (content === undefined) {
+        continue; // unreadable — the watcher retries on save
+      }
+      entries.push({ rel, kind: c.kind, content });
+    }
+
+    const contentByRel = new Map(entries.map((e) => [e.rel, e.content]));
+    const projects: ProjectInfo[] = [];
+    for (const role of classifyVsManifests(entries)) {
+      const c = candidates.get(role.rel);
+      const content = contentByRel.get(role.rel);
+      if (!c || content === undefined) {
+        continue;
+      }
+      metaCache.set(c.uri.fsPath, parseMeta(role.kind, content));
+      projects.push({
+        id: `vs:${role.rel}`,
+        name: manifestStem(role.rel),
+        adapterId: 'vs',
+        manifestPath: c.uri.fsPath,
+        workspaceFolder: c.folder,
+        parentId: role.role === 'sub' ? `vs:${role.parentRel}` : undefined,
+        library: role.library ? true : undefined,
+      });
+    }
+    return projects;
+  },
+
+  /** Build task: `MSBuild <sln|vcxproj> /p:Configuration /p:Platform /m` (no shell,
+   *  NFR-002). The MSBuild path is the warm probe (prepareInvocation ran first). */
+  createBuildTask(project, sel, config) {
+    const execution = new vscode.ProcessExecution(
+      bridge.peekMsbuild(),
+      msbuildBuildArgs(project.manifestPath, activeCfg(sel), activePlatform(sel), solutionDirOf(project)),
+      { cwd: dirname(project.manifestPath), env: taskEnv(config) },
+    );
+    const definition: vscode.TaskDefinition = { type: VS_TASK_TYPE, action: 'build', projectId: project.id };
+    const task = new vscode.Task(
+      definition,
+      project.workspaceFolder,
+      `build ${project.name}`,
+      'vs',
+      execution,
+      ['$msCompile'], // built-in MSVC matcher — no extension dependency (ADR-009)
+    );
+    task.group = vscode.TaskGroup.Build;
+    task.presentationOptions = {
+      reveal: vscode.TaskRevealKind.Always,
+      panel: vscode.TaskPanelKind.Shared,
+      clear: true,
+    };
+    return task;
+  },
+
+  /** Run task: execute the evaluated TargetPath directly. The path comes from the warm
+   *  eval cache (prepareInvocation ran; the orchestrator built first via runRequiresBuild). */
+  createRunTask(project, sel, config) {
+    if (isSolution(project)) {
+      // Unreachable through Run (validateAction vetoes first); guards the command preview.
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `A solution has no single runnable project.`);
+    }
+    const exe = bridge.peekTargetPath(project.manifestPath, activeCfg(sel), activePlatform(sel), solutionDirOf(project));
+    if (!exe) {
+      throw new DevSwitcherError(
+        'EXECUTABLE_NOT_FOUND',
+        `No built executable path for ${project.name} — build first (run/debug path evaluation needs MSBuild 17.8+).`,
+      );
+    }
+    const execution = new vscode.ProcessExecution(exe, config.runArgs ?? [], {
+      cwd: dirname(project.manifestPath),
+      env: taskEnv(config),
+    });
+    const definition: vscode.TaskDefinition = { type: VS_TASK_TYPE, action: 'run', projectId: project.id };
+    const task = new vscode.Task(definition, project.workspaceFolder, `run ${project.name}`, 'vs', execution);
+    task.presentationOptions = {
+      reveal: vscode.TaskRevealKind.Always,
+      panel: vscode.TaskPanelKind.Shared,
+      clear: true,
+    };
+    return task;
+  },
+
+  /** Debug config (§7.4): MSVC toolchain by definition → cppvsdbg via the C/C++ extension
+   *  (ensured dynamically, like CMake). The orchestrator builds first (debugRequiresBuild). */
+  async createDebugConfig(project, sel, config) {
+    const available = await ensureExtension(
+      CPPTOOLS_EXTENSION,
+      'Debugging Visual Studio C++ projects needs the C/C++ extension (cpptools). Install it?',
+    );
+    if (!available) {
+      throw new DevSwitcherError('EXTENSION_MISSING', `Debugger extension ${CPPTOOLS_EXTENSION} is required.`);
+    }
+    const program = await this.resolveExecutable(project, sel, config);
+    return {
+      type: 'cppvsdbg',
+      request: 'launch',
+      name: `Debug ${project.name}`,
+      program,
+      args: config.runArgs ?? [],
+      cwd: dirname(project.manifestPath),
+    };
+  },
+
+  /** Locate MSBuild and warm the TargetPath eval cache before build/run/debug (§7.3/§7.4).
+   *  An eval failure (older MSBuild) is swallowed here — build still works; run/debug
+   *  surface their own guidance error when the path stays unresolved. */
+  async prepareInvocation(project, sel, config) {
+    void config;
+    const status = await bridge.checkToolchain();
+    if (!status.ok) {
+      throw new DevSwitcherError(
+        'MSBUILD_NOT_FOUND',
+        'MSBuild was not found. Install Visual Studio (or Build Tools) with the C++ workload — see Doctor.',
+      );
+    }
+    if (!isSolution(project) && project.library !== true) {
+      try {
+        await bridge.evalTargetPath(project.manifestPath, activeCfg(sel), activePlatform(sel), solutionDirOf(project));
+      } catch {
+        // Evaluation-only failure (e.g. MSBuild < 17.8) must not block plain builds.
+      }
+    }
+  },
+
+  /** Solutions build everything but never run/debug; library projects build only (ADR-019
+   *  — the Visual Studio behaviour). The orchestrator toasts the returned reason. */
+  async validateAction(action, project) {
+    const verb = action === 'run' ? 'run' : 'debugged';
+    if (isSolution(project)) {
+      return `'${project.name}' is a solution — it builds all projects; pick a project beneath it to be ${verb}.`;
+    }
+    const meta = await metaFor(project);
+    if (meta.libraryKind) {
+      return `'${project.name}' is a ${meta.libraryKind} project — it can be built, but not ${verb}.`;
+    }
+    return undefined;
+  },
+
+  /** The built executable path — MSBuild's own evaluation of TargetPath (no path guessing,
+   *  KB #8/DD-05). §7.4 builds first, so the binary exists by the time debug resolves. */
+  async resolveExecutable(project, sel, _config) {
+    if (isSolution(project)) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `A solution has no single runnable project.`); // E6
+    }
+    const exe = await bridge.evalTargetPath(project.manifestPath, activeCfg(sel), activePlatform(sel), solutionDirOf(project));
+    if (!exe) {
+      throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', `No executable artifact for ${project.name}.`); // E6
+    }
+    return exe;
+  },
+
+  createProject: () => notImplemented('vs.createProject', 'MS-022'), // canCreateProject=false keeps it out of the wizard
+
+  // Clears the MSBuild probe + TargetPath evals + parsed manifest metadata so a freshly
+  // installed VS / edited manifest re-discovers on Rescan. Must not throw (invalidateAll).
+  invalidateCache: (_project) => {
+    metaCache.clear();
+    bridge.invalidateCache();
+  },
+
+  // F19 (§13.5) — probe MSBuild (critical). Absent (including every non-Windows host) →
+  // Doctor ❌ + the E1 warning chip; the fix is a VS / Build Tools install (tier 2).
+  collectDiagnostics: async (): Promise<DiagnosticProbe[]> => {
+    const tc = await bridge.checkToolchain();
+    return [
+      {
+        id: 'msbuild',
+        label: 'MSBuild',
+        severity: 'critical',
+        present: tc.ok,
+        detail: tc.version ? `MSBuild ${tc.version}` : tc.msbuild,
+        tier: 2,
+        resolution: { kind: 'openUrl', url: 'https://visualstudio.microsoft.com/downloads/' },
+      },
+    ];
+  },
+};

@@ -30,6 +30,11 @@ src/test/fixtures/**/*.pyc
 # ─── CMake test-fixture build output ───
 src/test/fixtures/**/build/
 
+# ─── Visual Studio test-fixture build output (MSBuild x64/Win32 output + .vs cache) ───
+src/test/fixtures/vs/**/x64/
+src/test/fixtures/vs/**/Win32/
+src/test/fixtures/vs/**/.vs/
+
 # ─── Go test-fixture build output (go build drops the binary in the module dir) ───
 src/test/fixtures/go/**/*.exe
 src/test/fixtures/go/hello/hello

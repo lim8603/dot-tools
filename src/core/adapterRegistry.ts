@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ALL_ADAPTERS } from '../adapters';
+import { enabledAdapterIds } from './languageFilter';
 import type { LanguageAdapter, ProjectInfo } from './types';
 
 /**
@@ -30,10 +31,27 @@ export class AdapterRegistry {
     }
   }
 
+  /**
+   * Adapters enabled by `devSwitcher.languages.enabled` (B-3) — the scan/detect/create
+   * surface. Fail-open (an invalid or empty setting enables all); adapterFor/adapter
+   * stay unfiltered so already-listed projects keep resolving mid-change.
+   */
+  private enabledAdapters(): LanguageAdapter[] {
+    const setting = vscode.workspace.getConfiguration('devSwitcher').get<string[]>('languages.enabled');
+    const enabled = enabledAdapterIds(setting, this.adapters.map((a) => a.id));
+    return this.adapters.filter((a) => enabled.has(a.id));
+  }
+
+  /** Every registered adapter, independent of the enable filter — for the General-tab
+   *  language checkboxes (B-3), which must list disabled languages too. */
+  registeredAdapters(): LanguageAdapter[] {
+    return this.adapters;
+  }
+
   /** Rescan the workspace and refresh the project list. */
   async scan(): Promise<ProjectInfo[]> {
     const found: ProjectInfo[] = [];
-    for (const adapter of this.adapters) {
+    for (const adapter of this.enabledAdapters()) {
       const uris: vscode.Uri[] = [];
       for (const glob of adapter.manifestGlobs) {
         uris.push(...(await vscode.workspace.findFiles(glob, EXCLUDE_GLOB)));
@@ -85,9 +103,9 @@ export class AdapterRegistry {
     return this.byId.get(adapterId);
   }
 
-  /** Adapters that support the start wizard (F20). v1: all four declare canCreateProject. */
+  /** Adapters that support the start wizard (F20), narrowed by the enable filter (B-3). */
   creatableAdapters(): LanguageAdapter[] {
-    return this.adapters.filter((a) => a.canCreateProject);
+    return this.enabledAdapters().filter((a) => a.canCreateProject);
   }
 
   /**
@@ -97,7 +115,7 @@ export class AdapterRegistry {
    */
   async detectAdapters(): Promise<LanguageAdapter[]> {
     const present: LanguageAdapter[] = [];
-    for (const adapter of this.adapters) {
+    for (const adapter of this.enabledAdapters()) {
       for (const glob of adapter.manifestGlobs) {
         const hits = await vscode.workspace.findFiles(glob, EXCLUDE_GLOB, 1);
         if (hits.length > 0) {

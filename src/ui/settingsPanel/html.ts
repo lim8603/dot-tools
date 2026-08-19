@@ -528,6 +528,12 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       '<h3 class="cat">Projects</h3>' +
       '<label class="row"><input type="checkbox" id="gen-showlibs"' + (gen.showLibraries ? ' checked' : '') +
       ' /> Show library projects and targets — static/shared libraries build, but cannot run or debug</label>' +
+      '<h3 class="cat">Languages</h3>' +
+      (gen.languages || []).map((l) =>
+        '<label class="row"><input type="checkbox" class="lang-cb" data-adapter-id="' + esc(l.id) + '"' +
+        (l.enabled ? ' checked' : '') + ' /> ' + esc(l.label) + '</label>').join('') +
+      '<p class="muted">Unchecked languages are not scanned and their projects are hidden from the ' +
+      'switcher. Unchecking everything falls back to all languages.</p>' +
       '<div class="muted">Also editable in VSCode Settings › DevSwitcher.</div>' +
       '<h3 class="cat">Keyboard shortcuts</h3>' +
       (rows || '<p class="muted">No default shortcuts.</p>') +
@@ -578,6 +584,8 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       post({ type: 'setStatusBarPref', key: 'selectedOnly', value: el.checked });
     } else if (el.id === 'gen-showlibs') {
       post({ type: 'setShowLibraries', value: el.checked });
+    } else if (el.classList.contains('lang-cb')) {
+      post({ type: 'setLanguageEnabled', adapterId: el.dataset.adapterId, enabled: el.checked });
     } else if (el.classList.contains('group-rename')) {
       post({ type: 'renameGroup', groupId: el.dataset.groupId, name: el.value });
     } else if (el.id === 'add-member') {

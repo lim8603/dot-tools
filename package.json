@@ -1,7 +1,7 @@
 {
   "name": "devswitcher-tools",
   "displayName": "DevSwitcher Tools",
-  "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ / C# / Python / Go / Node.js / TypeScript)",
+  "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ CMake / Visual Studio / C# / Python / Go / Node.js / TypeScript)",
   "version": "1.1.0",
   "publisher": "lim8603",
   "icon": "images/icon-256.png",
@@ -24,6 +24,9 @@
     "python",
     "cmake",
     "c++",
+    "visual studio",
+    "msbuild",
+    "vcxproj",
     "go",
     "golang",
     "node",
@@ -52,6 +55,9 @@
     "workspaceContains:**/*.csproj",
     "workspaceContains:**/pyproject.toml",
     "workspaceContains:**/CMakeLists.txt",
+    "workspaceContains:**/*.sln",
+    "workspaceContains:**/*.slnx",
+    "workspaceContains:**/*.vcxproj",
     "workspaceContains:**/go.mod",
     "workspaceContains:**/package.json"
   ],
@@ -207,6 +213,31 @@
           "default": false,
           "description": "Show only chips that have a value; hide unselected optional chips (required chips stay visible). Default shows all chips."
         },
+        "devSwitcher.languages.enabled": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "cargo",
+              "cmake",
+              "vs",
+              "dotnet",
+              "go",
+              "node",
+              "python"
+            ]
+          },
+          "default": [
+            "cargo",
+            "cmake",
+            "vs",
+            "dotnet",
+            "go",
+            "node",
+            "python"
+          ],
+          "description": "Languages DevSwitcher scans and shows. Remove a language to hide its projects from the switcher (an empty or invalid list falls back to all languages)."
+        },
         "devSwitcher.projects.showLibraries": {
           "type": "boolean",
           "default": true,
@@ -318,6 +349,19 @@
           "action": {
             "type": "string",
             "description": "The DevSwitcher action this task runs (build)."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The DevSwitcher project id the task belongs to."
+          }
+        }
+      },
+      {
+        "type": "devSwitcher.vs",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The DevSwitcher action this task runs (build or run)."
           },
           "projectId": {
             "type": "string",

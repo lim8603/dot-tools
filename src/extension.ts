@@ -66,6 +66,11 @@ export function activate(context: vscode.ExtensionContext): void {
       if (e.affectsConfiguration('devSwitcher.statusBar')) {
         void orchestrator.renderActive();
       }
+      // Language enable filter (B-3): a changed set re-scans so hidden languages drop
+      // out (and re-enabled ones reappear) without a manual Rescan.
+      if (e.affectsConfiguration('devSwitcher.languages')) {
+        void orchestrator.refresh();
+      }
     }),
     // Debug sessions aren't tasks, so track them for the Stop button as they start/end.
     vscode.debug.onDidStartDebugSession((session) => orchestrator.noteDebugSessionStarted(session)),

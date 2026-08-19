@@ -3,6 +3,7 @@ import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
 import type { GroupOrchestrator } from '../../core/groupOrchestrator';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
+import { enabledAdapterIds } from '../../core/languageFilter';
 import { orderByHierarchy } from '../../core/projectTree';
 import { memberStages, validateGroup, withMember, withMemberLaunch, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
 import type { ChipDescriptor, ChipItem, ChipValue, DiagnosticProbe, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, ReadinessProbe, RunGroup } from '../../core/types';
@@ -22,6 +23,14 @@ export interface ChipView {
   required: boolean;
   items: ChipItem[];
   value: ChipValue | undefined;
+}
+
+/** One language row in the General tab's enable filter (B-3): adapter id, display
+ *  name, and whether devSwitcher.languages.enabled currently includes it. */
+export interface LanguageToggle {
+  id: string;
+  label: string;
+  enabled: boolean;
 }
 
 /** One run group as the webview renders it (members with their stage + running/validation state). */
@@ -85,8 +94,8 @@ export interface SettingsState {
   invocation: InvocationConfig;
   commandPreview: string;
   statusBar: { compact: boolean; selectedOnly: boolean };
-  /** Other General-tab preferences (ADR-019). */
-  general: { showLibraries: boolean };
+  /** Other General-tab preferences (ADR-019 / B-3). */
+  general: { showLibraries: boolean; languages: LanguageToggle[] };
   groups: GroupView[];
   /** Default keyboard shortcuts (MS-017 / ADR-017) shown in the General tab. */
   shortcuts: ShortcutRow[];
@@ -111,6 +120,8 @@ type InMessage =
   | { type: 'setStatusBarPref'; key: 'compact' | 'selectedOnly'; value: boolean }
   // General-tab preference: show library projects/targets in pickers (ADR-019).
   | { type: 'setShowLibraries'; value: boolean }
+  // General-tab language enable filter (B-3) — toggles one adapter in devSwitcher.languages.enabled.
+  | { type: 'setLanguageEnabled'; adapterId: string; enabled: boolean }
   // Keyboard shortcuts (MS-017) — deep-link the native editor (optionally filtered).
   | { type: 'openKeybindings'; query?: string }
   // Run groups (C-6 / MS-013) — workspace-level, independent of the active project.
@@ -227,6 +238,22 @@ export class SettingsPanel {
       await vscode.workspace
         .getConfiguration('devSwitcher')
         .update('projects.showLibraries', message.value, vscode.ConfigurationTarget.Global);
+    } else if (message.type === 'setLanguageEnabled') {
+      // Toggle one language in the enabled set and store the full list (B-3). The config
+      // listener in extension.ts re-scans, so projects appear/disappear without a Rescan.
+      const allIds = this.registry.registeredAdapters().map((a) => a.id);
+      const config = vscode.workspace.getConfiguration('devSwitcher');
+      const enabled = enabledAdapterIds(config.get<string[]>('languages.enabled'), allIds);
+      if (message.enabled) {
+        enabled.add(message.adapterId);
+      } else {
+        enabled.delete(message.adapterId);
+      }
+      await config.update(
+        'languages.enabled',
+        allIds.filter((id) => enabled.has(id)), // stable order; never store an empty list's chaos — fail-open covers it anyway
+        vscode.ConfigurationTarget.Global,
+      );
     } else if (activeId !== undefined) {
       switch (message.type) {
         case 'setChipValue':
@@ -615,10 +642,15 @@ export class SettingsPanel {
     };
   }
 
-  /** Other General-tab preferences (ADR-019). */
-  private generalPrefs(): { showLibraries: boolean } {
+  /** Other General-tab preferences (ADR-019 / B-3). */
+  private generalPrefs(): { showLibraries: boolean; languages: LanguageToggle[] } {
     const config = vscode.workspace.getConfiguration('devSwitcher');
-    return { showLibraries: config.get<boolean>('projects.showLibraries', true) };
+    const adapters = this.registry.registeredAdapters();
+    const enabled = enabledAdapterIds(config.get<string[]>('languages.enabled'), adapters.map((a) => a.id));
+    return {
+      showLibraries: config.get<boolean>('projects.showLibraries', true),
+      languages: adapters.map((a) => ({ id: a.id, label: a.displayName, enabled: enabled.has(a.id) })),
+    };
   }
 
   /**
