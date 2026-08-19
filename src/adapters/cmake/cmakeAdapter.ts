@@ -583,9 +583,10 @@ export const cmakeAdapter: LanguageAdapter = {
     if (!target) {
       return undefined;
     }
-    const verb = action === 'run' ? 'run' : 'debugged';
+    // Kept short: info toasts render one line and truncate (F5 feedback, session #017).
+    const verb = action === 'run' ? 'run' : 'debug';
     if (target === ALL_TARGETS) {
-      return `'All targets' builds everything — pick a single executable target to be ${verb}.`;
+      return `'All targets' builds only — pick one executable to ${verb}.`;
     }
     const { targets } = await configuredTargets(project, sel, config);
     const found = targets.find((t) => t.name === target);
@@ -593,7 +594,7 @@ export const cmakeAdapter: LanguageAdapter = {
     if (!kind) {
       return undefined;
     }
-    return `'${target}' is a ${kind} — it can be built, but not ${verb}.`;
+    return `'${target}' is a ${kind} — build only.`;
   },
 
   /**

@@ -336,15 +336,16 @@ export const vsAdapter: LanguageAdapter = {
   },
 
   /** Solutions build everything but never run/debug; library projects build only (ADR-019
-   *  — the Visual Studio behaviour). The orchestrator toasts the returned reason. */
+   *  — the Visual Studio behaviour). The orchestrator toasts the returned reason — kept
+   *  short: info toasts render one line and truncate (F5 feedback, session #017). */
   async validateAction(action, project) {
-    const verb = action === 'run' ? 'run' : 'debugged';
+    const verb = action === 'run' ? 'run' : 'debug';
     if (isSolution(project)) {
-      return `'${project.name}' is a solution — it builds all projects; pick a project beneath it to be ${verb}.`;
+      return `A solution builds only — pick a project to ${verb}.`;
     }
     const meta = await metaFor(project);
     if (meta.libraryKind) {
-      return `'${project.name}' is a ${meta.libraryKind} project — it can be built, but not ${verb}.`;
+      return `'${project.name}' is a ${meta.libraryKind} — build only.`;
     }
     return undefined;
   },
