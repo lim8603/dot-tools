@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — **🚀 v1.1.0 게시 완료(세션 #016)·MS-021 Done.** MS-001~021 전부 Done. 다음 사이클은 Human 결정(INT-002·B-3·TC-11) |
+| 활성 Milestone | **없음** — **🚀 v1.2.0 게시 완료(세션 #017)·MS-022 Done.** MS-001~022 전부 Done. 다음 사이클은 Human 결정(INT-002·TC-11) |
 | 마지막 갱신일 | 2026-08-19 |
-| 참조 세션 로그 | session_2026-08-18_016.md |
+| 참조 세션 로그 | session_2026-08-19_017.md |
 
 ---
 
@@ -20,9 +20,10 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| (없음) | TASK-001~062 전부 Done — v1.1.0 게시 완료 | — | — | — | 다음 Task는 Human 결정 후 등록 |
+| (없음) | TASK-001~065 전부 Done — v1.2.0 게시 완료 | — | — | — | 다음 Task는 Human 결정 후 등록 |
 
-> **🚀 v1.1.0 게시(세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건: CMake 중첩 하위 프로젝트(VS 솔루션식)·lib 타겟+차단 토스트·All targets·**런그룹 멤버 디버그**·Ctrl+Alt+T·설정창 블랭크 fix·아이콘 투명화. F5 2회 통과 → Marketplace 게시+GitHub Release. 버전 이력: …→v1.0.0→**v1.1.0**. 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft, v1.2.0+ 후보).
+> **🚀 v1.2.0 게시(세션 #017, D-25/ADR-021) — MS-022 Done.** Visual Studio 어댑터(7번째 툴체인: .sln/.slnx/.vcxproj·MSBuild 직접 구동·CMakeCache 마커 제외·A안 .csproj=dotnet 소유)+B-3 언어 필터+플랫 벡터 아이콘. F5 통과(토스트 축약 피드백 반영) → Marketplace 게시+GitHub Release. 버전 이력: …→v1.1.0→**v1.2.0**.
+> (직전) **🚀 v1.1.0 게시(세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건: CMake 중첩 하위 프로젝트(VS 솔루션식)·lib 타겟+차단 토스트·All targets·**런그룹 멤버 디버그**·Ctrl+Alt+T·설정창 블랭크 fix·아이콘 투명화. F5 2회 통과 → Marketplace 게시+GitHub Release. 버전 이력: …→v1.0.0→**v1.1.0**. 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft, v1.2.0+ 후보).
 
 ---
 
@@ -45,14 +46,16 @@
 | #013 | 2026-08-17 | **MS-016 Node/TS(v0.6.0)+MS-017 키보드 단축키(v0.7.0) 완주.** MS-016: script+packageManager 칩·**배열형 ShellExecution**(ADR-016/NFR-002b·Node24 `.cmd` EINVAL 실측)·js-debug·`.vscode-test` 스캔제외 fix. MS-017: 정적 키바인딩(Ctrl+Alt+B/R/S/D/P/G/,·`when:hasProjects`)·General 탭 딥링크(**ADR-017**·내장키 불간섭)·F5 유래 `devSwitcher.stop`(태스크+디버그세션)·상태바 Stop 버튼(세션 Map 추적·stale 버그 fix). **F5 전부 통과.** unit 235·통합 16커맨드. main FF·`v0.6.0`/`v0.7.0` 태그·push | MS-016·017 | TASK-046~050 | 완료·배포. 다음: MS-018 준비감지 |
 | #014 | 2026-08-17 | **B-2 Project 카드 + MS-018 준비 감지(v0.8.0) 완주 + README 스크린샷 리프레시.** B-2: 어댑터 무지 카드(툴체인 ✅/❌·칩 요약)·순수 `projectCard.ts`. MS-018(**ADR-018**): 포트 open/HTTP 상태코드 게이트·순수 `readiness.ts`+I/O `readinessProbe.ts`·타임아웃/취소=abort+teardown·**취소 가능**·Run Groups UI 재설계(멤버 카드·Add 드롭다운)·seedMemberDefaults. F5(svc-a→svc-b 포트 게이트 4s 대기). README: SIX 히어로·Go/Node 신규·clean triple. unit 268·통합 3·`v0.8.0.vsix` 스모크. **main FF·`v0.8.0` 태그·push.** KB 패턴#10·안티패턴#10. **v1.0.0 로드맵 4개 MINOR 전부 완료** | B-2·MS-018 | 051·052·053 | 완료·배포. 다음: 품질점검→MS-014 |
 | #015 | 2026-08-17 | **🏁 MS-014 v1.0.0 완주 — INT-001 Closed·첫 Marketplace 게시.** Human 완주 선언(D-23·TC-11=Known Issue). 최종 재검증(EV-019)·v1.0.0 스탬프·**docs/ 공식 산출물 13종**(에이전트 12기 병렬·소스 승격 2종)·Gate 5 Pass → `v1.0.0` 태그·**repo public**(+기여 차단: PR 자동닫기·CONTRIBUTING·Issues 유지)·**GitHub Release**(vsix)·Human 온보딩(aex 직행·PAT·publisher) 후 **`vsce publish` DONE**. 트러블슈팅: README 이미지=GitHub 전역 장애(레포 정상)·리스팅 404=검증 지연(→200). KB 패턴#11 | MS-014 | TASK-042·054·055 | **v1.0.0 완주.** 다음: Human 결정(INT-002·B-3·TC-11) |
+| #017 | 2026-08-19 | **🚀 MS-022 v1.2.0 Visual Studio 지원 완주 — 세 번째 Marketplace 게시.** Human 신규 요구 "VS 프로젝트 대응 가능?" → 타당성 검토(어댑터 독립·CMake 생성물 충돌 1건) → **D-25**(CMakeCache 마커 제외·A안 .csproj=dotnet 소유·Windows 전용)·**ADR-021** → 당일 구현: `vsBridge`(순수 sln/slnx/vcxproj 파서+vswhere/MSBuild I/O)·`vsAdapter`(솔루션=루트 계층[ADR-019 재사용]·Configuration/Platform 칩·`-getProperty:TargetPath`·cppvsdbg)·**KB #3**(솔루션 vs 단독 빌드 출력 불일치→`/p:SolutionDir` 주입, 실측)·**B-3 해소**(`languages.enabled` fail-open 필터+General 탭 체크박스)·아이콘 플랫 벡터(Human 제작). F5 통과(피드백=토스트 축약, KB 안티패턴 #11) → v1.2.0 스탬프·docs 7툴체인 주석 갱신·vsix 스모크·main 병합(`330b2b0`)·태그·**`vsce publish` DONE**·**GitHub Release**. unit 318·통합 3 | MS-022 | TASK-063~065 | **v1.2.0 게시 완료.** 다음: Human 결정(INT-002·TC-11) |
 | #016 | 2026-08-18~19 | **🚀 MS-021 v1.1.0 실사용 피드백 완주 — 두 번째 Marketplace 게시.** 회사 실사용 7건(Human): ① 중첩 CMake 하위 프로젝트(**ADR-019**: 루트=솔루션·타겟 선언 디렉토리=하위·`paths.source` 스코프·`ProjectInfo.parentId/library`) ② lib 타겟+`validateAction` 차단 토스트+`projects.showLibraries` ③ 설정창 블랭크 fix(퀵 페인트·가드·에러 배너) ④ 아이콘 투명화(flood fill+밝기×거리 페이드) ⑤ Ctrl+Alt+T(`pickTarget`, Node=script 폴백) ⑥ All targets(`--target` 생략) ⑦ **런그룹 멤버 Launch Run/Debug**(**ADR-020**, ADR-015 "Run 전용" 대체)+`N running` 표기. D-24(3결정). F5 2회 통과·unit 286·통합 3·실 cmake 스모크 → v1.1.0 스탬프·vsix 스모크·main 병합·태그·**`vsce publish` DONE**·**GitHub Release**. nested 픽스처 신설 | MS-021 | TASK-056~062 | **v1.1.0 게시 완료.** 다음: Human 결정(INT-002·B-3·TC-11) |
 
 ---
 
 ## 다음 시작점
 
-1. **다음 사이클 결정(Human)**: ① **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② B-3(언어별 enable, 저우선) ③ TC-11(WSL) 검증으로 Known Issue 해소. 급하지 않음 — Marketplace 반응 보며 결정.
-2. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.1.x·기능 v1.x.0. v1.1.0 등재 반영 확인(게시 직후 몇 분)·회사 실사용에서 v1.1.0 기능 계속 검증(추가 피드백 시 다음 마이너로).
+1. **다음 사이클 결정(Human)**: ① **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소. 급하지 않음 — Marketplace 반응 보며 결정. (B-3는 세션 #017에서 해소됨)
+2. 선택: README 히어로 스크린샷 "SIX toolchains" → 7번째(VS) 반영 재생성(세션 #014 Edge headless 방식) + 상태바 스크린샷에 VS 항목 추가.
+3. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.2.x·기능 v1.x.0. v1.2.0 등재 반영 확인·실사용 검증(특히 VS 어댑터 — 실무 혼합 솔루션). HN 게시글(item 49347062) 모더레이터 회신 대기.
 
 ---
 
