@@ -2,7 +2,7 @@
   "name": "devswitcher-tools",
   "displayName": "DevSwitcher Tools",
   "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ CMake / Visual Studio / C# / Python / Go / Node.js / TypeScript)",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "lim8603",
   "icon": "images/icon-256.png",
   "private": true,

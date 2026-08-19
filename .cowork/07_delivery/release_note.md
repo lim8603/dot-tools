@@ -9,8 +9,8 @@
 | 항목 | 내용 |
 | --- | --- |
 | 프로젝트 | DevSwitcher Tools (`devswitcher-tools`) |
-| 버전 | v1.0.0 (최신 릴리즈) |
-| 릴리즈 일자 | 2026-08-17 |
+| 버전 | v1.2.0 (최신 릴리즈) |
+| 릴리즈 일자 | 2026-08-19 |
 | 기준 문서 | `CHANGELOG.md`(영문 원본) · `.cowork/04_implementation/milestone_registry.md` |
 
 ---
@@ -29,6 +29,8 @@
 
 | 버전 | 일자 | 핵심 | 관련 Milestone |
 | --- | --- | --- | --- |
+| v1.2.0 | 2026-08-19 | Visual Studio(.sln/.vcxproj) 지원 — 7번째 툴체인 + 언어별 표시 필터 | MS-022 |
+| v1.1.0 | 2026-08-19 | 실사용 피드백 1차 — CMake 중첩 하위 프로젝트·라이브러리 타겟·런그룹 디버그 | MS-021 |
 | v1.0.0 | 2026-08-17 | 첫 안정판 — 6개 언어 완성 + Marketplace 게시 + 저장소 public | MS-014 |
 | v0.8.0 | 2026-08-17 | Run Group 준비 감지(포트/HTTP 게이트) + 설정 페이지 카드 UI | MS-018 |
 | v0.7.0 | 2026-08-17 | 키보드 단축키 + Stop 커맨드 | MS-017 |
@@ -45,6 +47,22 @@
 ---
 
 ## 릴리즈 이력
+
+### v1.2.0 — 2026-08-19
+
+#### 핵심 요약
+
+- **7번째 툴체인: C++ (Visual Studio).** 네이티브 `.sln`/`.slnx` 솔루션과 `.vcxproj` C++ 프로젝트를 MSBuild 직접 구동으로 지원(Windows). 솔루션=루트(전체 빌드)·`.vcxproj`=하위 항목, Configuration·Platform 칩, `vswhere` 발견, `-getProperty:TargetPath` 실행 경로, `cppvsdbg` 디버그. CMake 생성물은 CMakeCache.txt 마커로 자동 제외, 솔루션 내 C# 프로젝트는 .NET 항목 유지.
+- **언어별 표시 필터** — `devSwitcher.languages.enabled`(General 탭 체크박스, fail-open).
+- **확장 아이콘** 플랫 벡터 디자인 교체 + 차단 토스트 문구 축약.
+- 관련 Milestone: MS-022 / Breaking Change: 없음 / 알려진 이슈: TC-11(WSL) 이월, VS 지원은 Windows 전용·실행/디버그 경로 해석은 MSBuild 17.8+.
+
+### v1.1.0 — 2026-08-19
+
+#### 핵심 요약
+
+- **첫 실사용 피드백 릴리즈(7건).** CMake 중첩 하위 프로젝트 계층 표시·라이브러리 타겟(+`projects.showLibraries`)·루트 "All targets"·런그룹 멤버 디버그 기동·Switch Target 단축키(Ctrl/Cmd+Alt+T)·설정 페이지 공백 열림 수정·아이콘 투명화.
+- 관련 Milestone: MS-021 / Breaking Change: 없음 / 알려진 이슈: TC-11(WSL) 이월.
 
 ### v1.0.0 — 2026-08-17
 

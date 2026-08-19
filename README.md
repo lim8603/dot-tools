@@ -8,7 +8,7 @@
 
 [![VS Code](https://img.shields.io/badge/VS%20Code-1.90%2B-007ACC?logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-informational.svg)](LICENSE)
-![Languages](https://img.shields.io/badge/Rust%20%C2%B7%20C%23%20%C2%B7%20Python%20%C2%B7%20C%2B%2B%20%C2%B7%20Go%20%C2%B7%20Node-supported-success)
+![Languages](https://img.shields.io/badge/Rust%20%C2%B7%20C%23%20%C2%B7%20Python%20%C2%B7%20CMake%20%C2%B7%20Visual%20Studio%20%C2%B7%20Go%20%C2%B7%20Node-supported-success)
 
 </div>
 
