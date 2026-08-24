@@ -6,6 +6,7 @@ npm-debug.log*
 # ─── VSCode 확장 빌드 산출물 ───
 dist/
 out/
+# 패키징된 VSIX는 release/ 에 모은다(폴더는 .gitkeep으로 유지, 산출물은 미추적)
 *.vsix
 
 # ─── VSCode 확장 테스트 ───

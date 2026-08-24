@@ -420,6 +420,7 @@
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "package": "node esbuild.js --production",
+    "package:vsix": "npx @vscode/vsce package --out release/",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "compile-tests": "tsc",

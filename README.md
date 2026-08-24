@@ -274,7 +274,7 @@ npm run compile           # esbuild bundle → dist/extension.js
 npm run check-types       # tsc --noEmit
 npm run test:unit         # pure-core unit tests (mocha, no VS Code host)
 npm run test:integration  # VS Code host integration tests
-npx @vscode/vsce package  # build devswitcher-tools-<version>.vsix
+npm run package:vsix      # build release/devswitcher-tools-<version>.vsix
 ```
 
 Press **F5** in VS Code to launch the Extension Development Host. The architecture keeps the
