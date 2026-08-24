@@ -484,11 +484,12 @@ export const cmakeAdapter: LanguageAdapter = {
         }
         return items;
       },
-      // Seeded on project switch, so it must not configure (see listSwitcherTargetsFor):
-      // an unconfigured tree simply leaves the chip unset until the first build, which
-      // ensureRequiredChips then resolves through the picker.
-      defaultValue: async (project) => {
-        const targets = await listSwitcherTargetsFor(project, { configure: false });
+      // The switch-time seeding passes probe:false so merely selecting a project never
+      // configures it (see listSwitcherTargetsFor); the chip then stays unset until an
+      // action seeds it for real. Seeding before build/run/debug (and before a run group
+      // starts its members) leaves probing on, so a sole target is still auto-picked.
+      defaultValue: async (project, opts) => {
+        const targets = await listSwitcherTargetsFor(project, { configure: opts?.probe !== false });
         return targets.length === 1 ? targets[0].name : undefined;
       },
       // Chip caption for the sentinel — 'All' reads better than the raw '__all__' id.

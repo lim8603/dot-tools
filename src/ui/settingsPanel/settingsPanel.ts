@@ -470,7 +470,12 @@ export class SettingsPanel {
       let items: ChipItem[] = [];
       if (!quick) {
         try {
-          items = await chip.listItems(project);
+          // probe:false — this rebuilds whenever the active project changes, and clicking a
+          // project card in the Project tab is one of the ways it changes. Selecting a
+          // project to look at it must not configure it (the whole point of this release),
+          // so the editor offers what is already known; a tree that was never built lists
+          // nothing until the status-bar picker or a build fills it in.
+          items = await chip.listItems(project, { probe: false });
         } catch {
           // metadata/toolchain unavailable — render the chip with its stored value only
         }
@@ -578,7 +583,8 @@ export class SettingsPanel {
   /** A chip's default value, or undefined when it declares none or throws (B-2). */
   private async chipDefault(chip: ChipDescriptor, project: ProjectInfo): Promise<ChipValue | undefined> {
     try {
-      return chip.defaultValue ? await chip.defaultValue(project) : undefined;
+      // probe:false — drawn for every project card, so it must stay side-effect free.
+      return chip.defaultValue ? await chip.defaultValue(project, { probe: false }) : undefined;
     } catch {
       return undefined;
     }

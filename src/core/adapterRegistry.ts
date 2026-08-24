@@ -56,6 +56,11 @@ export class AdapterRegistry {
       for (const glob of adapter.manifestGlobs) {
         uris.push(...(await vscode.workspace.findFiles(glob, EXCLUDE_GLOB)));
       }
+      // findFiles makes no ordering promise and its order does vary between runs, so the
+      // project list would reshuffle on every rescan — entries jumping around the switcher
+      // and the settings page while the user is reading them. Sort by path for a stable
+      // list; orderByHierarchy preserves this order when it nests sub-projects.
+      uris.sort((a, b) => a.path.localeCompare(b.path));
       if (uris.length === 0) {
         continue;
       }

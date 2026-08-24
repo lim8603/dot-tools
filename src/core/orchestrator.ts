@@ -685,6 +685,24 @@ export class Orchestrator {
       if (chip.appliesTo && !(await chip.appliesTo(project))) {
         continue;
       }
+      // Seed for real first. applyDefaults runs with probe:false (a project switch must not
+      // configure anything), so an unseeded chip here may simply be one whose default was
+      // unknowable then — a sole CMake target in a tree that had never been configured. This
+      // is the action the user asked for, so probing is fair, and it keeps the old behaviour
+      // of auto-picking a lone target instead of prompting for it (KB antipattern #10:
+      // default seeding is an invariant of "about to run", not of "became active").
+      if (chip.defaultValue) {
+        try {
+          const seeded = await chip.defaultValue(project);
+          if (seeded !== undefined) {
+            await this.store.setValue(project.id, chip.id, seeded);
+            this.renderBar(adapter, project);
+            continue;
+          }
+        } catch {
+          // default unavailable — fall through to the prompt
+        }
+      }
       const value = await pickChipValue(chip, project, undefined);
       if (value === undefined) {
         return false;
@@ -765,7 +783,14 @@ export class Orchestrator {
     return hidden;
   }
 
-  /** Seed unset chips from their defaultValue (e.g. profile=dev, sole bin target). */
+  /**
+   * Seed unset chips from their defaultValue (e.g. profile=dev, sole bin target).
+   *
+   * Runs on every render, so it seeds with `probe: false`: switching to a project must not
+   * make an adapter do work with side effects (CMake would configure, writing a build tree
+   * into the source dir). A chip that cannot answer cheaply stays unset until
+   * ensureRequiredChips seeds it for real, just before the action that needs it.
+   */
   private async applyDefaults(project: ProjectInfo, adapter: LanguageAdapter): Promise<void> {
     for (const chip of adapter.chips) {
       if (this.hiddenChips.has(chip.id)) {
@@ -775,7 +800,7 @@ export class Orchestrator {
         continue;
       }
       try {
-        const value = await chip.defaultValue(project);
+        const value = await chip.defaultValue(project, { probe: false });
         if (value !== undefined) {
           await this.store.setValue(project.id, chip.id, value);
         }
@@ -785,7 +810,19 @@ export class Orchestrator {
     }
   }
 
-  /** listItems ids per (project × chip) for the projects that have stored selections. */
+  /**
+   * listItems ids per (project × chip) for the projects that have stored selections.
+   *
+   * Asks each chip for what it already knows (`probe: false`) rather than letting it do
+   * work with side effects: this runs on activation and on every rescan, across every
+   * project the user has ever picked a chip on, so probing would configure a whole
+   * workspace of CMake trees just for a bookkeeping pass.
+   *
+   * An empty answer is treated as *no* answer and the chip is omitted, exactly like the
+   * failure path — reconcileValues leaves an absent chip's value untouched, whereas an
+   * empty id list would delete the user's stored selection. Erring toward keeping a stale
+   * value is right here: the next real listItems (picker, build) reconciles it properly.
+   */
   private async gatherValidItems(
     projects: ProjectInfo[],
   ): Promise<Record<string, Record<string, string[]>>> {
@@ -803,7 +840,14 @@ export class Orchestrator {
       const byChip: Record<string, string[]> = {};
       for (const chip of adapter.chips) {
         try {
-          byChip[chip.id] = (await chip.listItems(project)).map((item) => item.id);
+          // probe:false — this runs on every activation and rescan, for every project with
+          // stored state. Probing here would configure each of them (CMake), writing a build
+          // tree into source directories the user never asked us to touch.
+          const items = await chip.listItems(project, { probe: false });
+          if (items.length === 0) {
+            continue; // no answer (e.g. an unconfigured tree) — see below
+          }
+          byChip[chip.id] = items.map((item) => item.id);
         } catch {
           // chip unavailable — omit so reconcile leaves its value untouched
         }

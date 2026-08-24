@@ -77,7 +77,13 @@ export interface ChipDescriptor {
    * 'default'), which should hide like an unset chip. Defaults to "empty array".
    */
   isBlank?(value: ChipValue): boolean;
-  defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
+  /**
+   * Seed value for an unset chip. Takes the same `opts.probe` as listItems: the seeding
+   * that happens on project switch passes `probe: false` (selecting a project is not a
+   * request to configure it), while seeding just before an action leaves it on, so a
+   * sole target/script is still auto-picked instead of prompting.
+   */
+  defaultValue?(project: ProjectInfo, opts?: { probe?: boolean }): Promise<ChipValue | undefined>;
   /**
    * Optional post-pick hook (F19 §13.4). Runs after the user picks a value, before it
    * is stored; return false to abort the selection. The Architecture chip uses it to
