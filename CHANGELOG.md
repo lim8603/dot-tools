@@ -3,6 +3,26 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.1] - 2026-08-24
+
+### Fixed
+
+- **Switching to a CMake project no longer configures it.** Listing a project's targets
+  needs a configured build tree, and the Target chip was seeding its default on every
+  project switch — so merely selecting a project ran `cmake -S … -B <project>/build` and
+  wrote a build tree into the source directory. In a workspace with vendored trees or git
+  submodules those files then showed up as local changes in repositories the user treats
+  as read-only. Switching now reads an already-configured tree and settles for nothing;
+  the chip stays unset until the first build. Opening the Target picker or running
+  build/run/debug still configures — those are explicit requests.
+- **Opening the settings page no longer configures every CMake project in the workspace.**
+  The Project tab's per-chip counts called into each scanned project's target list, which
+  had the same effect once per project. Those counts are decoration, so they now read only
+  what is already available.
+
+Note: this stops new build trees from appearing. Any that were already created have to be
+removed by hand.
+
 ## [1.2.0] - 2026-08-19
 
 ### Added

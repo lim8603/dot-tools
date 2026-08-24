@@ -45,8 +45,18 @@ export interface ChipDescriptor {
    * not-installed options stays collapsed by default (§13.4). Single-select only.
    */
   secondaryToggle?: string;
-  /** Read the available items from the canonical source (e.g. Cargo.toml). */
-  listItems(project: ProjectInfo): Promise<ChipItem[]>;
+  /**
+   * Read the available items from the canonical source (e.g. Cargo.toml).
+   *
+   * `opts.probe: false` asks for what is already known without doing work that has side
+   * effects — for CMake, listing targets otherwise runs a configure, which writes a build
+   * tree into the source directory. The UI passes it where the list is decoration rather
+   * than a request (the project cards' per-chip counts, drawn for every scanned project),
+   * and omits it where the user asked to see the list (a chip picker, the settings page's
+   * chip editor). Adapters with no such cost ignore it; returning fewer items — or none —
+   * is a valid answer to `probe: false`.
+   */
+  listItems(project: ProjectInfo, opts?: { probe?: boolean }): Promise<ChipItem[]>;
   /** Abbreviated rendering for the status bar. */
   format?(value: ChipValue): string;
   /**

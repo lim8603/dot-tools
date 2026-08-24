@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
@@ -427,5 +427,59 @@ describe('resolvePresetBinaryDir (TASK-041)', () => {
 
   it('falls back to <srcDir>/build/<name> when the preset declares no binaryDir', () => {
     assert.equal(resolvePresetBinaryDir({ name: 'ninja' }, '/proj'), resolve('/proj', 'build/ninja'));
+  });
+});
+
+describe('CMakeBridge.targetsIfConfigured (no configure on project switch)', () => {
+  /** An exec that fails the test if cmake is ever spawned. */
+  const forbiddenExec: CMakeExec = () => {
+    assert.fail('targetsIfConfigured must never run cmake');
+  };
+
+  it('returns [] for a tree that was never configured, without creating it', async () => {
+    const parent = mkdtempSync(join(tmpdir(), 'ds-peek-'));
+    const buildDir = join(parent, 'build'); // deliberately absent
+    try {
+      const targets = await new CMakeBridge(forbiddenExec).targetsIfConfigured(buildDir);
+      assert.deepEqual(targets, []);
+      assert.equal(existsSync(buildDir), false, 'peeking must not create the build tree');
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('reads the targets of an already-configured tree from the File API reply', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-peek-'));
+    try {
+      // Stage the committed real-cmake reply (TASK-033) where a configured tree keeps it.
+      const replyDir = join(buildDir, '.cmake', 'api', 'v1', 'reply');
+      mkdirSync(replyDir, { recursive: true });
+      for (const file of readdirSync(FIXTURE_REPLY)) {
+        copyFileSync(join(FIXTURE_REPLY, file), join(replyDir, file));
+      }
+      const targets = await new CMakeBridge(forbiddenExec).targetsIfConfigured(buildDir, 'Debug');
+      // The fixture's switcher-relevant target is `hello`; ALL_BUILD/ZERO_CHECK are noise.
+      assert.deepEqual(targets.map((t) => t.name), ['hello']);
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
+  });
+
+  it('never populates the target cache, so a later targetsFor still configures', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-peek-'));
+    try {
+      let calls = 0;
+      const counting: CMakeExec = () => {
+        calls += 1;
+        return Promise.resolve({ stdout: '', stderr: '', exitCode: 0 });
+      };
+      const bridge = new CMakeBridge(counting);
+      await bridge.targetsIfConfigured(buildDir); // empty peek — must not be cached
+      assert.equal(calls, 0);
+      await bridge.targetsFor('/src', buildDir, {}, 'Debug');
+      assert.equal(calls, 1, 'an empty peek must not suppress the real configure');
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
   });
 });

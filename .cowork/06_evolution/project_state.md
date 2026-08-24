@@ -91,6 +91,7 @@
 
 | # | 항목 | 내용 | 출처 |
 |---|------|------|------|
+| **B-4** | **프로젝트 정리(Clean) / 빌드 트리 삭제(Delete build tree)** | Visual Studio의 "솔루션 정리"에 해당하는 기능이 DevSwitcher에도 VSCode에도 없다(VSCode Task 그룹은 `build`/`test`만 표준이고 `clean` 개념 자체가 없음. CMake Tools 확장엔 있으나 우리는 미의존 — ADR-014). 어댑터별 정리 명령이 이미 존재해 선언 패턴에 자연스럽게 들어감: cargo `clean` · cmake `--target clean` · vs `msbuild /t:Clean` · dotnet `clean` · go `clean` · node=표준 없음(스크립트 있으면) · python=해당없음. `ActionCapabilities`에 플래그 추가 + 미지원 어댑터는 false. **두 기능을 구분할 것**: `clean`은 산출물만 지우고 빌드 디렉토리(`CMakeCache.txt`·`.cmake/api/`)는 남으므로, v1.2.1 이전에 서브모듈에 생긴 `build/`를 원상복구하려면 **"빌드 트리 삭제"가 따로 필요**(VS로 치면 정리 vs bin/obj 폴더 삭제). 일상 정리=Clean, 완전 초기화=Delete 둘 다 후보. **v1.2.1은 새 오염을 막을 뿐 이미 생긴 `build/`는 지우지 않으므로, 그 정리는 당분간 수동** | 세션 #018 Human 제안 |
 | ~~**B-2**~~ | **해소(2026-08-17, 세션 #014, v0.8.0)** — 설정 Project 탭 카드형 강화 완료. 프로젝트별 displayName·매니페스트 경로·툴체인 ✅/❌(Doctor probe)·활성 프로파일·칩 요약+개수를 카드로. 어댑터 무지(INV-2) 유지=선언적 필드. 순수 `projectCard.ts`(deriveToolchain·formatChipValue) 분리·단위테스트. F5 통과 | 세션 #013 Human 제안 → #014 구현 |
 | ~~**B-3**~~ | **해소(2026-08-19, 세션 #017, MS-022/TASK-064)** — `devSwitcher.languages.enabled`(fail-open: 빈/무효=전체) + AdapterRegistry scan/detect/creatable 필터 + 설정 변경 자동 rescan + General 탭 언어 체크박스. F5 대기 | 세션 #013 Human 제안 → #017 구현 |
 | ~~B-1~~ | **해소(2026-08-15, 세션 #005)** — MS-006 코어(TASK-012·013·014) main FF 병합 완료(335f982), `feature/ms-006-settings-page` 브랜치 삭제. 다음: TASK-015 착수 | 세션 #004 → #005 병합 |

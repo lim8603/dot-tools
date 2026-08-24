@@ -192,17 +192,32 @@ async function configuredTargets(
  * the show-libraries preference is off, narrowed to executables. A configure failure (no
  * compiler yet, a broken CMakeLists, …) degrades to [] so the chip shows empty rather than
  * throwing — Doctor surfaces the cause.
+ *
+ * `configure: false` reads an already-configured tree instead of configuring one. Merely
+ * switching to a project is not a request to build it, and configuring writes
+ * `<srcDir>/build/` — into a vendored dependency or git submodule, that is our files
+ * appearing as local changes in a repo the user treats as read-only. Opening the picker or
+ * running an action still configures: those are explicit.
  */
-async function listSwitcherTargetsFor(project: ProjectInfo): Promise<CMakeTarget[]> {
+async function listSwitcherTargetsFor(
+  project: ProjectInfo,
+  { configure = true }: { configure?: boolean } = {},
+): Promise<CMakeTarget[]> {
   const srcDir = rootSrcDirOf(project);
   let targets: CMakeTarget[];
   try {
     const presets = await readPresetsFor(project);
     if (presets.length > 0) {
       const preset = presets[0];
-      targets = await bridge.targetsForPreset(srcDir, preset.name, resolvePresetBinaryDir(preset, srcDir));
+      const binaryDir = resolvePresetBinaryDir(preset, srcDir);
+      targets = configure
+        ? await bridge.targetsForPreset(srcDir, preset.name, binaryDir)
+        : await bridge.targetsIfConfigured(binaryDir);
     } else {
-      targets = await bridge.listTargets(srcDir, defaultBuildDir(srcDir));
+      const buildDir = defaultBuildDir(srcDir);
+      targets = configure
+        ? await bridge.listTargets(srcDir, buildDir)
+        : await bridge.targetsIfConfigured(buildDir);
     }
   } catch {
     return [];
@@ -457,8 +472,8 @@ export const cmakeAdapter: LanguageAdapter = {
       // they build but never run/debug (validateAction). Root projects also get an
       // "All targets" entry (build the whole tree, MS-021). Single-target projects
       // auto-select via defaultValue.
-      listItems: async (project) => {
-        const targets = await listSwitcherTargetsFor(project);
+      listItems: async (project, opts) => {
+        const targets = await listSwitcherTargetsFor(project, { configure: opts?.probe !== false });
         const items: ChipItem[] = targets.map((t) => ({
           id: t.name,
           label: t.name,
@@ -469,8 +484,11 @@ export const cmakeAdapter: LanguageAdapter = {
         }
         return items;
       },
+      // Seeded on project switch, so it must not configure (see listSwitcherTargetsFor):
+      // an unconfigured tree simply leaves the chip unset until the first build, which
+      // ensureRequiredChips then resolves through the picker.
       defaultValue: async (project) => {
-        const targets = await listSwitcherTargetsFor(project);
+        const targets = await listSwitcherTargetsFor(project, { configure: false });
         return targets.length === 1 ? targets[0].name : undefined;
       },
       // Chip caption for the sentinel — 'All' reads better than the raw '__all__' id.

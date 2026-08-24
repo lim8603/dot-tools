@@ -536,7 +536,9 @@ export class SettingsPanel {
               // Count readily-available items only: `secondary` items (e.g. cargo's ~100
               // not-installed rustup targets, hidden behind the QuickPick toggle) would
               // otherwise inflate the architecture count into the hundreds.
-              const items = await chip.listItems(project);
+              // probe:false — a card count is decoration, and this loop runs for every
+              // scanned project: letting it configure would build a CMake tree in each.
+              const items = await chip.listItems(project, { probe: false });
               count = items.filter((it) => !it.secondary).length;
             } catch {
               // metadata/toolchain unavailable — leave the count at 0

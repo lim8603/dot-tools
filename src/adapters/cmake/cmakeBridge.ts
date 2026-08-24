@@ -789,6 +789,30 @@ export class CMakeBridge {
     return targets;
   }
 
+  /**
+   * Targets from an **already-configured** build tree — never runs cmake, never writes.
+   *
+   * `targetsFor`/`targetsForPreset` configure on demand, which creates the build tree.
+   * That is right when the user asked for something (build, run, opening the Target
+   * picker) and wrong when they merely switched to a project to look at it: configuring
+   * writes `<srcDir>/build/` into a source tree the user may consider read-only — a
+   * vendored dependency or a git submodule, where those files then show up as local
+   * changes. So the switch-time path reads what is already there and settles for nothing.
+   *
+   * Returns [] when the tree was never configured (readReplyDir's own "no reply yet"),
+   * which the Target chip renders as an unset value until the first real build.
+   *
+   * The target cache is read but deliberately **not** populated: an empty peek must never
+   * become a cache entry that later makes `targetsFor` skip a configure it actually needs.
+   */
+  async targetsIfConfigured(buildDir: string, config?: string): Promise<CMakeTarget[]> {
+    const cached = this.targetCache.get(`${buildDir}\0${config ?? ''}`);
+    if (cached) {
+      return cached;
+    }
+    return readReplyDir(join(buildDir, '.cmake', 'api', 'v1', 'reply'), config);
+  }
+
   /** Request codemodel (targets/paths) + toolchains (compiler id) replies on the next
    *  configure (shared stateless queries; file names select the reply, content ignored). */
   private async writeApiQueries(buildDir: string): Promise<void> {
