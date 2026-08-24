@@ -11,8 +11,8 @@
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
 | 활성 Milestone | **없음** — **🚀 v1.2.0 게시 완료(세션 #017)·MS-022 Done.** MS-001~022 전부 Done. 다음 사이클은 Human 결정(INT-002·TC-11) |
-| 마지막 갱신일 | 2026-08-19 |
-| 참조 세션 로그 | session_2026-08-19_017.md |
+| 마지막 갱신일 | 2026-08-24 |
+| 참조 세션 로그 | session_2026-08-24_018.md |
 
 ---
 
@@ -47,15 +47,18 @@
 | #014 | 2026-08-17 | **B-2 Project 카드 + MS-018 준비 감지(v0.8.0) 완주 + README 스크린샷 리프레시.** B-2: 어댑터 무지 카드(툴체인 ✅/❌·칩 요약)·순수 `projectCard.ts`. MS-018(**ADR-018**): 포트 open/HTTP 상태코드 게이트·순수 `readiness.ts`+I/O `readinessProbe.ts`·타임아웃/취소=abort+teardown·**취소 가능**·Run Groups UI 재설계(멤버 카드·Add 드롭다운)·seedMemberDefaults. F5(svc-a→svc-b 포트 게이트 4s 대기). README: SIX 히어로·Go/Node 신규·clean triple. unit 268·통합 3·`v0.8.0.vsix` 스모크. **main FF·`v0.8.0` 태그·push.** KB 패턴#10·안티패턴#10. **v1.0.0 로드맵 4개 MINOR 전부 완료** | B-2·MS-018 | 051·052·053 | 완료·배포. 다음: 품질점검→MS-014 |
 | #015 | 2026-08-17 | **🏁 MS-014 v1.0.0 완주 — INT-001 Closed·첫 Marketplace 게시.** Human 완주 선언(D-23·TC-11=Known Issue). 최종 재검증(EV-019)·v1.0.0 스탬프·**docs/ 공식 산출물 13종**(에이전트 12기 병렬·소스 승격 2종)·Gate 5 Pass → `v1.0.0` 태그·**repo public**(+기여 차단: PR 자동닫기·CONTRIBUTING·Issues 유지)·**GitHub Release**(vsix)·Human 온보딩(aex 직행·PAT·publisher) 후 **`vsce publish` DONE**. 트러블슈팅: README 이미지=GitHub 전역 장애(레포 정상)·리스팅 404=검증 지연(→200). KB 패턴#11 | MS-014 | TASK-042·054·055 | **v1.0.0 완주.** 다음: Human 결정(INT-002·B-3·TC-11) |
 | #017 | 2026-08-19 | **🚀 MS-022 v1.2.0 Visual Studio 지원 완주 — 세 번째 Marketplace 게시.** Human 신규 요구 "VS 프로젝트 대응 가능?" → 타당성 검토(어댑터 독립·CMake 생성물 충돌 1건) → **D-25**(CMakeCache 마커 제외·A안 .csproj=dotnet 소유·Windows 전용)·**ADR-021** → 당일 구현: `vsBridge`(순수 sln/slnx/vcxproj 파서+vswhere/MSBuild I/O)·`vsAdapter`(솔루션=루트 계층[ADR-019 재사용]·Configuration/Platform 칩·`-getProperty:TargetPath`·cppvsdbg)·**KB #3**(솔루션 vs 단독 빌드 출력 불일치→`/p:SolutionDir` 주입, 실측)·**B-3 해소**(`languages.enabled` fail-open 필터+General 탭 체크박스)·아이콘 플랫 벡터(Human 제작). F5 통과(피드백=토스트 축약, KB 안티패턴 #11) → v1.2.0 스탬프·docs 7툴체인 주석 갱신·vsix 스모크·main 병합(`330b2b0`)·태그·**`vsce publish` DONE**·**GitHub Release**. unit 318·통합 3 | MS-022 | TASK-063~065 | **v1.2.0 게시 완료.** 다음: Human 결정(INT-002·TC-11) |
+| #018 | 2026-08-24 | **리포 정리(vsix → `release/`)만 남기고 기능 3건 미착수/롤백.** ① `release/` 이동+`package:vsix` 스크립트(유지) ② 기능1(빌드/실행/디버그 전후 이벤트)=착수 전 Human 취소 ③ 기능2(스캔 무시 폴더 `scan.exclude`)=구현 완료(순수코어+레지스트리+설정페이지+unit 18+통합 3, 최상위 중괄호 글롭 실호스트 실증)했으나 **세션 말미 Human 지시로 전량 롤백** — 재검토 후 재착수 예정 ④ 기능3(성능·품질 코드리뷰)=미착수. **진단 자산 보존**: 서브모듈 목록 폭증의 원인 3중 구조(서브모듈 미처리 / 전환만 해도 configure→in-source `build/` 생성 / 어댑터 로컬 빌드트리 필터) 규명. KB 인사이트 #4·안티패턴 #12 승격 | — | — | **롤백 완료·unit 318 기준선 복귀.** 다음: Human 재검토 |
 | #016 | 2026-08-18~19 | **🚀 MS-021 v1.1.0 실사용 피드백 완주 — 두 번째 Marketplace 게시.** 회사 실사용 7건(Human): ① 중첩 CMake 하위 프로젝트(**ADR-019**: 루트=솔루션·타겟 선언 디렉토리=하위·`paths.source` 스코프·`ProjectInfo.parentId/library`) ② lib 타겟+`validateAction` 차단 토스트+`projects.showLibraries` ③ 설정창 블랭크 fix(퀵 페인트·가드·에러 배너) ④ 아이콘 투명화(flood fill+밝기×거리 페이드) ⑤ Ctrl+Alt+T(`pickTarget`, Node=script 폴백) ⑥ All targets(`--target` 생략) ⑦ **런그룹 멤버 Launch Run/Debug**(**ADR-020**, ADR-015 "Run 전용" 대체)+`N running` 표기. D-24(3결정). F5 2회 통과·unit 286·통합 3·실 cmake 스모크 → v1.1.0 스탬프·vsix 스모크·main 병합·태그·**`vsce publish` DONE**·**GitHub Release**. nested 픽스처 신설 | MS-021 | TASK-056~062 | **v1.1.0 게시 완료.** 다음: Human 결정(INT-002·B-3·TC-11) |
 
 ---
 
 ## 다음 시작점
 
-1. **다음 사이클 결정(Human)**: ① **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소. 급하지 않음 — Marketplace 반응 보며 결정. (B-3는 세션 #017에서 해소됨)
-2. 선택: README 히어로 스크린샷 "SIX toolchains" → 7번째(VS) 반영 재생성(세션 #014 Edge headless 방식) + 상태바 스크린샷에 VS 항목 추가.
-3. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.2.x·기능 v1.x.0. v1.2.0 등재 반영 확인·실사용 검증(특히 VS 어댑터 — 실무 혼합 솔루션). HN 게시글(item 49347062) 모더레이터 회신 대기.
+1. **스캔 무시 폴더(`scan.exclude`) 재검토(Human)** — 세션 #018에서 구현했다가 롤백. 설계 결론(`.vscode/settings.json` 저장·User∪Workspace 합집합·`!` 미지원·폴더명/경로/글롭 3형식)과 최상위 중괄호 글롭 실증이 세션 로그 #018에 보존되어 있어, 재착수 시 구현부터 시작 가능. 재착수하면 정식 Task/Milestone 등록.
+2. **문제 2 — 전환만 해도 cmake configure가 돌아 소스 트리에 `build/` 생성** (무시 폴더와 별개로 남은 근본 결함). Target 칩 기본값 시딩을 전환 시점 → 실행 시점(`ensureRequiredChips`)으로 이동하는 것이 후보. KB 안티패턴 #10("기본값 시드는 실행 직전 불변식")과 같은 뿌리.
+3. **성능·품질 코드리뷰** (세션 #018 미착수분).
+4. **다음 사이클 결정(Human)**: ① **INT-002**(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소. 급하지 않음.
+5. 유지보수: Marketplace/Issues 버그 신고 대응 → 패치 v1.2.x·기능 v1.x.0. 패키징 산출물은 `release/`(`npm run package:vsix`).
 
 ---
 

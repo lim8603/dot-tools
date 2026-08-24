@@ -24,9 +24,9 @@
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-19 |
+| 마지막 갱신일 | 2026-08-24 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-19_017.md |
+| 참조 세션 로그 | session_2026-08-24_018.md |
 | 최신 배포 | **v1.2.0 — Marketplace 게시 완료**(2026-08-19, `vsce publish` DONE) + **GitHub Release v1.2.0**(vsix 첨부). Visual Studio 어댑터(7번째 툴체인, ADR-021) + B-3 언어 필터 + 플랫 벡터 아이콘 |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
@@ -43,6 +43,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
+- **🧹 세션 #018(2026-08-24) — 리포 정리만 반영, 기능은 전량 보류.** vsix 10개를 루트→`release/`로 이동(+`package:vsix` 스크립트·`.vscodeignore` 자기포함 방지). 기능 3건 중 ①빌드/실행/디버그 전후 이벤트=착수 전 취소 ②스캔 무시 폴더=구현 후 **Human 지시로 롤백**(unit 318 기준선 복귀) ③성능·품질 코드리뷰=미착수. **남는 자산**: 서브모듈 목록 폭증 원인 3중 구조 규명 + 설계 결론 + KB 인사이트 #4·안티패턴 #12.
 - **🚀 v1.2.0 게시 완료(2026-08-19, 세션 #017, D-25/ADR-021) — MS-022 Done.** F5 통과(Human, 피드백 1건=토스트 축약 반영) → v1.2.0 스탬프·vsix(15파일 247.06KB) 스모크·main FF 병합(`330b2b0`)·태그·push → **Marketplace 게시**·**GitHub Release**(EV-023/024, Gate 5 Pass). 이하 구현 요약: Human 지시 3건: ① **`vs` 어댑터**(7번째) — `.sln`/`.slnx`/`.vcxproj` 감지(CMakeCache 마커로 CMake 생성물 제외·A안 .csproj=dotnet 소유)·솔루션=루트 계층·MSBuild 빌드(vswhere 발견·`/p:SolutionDir` 주입)·`-getProperty:TargetPath` 실행경로·cppvsdbg 디버그 ② **B-3 해소** — `devSwitcher.languages.enabled` 필터+General 탭 체크박스 ③ 아이콘 플랫 벡터 교체(Human 제작, 커밋 포함). unit **318**·통합 3·esbuild 149.4kb·**실 MSBuild(VS18) 스모크**(솔루션/멤버 빌드·TargetPath 평가·exe 실행). 브랜치 `feature/ms-022-v1.2.0` 미병합. **다음=F5 → v1.2.0 릴리즈 시퀀스.**
 - (직전) **🚀 v1.1.0 게시 완료(2026-08-19, 세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건(중첩 CMake 하위 프로젝트·lib 타겟·설정창 블랭크 fix·아이콘 투명화·Ctrl+Alt+T·All targets·**런그룹 멤버 디버그**) 전부 F5 통과(2회) → v1.1.0 스탬프·vsix 스모크·main FF 병합(`67fe903`)·태그·push → **Marketplace 게시**·**GitHub Release**(EV-021/022, Gate 5 Pass). 다음 사이클은 Human 결정: INT-002 승인·B-3·TC-11.
 - (직전) **🏁 v1.0.0 완주(2026-08-17, 세션 #015, D-23) — INT-001 Closed.** repo public·GitHub Release·**Marketplace 게시**(`lim8603.devswitcher-tools`). TC-11(WSL)=Known Issue. INT-002(Draft) 승인 여부·B-3은 Human 결정 대기.
@@ -74,9 +75,11 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소. 별도: v1.2.0 Marketplace 등재 확인(게시 직후 몇 분 소요)·실사용 피드백 수집(특히 VS 어댑터)·HN 게시글(item 49347062) 모더레이터 회신 대기.
-2. 선택: README 히어로 스크린샷이 "SIX toolchains" 상태 — 7번째(VS) 반영 재생성은 Human 판단 시(세션 #014 방식).
-3. 유지보수 트랙: Marketplace 버그 신고(Issues) 대응 → 패치는 v1.2.x, 기능은 v1.x.0(SemVer).
+1. **스캔 무시 폴더(`devSwitcher.scan.exclude`) 재검토(Human)** — 세션 #018에서 구현 완료 후 Human 지시로 전량 롤백. 설계 결론과 실증(최상위 중괄호 글롭이 실 VSCode 호스트에서 동작)은 세션 로그 #018에 보존 → 재착수 시 구현부터 시작 가능. 재착수하면 정식 Task/Milestone 등록.
+2. **전환만 해도 cmake configure** — Target 칩이 `required:true`라 프로젝트 전환만으로 `configure`가 돌고 in-source `build/`(cmakeAdapter.ts:92)가 생성됨. 읽기 전용 서브모듈 트리를 오염시키는 근본 결함. 시딩을 실행 시점(`ensureRequiredChips`)으로 옮기는 것이 후보(KB 안티패턴 #10과 동일 뿌리).
+3. **성능·품질 코드리뷰** (세션 #018 미착수분).
+4. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
+5. 유지보수 트랙: Marketplace 버그 신고(Issues) 대응 → 패치는 v1.2.x, 기능은 v1.x.0(SemVer). 패키징 산출물은 루트가 아니라 `release/`에 모은다 — `npm run package:vsix`(= `vsce package --out release/`, 세션 #018).
 
 ---
 
