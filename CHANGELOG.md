@@ -7,20 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
-- **Switching to a CMake project no longer configures it.** Listing a project's targets
-  needs a configured build tree, and the Target chip was seeding its default on every
-  project switch — so merely selecting a project ran `cmake -S … -B <project>/build` and
-  wrote a build tree into the source directory. In a workspace with vendored trees or git
-  submodules those files then showed up as local changes in repositories the user treats
-  as read-only. Switching now reads an already-configured tree and settles for nothing;
-  the chip stays unset until the first build. Opening the Target picker or running
-  build/run/debug still configures — those are explicit requests.
-- **Opening the settings page no longer configures every CMake project in the workspace.**
-  The Project tab's per-chip counts called into each scanned project's target list, which
-  had the same effect once per project. Those counts are decoration, so they now read only
-  what is already available.
+- **Looking at a CMake project no longer configures it.** Listing a project's targets
+  requires a configured build tree, and several paths asked for that list without the
+  user requesting anything — most of all on activation and on every rescan, across every
+  project with stored state. The effect was `cmake -S … -B <project>/build` writing a
+  build tree into source directories: in a workspace with vendored trees or git
+  submodules, our files then showed up as local changes in repositories the user treats
+  as read-only. Activation, rescan, switching projects, opening the settings page and
+  clicking a project card are now all side-effect free. Opening the Target picker or
+  running build/run/debug still configures — those are explicit requests, and a project
+  with a single target is still auto-selected rather than prompting.
+- **The project list no longer reshuffles.** Workspace scan results were used in the
+  order the file search returned them, which is not guaranteed and does vary, so entries
+  moved around the switcher and the settings page between rescans. The scan is now
+  ordered by path.
 
-Note: this stops new build trees from appearing. Any that were already created have to be
+Note: this stops new build trees from appearing. Any that already exist have to be
 removed by hand.
 
 ## [1.2.0] - 2026-08-19
