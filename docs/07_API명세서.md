@@ -5,8 +5,9 @@
 | 문서번호 | 07 |
 | 문서명 | API 명세서 — 어댑터 계약 |
 | 프로젝트 | DevSwitcher Tools |
-| 버전 | v1.0.0 |
+| 버전 | v1.3.0 |
 | 작성일 | 2026-08-17 |
+| 개정일 | 2026-08-25 (v1.3.0판) |
 | 작성 | AI — Claude Code |
 | 승인 | Human |
 | 기준 문서 | `.cowork/03_design_artifacts/interface_contract.md` + `src/core/types.ts` |
@@ -75,7 +76,11 @@ export interface ChipDescriptor {
   required?: boolean;         // 미선택 시 액션 차단 (예: target)
   secondaryToggle?: string;   // 【구현 반영】 설정 시 secondary 항목을 토글 버튼 뒤에 접음
                               //   (버튼 툴팁 텍스트, 단일 선택 칩 전용, §13.4)
-  listItems(project: ProjectInfo): Promise<ChipItem[]>;  // 캐노니컬 소스에서 항목 읽기
+  listItems(project: ProjectInfo, opts?: { probe?: boolean }): Promise<ChipItem[]>;
+                              // 캐노니컬 소스에서 항목 읽기.
+                              // 【v1.2.1】 opts.probe === false = "부작용·비용 있는 작업 없이
+                              //   아는 것만 답하라". 빈 배열은 "항목 없음"이 아니라 "답 없음"이며,
+                              //   호출측은 저장된 선택을 보존한다
   format?(value: ChipValue): string;                     // 상태바 축약 표시
   unsetText?: string;         // 【구현 반영】 값 미저장 시 상태바에 값처럼 표시할 텍스트
                               //   (예: architecture 칩의 'default' = 호스트 타깃)
@@ -83,7 +88,9 @@ export interface ChipDescriptor {
                               //   선택 시 저장 값을 제거해 unset(unsetText) 상태로 복귀
   isBlank?(value: ChipValue): boolean;  // 【구현 반영】 statusBar.selectedOnly용 —
                               //   저장된 값이 사실상 "선택 없음"인지 (기본: 빈 배열)
-  defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
+  defaultValue?(project: ProjectInfo, opts?: { probe?: boolean }): Promise<ChipValue | undefined>;
+                              // 【v1.2.1】 listItems와 같은 opts.probe 규약. 전환 시 시딩은
+                              //   probe:false로 묻고, 액션 직전 시딩은 붙이지 않는다
   onPick?(project: ProjectInfo, value: ChipValue): Promise<boolean>;
                               // 【구현 반영】 선택 후·저장 전 훅 (F19 §13.4). false 반환 시 선택 중단.
                               //   Architecture 칩이 미설치 타깃의 `rustup target add`에 사용
@@ -95,6 +102,8 @@ export interface ChipDescriptor {
 
 **계약 규칙 (칩)**
 
+- **【v1.2.1】 `opts.probe`는 "누가 왜 묻는가"를 어댑터에 전달하는 유일한 수단이다.** UI는 여전히 언어를 모른 채 `probe: false`만 보내고, 그 요청에 무엇이 비싼지는 어댑터가 판단한다(INV-2 유지). 어느 경로가 어느 값을 보내는지는 [기능 명세서 §3.1 F24](03_기능명세서.md)를 본다.
+- **【v1.2.1】 빈 답과 실패는 같게 취급된다.** 정합성 패스(`gatherValidItems`)가 빈 목록을 "유효 항목 0개"로 읽으면 사용자의 저장된 선택을 삭제한다. 그래서 빈 답은 "이 칩에 대한 답 없음"으로 처리해 칩을 생략한다.
 - UI는 `appliesTo` predicate 결과만 참조하며 언어 무지를 유지한다(BR-003). CMake는 `CMakePresets.json` 유무로 **Preset 칩 ↔ profile/architecture 칩**을 상호 배타 노출한다(TASK-041).
 - `chips` 배열 순서 = 상태바 표시 순서(ADR-003).
 
@@ -129,6 +138,9 @@ export interface ActionCapabilities {
   debugRequiresBuild?: boolean; // 【구현 반영】 디버그 플로우(§7.4)가 디버거 기동 전에 빌드하는가.
                                 //   기본값 = build. Node는 false (npm 스크립트를 직접 디버그, ADR-016).
                                 //   build가 false면 무시
+  clean?: boolean;              // 【v1.3.0】 clean 개념 존재 여부 (B-4). cargo·cmake·vs·
+                                //   dotnet·go = true, node·python = false(표준 명령 없음).
+                                //   clean과 delete-build-tree를 **함께** 게이트한다
   // run·debug는 전 언어 공통이라 선언 불필요
 }
 
@@ -154,6 +166,8 @@ export interface StartedTask {
 ```
 
 > `runRequiresBuild`는 기준 계약 문서에서 계약 규칙 서술로만 존재하고 `ActionCapabilities` 타입 블록에는 없었다. `debugRequiresBuild` · `StartResult` · `StartedTask`는 구현에서 추가된 멤버다. 【구현 반영】
+>
+> `clean`은 v1.3.0에서 추가됐다. node는 `package.json`에 `clean` 스크립트가 있을 수도 없을 수도 있지만 `actions`가 **정적 선언**이라 프로젝트별로 갈릴 수 없어 false로 둔다. 【v1.3.0】
 
 ---
 
@@ -162,7 +176,7 @@ export interface StartedTask {
 ```ts
 export interface LanguageAdapter {
   readonly id: string;                    // 'cargo' | 'cmake' | 'dotnet' | 'python'
-                                          // 【구현 반영】 + 'go' | 'node'
+                                          // 【구현 반영】 + 'go' | 'node' | 'vs' (v1.2.0)
   readonly displayName: string;           // 'Rust (Cargo)' 등
   readonly actions: ActionCapabilities;
   readonly chips: ChipDescriptor[];       // 상태바 칩 (순서 = 표시 순서, ADR-003)
@@ -187,6 +201,21 @@ export interface LanguageAdapter {
   prepareInvocation?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<void>;
                                           // 선택적 — 2단계 툴체인 사전 단계 (§7, ADR-014)
 
+  // 【v1.1.0】 run/debug 사전 거부 훅 (ADR-019). 적용 불가 사유를 문자열로, 진행 가능하면 undefined.
+  // 오케스트레이터가 사유를 토스트로 띄우고 중단한다 — 어댑터가 '왜'를 정하고 UI는 언어를 모른다(INV-2).
+  validateAction?(action: 'run' | 'debug', project: ProjectInfo, sel: Selection,
+                  config: InvocationConfig): Promise<string | undefined>;
+
+  // 【v1.3.0】 B-4 — 산출물만 지우는 clean Task. actions.clean === true일 때만 호출.
+  // undefined = 정리할 것 없음(가장 중요하게는 CMake 미구성 트리). clean이 빌드 트리를
+  // 만들어내면 v1.2.1이 막은 결함이 돌아오므로, 이 경로는 prepareInvocation을 호출하지 않는다.
+  createCleanTask?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.Task | undefined>;
+
+  // 【v1.3.0】 B-4 — 삭제 가능한 빌드 디렉토리의 절대경로. 빈 배열 = 삭제할 트리 없음.
+  // 반환값은 '후보'이지 '허가'가 아니다 — core/cleanPlan.ts가 워크스페이스 밖·소스
+  // 디렉토리를 거부한 뒤에야 실제 삭제가 일어난다.
+  buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string[]>;
+
   createProject(target: NewProjectTarget): ProjectCreation;   // F20 (§5)
 
   invalidateCache(project?: ProjectInfo): void;   // 매니페스트 변경 시 캐시 무효화 (F17)
@@ -204,6 +233,9 @@ export interface LanguageAdapter {
 - 경로·파일 접근은 `vscode.Uri` 기반, OS 경로 형식 가정 금지 — 원격 안전(ADR-008).
 - **run이 빌드를 요구하는 경우**(`runRequiresBuild: true`, CMake): 오케스트레이터가 run 전에 build를 돌리고, 동기 run Task는 `prepareInvocation`이 데운 캐시에서 실행 경로를 읽는다(TASK-035).
 - **디버거 확장은 동적일 수 있다**: CMake는 컴파일러(File API `toolchains`)에서 디버거를 자동판별하므로 정적 `requiredExtensions`가 아니라 `createDebugConfig` 내부에서 판별된 확장을 보장(ensure)한다(ADR-009/ADR-014). 구현의 `cmakeAdapter.requiredExtensions`는 `[]`이다. 【구현 반영】
+- **【v1.2.1】 어댑터는 "묻는 쪽이 무엇을 요청했는지"를 구분해야 한다.** `listItems`/`defaultValue`의 `opts.probe`가 `false`면 부작용이나 프로세스 비용이 있는 작업을 해서는 안 된다(§2.1). 이것은 성능 권고가 아니라 **계약**이다 — 이 구분이 없던 시절 CMake 어댑터는 사용자가 프로젝트를 보기만 해도 소스 디렉토리에 빌드 트리를 썼다.
+- **【v1.3.0】 정리(clean)는 구성(configure)을 유발하지 않는다.** `createCleanTask`·`buildTreeDirs` 경로에서 오케스트레이터는 `prepareInvocation`을 호출하지 않는다. 어댑터도 이 두 메서드 안에서 빌드 트리를 생성해서는 안 된다.
+- **【v1.3.0】 삭제 경로에서 경로를 추측하지 않는다**(DD-05의 연장). 출력 경로가 여러 축으로 갈리는 어댑터(vs)는 `buildTreeDirs`를 **구현하지 않는 것이 옳다** — 틀린 추측의 대가가 지워진 디렉토리이기 때문이다.
 
 ---
 
@@ -403,19 +435,31 @@ export interface ProfileExport {
 
 ## 11. 어댑터별 계약 구현 요약
 
-v1.0.0 구현 기준(각 `src/adapters/*/​*Adapter.ts`의 실제 선언값). 기준 계약 문서 §6 표(4개 어댑터·스텁 표기)를 대체한다. 【구현 반영】
+v1.3.0 구현 기준(각 `src/adapters/*/​*Adapter.ts`의 실제 선언값). 기준 계약 문서 §6 표(4개 어댑터·스텁 표기)를 대체한다. 【구현 반영】
 
 | 어댑터 (`id`) | displayName | chips (id) | actions | manifestGlobs | requiredExtensions | createProject | configCategories |
 |---|---|---|---|---|---|---|---|
 | `cargo` | Rust (Cargo) | profile · architecture · features · target | build: true | `**/Cargo.toml` | `vadimcn.vscode-lldb` | task (`cargo new`) | compiler · linker · output · env · buildEvent · runArgs |
 | `cmake` | C++ (CMake) | preset · profile · architecture · target (preset ↔ profile/architecture 상호 배타, `appliesTo`) | build: true, runRequiresBuild: true | `**/CMakeLists.txt` | (없음 — 디버거는 동적 판별, §4) | files (최소 템플릿) | compiler · linker · output · env · buildEvent · runArgs |
+| `vs` | Visual Studio (MSBuild) | profile(Configuration) · architecture(Platform) | build: true, runRequiresBuild: true, clean: true | `**/*.sln` · `**/*.slnx` · `**/*.vcxproj` (CMake 생성물 제외) | (없음 — cppvsdbg는 C/C++ 확장) | (없음) | compiler · linker · output · env · buildEvent · runArgs |
 | `dotnet` | C# (.NET) | profile · architecture · target | build: true | `**/*.csproj` | `ms-dotnettools.csdevkit` | task (`dotnet new`) | compiler · linker · output · env · buildEvent · runArgs |
 | `python` | Python | environment · target | build: false | `**/pyproject.toml` | `ms-python.python` | files (`pyproject.toml` 템플릿) | env · runArgs |
 | `go` | Go | target | build: true | `**/go.mod` | `golang.go` | files (템플릿) | compiler · env · runArgs |
 | `node` | Node.js / TypeScript | script | build: true, debugRequiresBuild: false | `**/package.json` | (없음 — js-debug는 VSCode 내장) | files (템플릿) | env · runArgs |
 
-- `canCreateProject`는 6개 어댑터 모두 `true`.
-- `prepareInvocation` 구현체는 `cmake` 단독.
+- `canCreateProject`는 `vs`를 제외한 6개 어댑터가 `true`. **【v1.2.0】** vs 어댑터는 솔루션 스캐폴딩을 하지 않는다.
+- `prepareInvocation` 구현체는 `cmake`와 `vs`. **【v1.2.0】**
+
+**【v1.3.0】 clean 계약 구현 현황** — 위 표의 `actions`에 더해:
+
+| 어댑터 | `actions.clean` | `createCleanTask` | `buildTreeDirs` |
+|---|---|---|---|
+| `cargo` | true | `cargo clean` | `target/` |
+| `cmake` | true | `cmake --build <tree> --target clean` (미구성 트리면 undefined) | 활성 빌드 트리(프리셋 `binaryDir` 또는 `build-dir` 오버레이) |
+| `vs` | true | `MSBuild <manifest> /t:Clean` (빌드와 동일 인자) | **미구현 — 의도적** (출력 경로 추측 금지, DD-05) |
+| `dotnet` | true | `dotnet clean` (빌드와 동일 `-c`/`-f`/`-r`) | `bin/` · `obj/` |
+| `go` | true | `go clean` (빌드 플래그 제외) | **없음** — GOCACHE는 모듈 밖 |
+| `node` · `python` | false | — | — |
 - **Python 리트머스:** `actions.build: false` + `configCategories: ['env','runArgs']` — profile/architecture/build 없이 스위처+환경+실행+디버그가 동작하며, 설정 페이지에서 compiler/linker/output 카테고리가 선언대로 사라진다(INV-2 검증).
 
 ---

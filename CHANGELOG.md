@@ -3,6 +3,52 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.0] - 2026-08-25
+
+### Added
+
+- **Clean, and Delete Build Tree.** Neither VS Code nor DevSwitcher had a clean concept
+  (VS Code's task groups are `build` and `test`), so tidying a project meant dropping to a
+  terminal. Two commands now cover it, in the Command Palette:
+  - **Clean** removes build output and leaves the build tree configured — `cargo clean`,
+    `cmake --build … --target clean`, `MSBuild /t:Clean`, `dotnet clean`, `go clean`. Node
+    and Python have no standard clean command and do not offer this.
+  - **Delete Build Tree…** removes the build directory itself. This is what it takes to
+    undo a `build/` directory that versions before 1.2.1 wrote into a vendored tree or a
+    git submodule — 1.2.1 stopped new ones appearing but could not remove the old ones.
+    It lists every directory before deleting, refuses anything outside the workspace
+    folder or equal to the project's source directory, and uses the trash where the
+    platform has one. Available for Cargo, CMake and .NET; Go builds outside the module,
+    and the Visual Studio adapter would have to guess where MSBuild put its output.
+- **`devSwitcher.scan.exclude`** — folders the workspace scan skips, so their manifests
+  never become projects. For vendored trees, git submodules and anything else you do not
+  want in the switcher. Write a folder name or a glob. User and Workspace values are
+  combined rather than overridden, because exclusions are additive and a project's
+  settings should not silently discard your own. Re-inclusion with `!` is not supported.
+- **`devSwitcher.cmake.configureOnSelect`** (default `false`) — configure a CMake project
+  when it is merely selected, so its target list is ready before the first build. Off by
+  default, and that default matters: configuring writes a build tree into the source
+  directory, which is exactly what 1.2.1 stopped doing to repositories you only read.
+  Turn it on only if you own every CMake project in the workspace.
+
+### Changed
+
+- **A chip with nothing to list now says so.** Since 1.2.1, a CMake project that has never
+  been built has no target list, and the settings page rendered that as `0` — which reads
+  like a failure. It now reads "not listed yet" and explains that DevSwitcher will not
+  build or configure a project just to fill a card in.
+
+### Fixed
+
+- **Switching projects no longer spawns a process per project.** 1.2.1 gave chips a way to
+  say "answer from what you already know" and taught CMake to respect it; the other
+  adapters ignored it. Switching projects, opening the settings page and the rescan
+  bookkeeping pass were still running `dotnet msbuild`, `cargo metadata`, `rustup target
+  list` and `go list` — and, worst of them, one Python probe per candidate interpreter on
+  every render. They now answer from cache on those paths and fetch for real only when a
+  picker or an action asks. No files were ever written by these; this is speed, not
+  pollution. `rustup target list` had no cache at all and now has one.
+
 ## [1.2.1] - 2026-08-25
 
 ### Fixed

@@ -5,8 +5,9 @@
 | 문서번호 | 05 |
 | 문서명 | WBS (Work Breakdown Structure) |
 | 프로젝트 | DevSwitcher Tools (`devswitcher-tools`) |
-| 버전 | v1.0.0 |
+| 버전 | v1.3.0 |
 | 작성일 | 2026-08-17 |
+| 개정일 | 2026-08-25 (v1.3.0판) |
 | 작성 | AI — Claude Code |
 | 승인 | Human |
 | 기준 문서 | `.cowork/04_implementation/milestone_registry.md` + `.cowork/04_implementation/task_registry.md` (합성) |
@@ -53,10 +54,11 @@ Milestone(중간 완료 단위)을 골격으로 하고, 각 Milestone 아래에 
 |--------|------|-----------|------|------|
 | INT-001 | 다언어 통합 상태바 UX VSCode 확장 (v1.0.0 완주) | MS-001~018 (18개) | TASK-001~053 (53개) | **완료** — v1.0.0 (2026-08-17) |
 | INT-002 | 원격 디버그·크로스 컴파일 (post-1.0) | MS-019~020 (2개) | 미분해 | Draft — v1.0.0 이후 (D-22) |
+| (유지보수) | v1.0.0 이후 실사용 피드백·결함 수정 | MS-021~023 (3개) | TASK-056~065 + v1.2.1·v1.3.0 | **완료** — v1.3.0 (2026-08-25) |
 
-- Milestone 총 20개: **Done 18** (MS-001~018) / **Deferred 2** (MS-019·020, INT-002 백로그)
-- Task 총 53개 (TASK-001~053): **전부 Done** (TASK-039는 TASK-051~053으로 분해되어 종료 — §7 주석 ②, TASK-042는 v1.0.0 완주 선언으로 완료 — §7 주석 ③)
-- 실구현 언어 6종: Rust(Cargo) · C#(Dotnet) · Python · C++(CMake) · Go · Node/TS
+- Milestone 총 23개: **Done 21** (MS-001~018·MS-021~023) / **Deferred 2** (MS-019·020, INT-002 백로그)
+- Task 총 65개 (TASK-001~065): **전부 Done**. v1.2.1·v1.3.0은 유지보수 릴리즈로 Task 채번 없이 진행했다 (§7 주석 ④)
+- 실구현 언어 **7종**: Rust(Cargo) · C#(Dotnet) · Python · C++(CMake) · Go · Node/TS · **Visual Studio(MSBuild)** 【v1.2.0】
 
 ## 3. 버전 사다리·일정 요약
 
@@ -73,6 +75,20 @@ Milestone(중간 완료 단위)을 골격으로 하고, 각 Milestone 아래에 
 | v0.7.0 | MS-017 | 키보드 단축키 + Stop 커맨드/버튼 | 2026-08-17 |
 | v0.8.0 | MS-018 | Run Group 준비 감지 (포트/HTTP) | 2026-08-17 |
 | **v1.0.0** | **MS-014** | **최종 점검 + Marketplace 게시 + GitHub Release — 완주 선언(이번 릴리즈)** | **2026-08-17** |
+
+### v1.0.0 이후 실제 릴리즈 (유지보수 사이클)
+
+> **주의:** 아래 v1.1.0·v1.2.0은 §3 말미의 "Post-1.0 후보" 표가 INT-002에 예약해 두었던 번호와 **다르다.** 실사용 피드백이 원격·크로스보다 먼저 도착해 그쪽이 MINOR를 가져갔고, INT-002는 아직 착수되지 않았다.
+
+| 버전 | Milestone | 핵심 내용 | 릴리즈일 |
+|------|-----------|-----------|----------|
+| v1.1.0 | MS-021 | 실사용 피드백 7건 — 중첩 CMake 하위 프로젝트·lib 타깃(ADR-019)·설정창 블랭크 수정·아이콘 투명화·Ctrl+Alt+T·All targets·런그룹 멤버 디버그(ADR-020) | 2026-08-19 |
+| v1.2.0 | MS-022 | **Visual Studio 어댑터**(7번째 툴체인, ADR-021) + 언어 활성 필터(B-3) + 플랫 벡터 아이콘 | 2026-08-19 |
+| v1.2.1 | (유지보수) | **결함 수정** — "보기만 해도 configure" 6경로 차단 + 프로젝트 목록 순서 고정(v1.0.0부터 잠복) | 2026-08-25 |
+| **v1.3.0** | **MS-023** | **Clean / Delete Build Tree** · 스캔 제외 폴더 · `cmake.configureOnSelect` · 전 어댑터 probe 정합성 | **2026-08-25** |
+
+- v1.2.1이 PATCH인 근거: 새 설정·명령이 없는 순수 결함 수정이라 SemVer상 패치이고, 프로젝트 규칙("패치=v1.2.x")과도 일치한다.
+- v1.3.0이 MINOR인 근거: 새 명령 2개(`devSwitcher.clean`·`devSwitcher.deleteBuildTree`)와 새 설정 2개가 추가된다.
 
 - v0.9.0은 없다 — v0.8.0 → v1.0.0 점프는 정상(최종 점검+게시 단계에서 MAJOR 승격, D-21).
 - MS-009(정리)는 별도 릴리즈 버전 귀속이 기준 문서에 명시되어 있지 않다(§6).
@@ -295,6 +311,41 @@ Milestone(중간 완료 단위)을 골격으로 하고, 각 Milestone 아래에 
 | Task ID | 제목 | 상태 |
 |---------|------|------|
 | TASK-042 | 추가 기능·논의 + v1.0.0 완주 결정 (게이트) — 담당: Human | Done ※③ |
+
+## 4.1 유지보수 Milestone (MS-021 ~ MS-023) 【v1.3.0 추가】
+
+### MS-021 — v1.1.0 실사용 피드백 (Done, 2026-08-19)
+
+| Task | 내용 |
+|------|------|
+| TASK-056 | 중첩 CMake 하위 프로젝트 계층화 — `project()` 루트=최상위, 타깃 선언 디렉토리=하위 (ADR-019) |
+| TASK-057 | library 타깃 노출 + `validateAction` 훅 신설(run/debug 사전 거부) + `projects.showLibraries` |
+| TASK-058 | 설정창 블랭크 수정 — 느린 `listItems`가 첫 페인트를 막던 문제. 퀵 첫 페인트 → 풀 state 후속 |
+| TASK-059 | 아이콘 투명화 (Marketplace 검은 사각형) |
+
+### MS-022 — v1.2.0 Visual Studio 어댑터 (Done, 2026-08-19)
+
+| Task | 내용 |
+|------|------|
+| TASK-063 | `vs` 어댑터 — sln/slnx/vcxproj 감지(CMake 생성물 제외)·MSBuild 빌드·`-getProperty:TargetPath` 실행 경로·cppvsdbg (ADR-021) |
+| TASK-064 | B-3 언어 활성 필터 — `languages.enabled` + General 탭 체크박스 |
+| TASK-065 | v1.2.0 릴리즈 |
+
+### v1.2.1 — configure 부작용 수정 (Done, 2026-08-25, Task 미채번)
+
+실사용 제보("서브모듈 리포에 CMake가 빌드 파일을 쏟아낸다")에서 출발. **"보기만 해도 configure" 경로 6개**를 차단하고, 곁가지로 **프로젝트 목록이 재스캔마다 뒤바뀌던 버그**(`findFiles` 결과 미정렬, v1.0.0부터 잠복)를 고쳤다.
+
+### MS-023 — v1.3.0 정리 기능·스캔 제어 (Done, 2026-08-25)
+
+| 항목 | 내용 |
+|------|------|
+| B-6 | 전 어댑터 `probe` 정합성 — dotnet·cargo·go·python이 전환/렌더/재스캔마다 띄우던 프로세스 제거 |
+| B-5 | `devSwitcher.cmake.configureOnSelect`(기본 false) + 빈 칩 목록 플레이스홀더 |
+| — | `devSwitcher.scan.exclude` — 스캔 제외 폴더 (#018 설계분 재착수) |
+| B-4 | Clean / Delete Build Tree — v1.2.1이 남긴 "이미 생긴 `build/`" 문제 해결 |
+| — | `docs/` 공식 산출물 13종 누적 동기화 (v1.1.0~v1.3.0) |
+
+---
 
 ## 5. Post-1.0 백로그 (INT-002): MS-019 ~ MS-020
 
