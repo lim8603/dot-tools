@@ -10,22 +10,31 @@ const GUARD = {
   sourceDir: 'C:/ws/app',
 };
 
-function reasonFor(dirs: string[], dir: string): string | undefined {
-  return classifyDeletions(dirs, GUARD).refused.find((r) => r.dir === dir)?.reason;
+/** Candidates from bare paths — the description is not what these tests are about. */
+function dirs(...paths: string[]): { path: string; description: string }[] {
+  return paths.map((path) => ({ path, description: 'build tree' }));
+}
+
+/** Just the surviving paths, for assertions that do not care about descriptions. */
+function deletablePaths(paths: string[]): string[] {
+  return classifyDeletions(dirs(...paths), GUARD).deletable.map((d) => d.path);
+}
+
+function reasonFor(paths: string[], dir: string): string | undefined {
+  return classifyDeletions(dirs(...paths), GUARD).refused.find((r) => r.dir === dir)?.reason;
 }
 
 describe('classifyDeletions', () => {
   it('allows a build directory inside the project', () => {
-    const plan = classifyDeletions(['C:/ws/app/build'], GUARD);
-    assert.deepEqual(plan.deletable, ['C:/ws/app/build']);
+    const plan = classifyDeletions(dirs('C:/ws/app/build'), GUARD);
+    assert.deepEqual(plan.deletable.map((d) => d.path), ['C:/ws/app/build']);
     assert.deepEqual(plan.refused, []);
   });
 
   it('allows a build directory elsewhere in the workspace', () => {
     // An out-of-source tree (`build-dir` overlay, a CMake preset binaryDir) is still fine
     // as long as it is inside the workspace.
-    const plan = classifyDeletions(['C:/ws/out/app'], GUARD);
-    assert.deepEqual(plan.deletable, ['C:/ws/out/app']);
+    assert.deepEqual(deletablePaths(['C:/ws/out/app']), ['C:/ws/out/app']);
   });
 
   // ── The guards. Each of these is a directory someone could lose. ────────────
@@ -67,38 +76,36 @@ describe('classifyDeletions', () => {
   });
 
   it('handles backslash paths, which is what Windows adapters produce', () => {
-    const plan = classifyDeletions(['C:\\ws\\app\\build'], GUARD);
-    assert.deepEqual(plan.deletable, ['C:\\ws\\app\\build']);
+    assert.deepEqual(deletablePaths(['C:\\ws\\app\\build']), ['C:\\ws\\app\\build']);
   });
 
   it('recognises a POSIX workspace too', () => {
-    const plan = classifyDeletions(['/home/u/ws/app/build'], {
+    const plan = classifyDeletions(dirs('/home/u/ws/app/build'), {
       workspaceRoot: '/home/u/ws',
       sourceDir: '/home/u/ws/app',
     });
-    assert.deepEqual(plan.deletable, ['/home/u/ws/app/build']);
+    assert.deepEqual(plan.deletable.map((d) => d.path), ['/home/u/ws/app/build']);
   });
 
   // ── Bookkeeping ────────────────────────────────────────────────────────────
 
   it('keeps the given order and collapses duplicates', () => {
-    const plan = classifyDeletions(
-      ['C:/ws/app/bin', 'C:/ws/app/obj', 'C:/ws/app/bin/', 'C:\\ws\\app\\BIN'],
-      GUARD,
+    assert.deepEqual(
+      deletablePaths(['C:/ws/app/bin', 'C:/ws/app/obj', 'C:/ws/app/bin/', 'C:\\ws\\app\\BIN']),
+      ['C:/ws/app/bin', 'C:/ws/app/obj'],
     );
-    assert.deepEqual(plan.deletable, ['C:/ws/app/bin', 'C:/ws/app/obj']);
   });
 
   it('skips blank entries without reporting them as refusals', () => {
     // An adapter returning '' means "nothing here", which is not worth warning about.
-    const plan = classifyDeletions(['', '   ', 'C:/ws/app/build'], GUARD);
-    assert.deepEqual(plan.deletable, ['C:/ws/app/build']);
+    const plan = classifyDeletions(dirs('', '   ', 'C:/ws/app/build'), GUARD);
+    assert.deepEqual(plan.deletable.map((d) => d.path), ['C:/ws/app/build']);
     assert.deepEqual(plan.refused, []);
   });
 
   it('separates good from bad rather than failing the whole batch', () => {
-    const plan = classifyDeletions(['C:/ws/app/bin', 'C:/elsewhere', 'C:/ws/app/obj'], GUARD);
-    assert.deepEqual(plan.deletable, ['C:/ws/app/bin', 'C:/ws/app/obj']);
+    const plan = classifyDeletions(dirs('C:/ws/app/bin', 'C:/elsewhere', 'C:/ws/app/obj'), GUARD);
+    assert.deepEqual(plan.deletable.map((d) => d.path), ['C:/ws/app/bin', 'C:/ws/app/obj']);
     assert.equal(plan.refused.length, 1);
   });
 });
@@ -107,15 +114,28 @@ describe('describeDeletionPrompt', () => {
   // The prompt is the last chance to notice a directory that should not be on the list,
   // so every path is spelled out — no "3 directories" summary.
   it('lists every path in full', () => {
-    const text = describeDeletionPrompt('app', ['C:/ws/app/bin', 'C:/ws/app/obj']);
+    const text = describeDeletionPrompt('app', dirs('C:/ws/app/bin', 'C:/ws/app/obj'));
     assert.ok(text.includes('C:/ws/app/bin'));
     assert.ok(text.includes('C:/ws/app/obj'));
     assert.ok(text.includes('2'));
   });
 
   it('reads naturally for a single directory', () => {
-    const text = describeDeletionPrompt('app', ['C:/ws/app/build']);
+    const text = describeDeletionPrompt('app', dirs('C:/ws/app/build'));
     assert.match(text, /this build directory for app/);
+  });
+
+  // A path alone does not tell you that a sub-project's CMake tree belongs to its root and
+  // takes its siblings with it. That is exactly the case someone needs to catch here.
+  it('says what each directory is, next to its path', () => {
+    const text = describeDeletionPrompt('mathlib', [
+      {
+        path: 'C:/ws/build',
+        description: 'CMake build tree — belongs to the root project and is shared',
+      },
+    ]);
+    assert.ok(text.includes('C:/ws/build'));
+    assert.ok(text.includes('shared'));
   });
 });
 

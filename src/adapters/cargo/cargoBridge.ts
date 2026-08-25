@@ -326,6 +326,16 @@ function findPackage(metadata: CargoMetadata, packageName?: string): CargoPackag
 }
 
 /** Workspace member packages (독립 매니페스트면 단일). Adapter attaches workspaceFolder later. */
+/**
+ * `cargo clean` args for a clean scope (B-4).
+ *
+ * Without `-p`, cargo empties the whole workspace target directory — from a member
+ * directory too. Scoping to the package is what "clean this project" has to mean.
+ */
+export function cargoCleanArgs(scopeId: string, packageName: string): string[] {
+  return scopeId === 'all' ? ['clean'] : ['clean', '-p', packageName];
+}
+
 export function parseWorkspacePackages(metadata: CargoMetadata): CargoProject[] {
   const memberIds = new Set(metadata.workspace_members);
   const members = metadata.packages.filter((p) => memberIds.has(p.id));

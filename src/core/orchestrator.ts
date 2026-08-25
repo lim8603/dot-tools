@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { ChipValue, DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
+import type { BuildTreeDir, ChipValue, CleanScope, DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { orderByHierarchy, visibleInSwitcher } from './projectTree';
 import { pickChipValue } from '../ui/picks';
@@ -261,7 +261,7 @@ export class Orchestrator {
       return;
     }
     const { project, adapter } = context;
-    if (!adapter.actions.clean || !adapter.createCleanTask) {
+    if (!adapter.actions.clean || !adapter.createCleanTask || !adapter.cleanScopes) {
       void vscode.window.showInformationMessage(
         `DevSwitcher: ${adapter.displayName} has no clean command.`,
       );
@@ -280,9 +280,42 @@ export class Orchestrator {
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
 
+    // What "clean" means differs per toolchain, so the adapter declares the scopes it can
+    // actually offer and we list them. CMake has exactly one (no per-target clean exists);
+    // cargo has two, and they are genuinely different — one wipes the whole workspace.
+    // The picker is shown even for a single scope: its description is where the user finds
+    // out what is about to disappear, which is the thing that varies.
+    let scopes: CleanScope[];
+    try {
+      scopes = await adapter.cleanScopes(project, selection, config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: clean failed — ${message}`);
+      return;
+    }
+    if (scopes.length === 0) {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: nothing to clean for ${project.name} — it has not been built yet.`,
+      );
+      return;
+    }
+
+    const picked = await vscode.window.showQuickPick(
+      scopes.map((scope) => ({
+        label: scope.label,
+        description: scope.description,
+        detail: scope.detail,
+        scopeId: scope.id,
+      })),
+      { placeHolder: `Clean ${project.name}`, matchOnDescription: true, matchOnDetail: true },
+    );
+    if (!picked) {
+      return; // cancelled
+    }
+
     let task: vscode.Task | undefined;
     try {
-      task = await adapter.createCleanTask(project, selection, config);
+      task = await adapter.createCleanTask(project, selection, config, picked.scopeId);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       void vscode.window.showErrorMessage(`DevSwitcher: clean failed — ${message}`);
@@ -290,7 +323,7 @@ export class Orchestrator {
     }
     if (!task) {
       void vscode.window.showInformationMessage(
-        `DevSwitcher: nothing to clean for ${project.name} — it has not been built yet.`,
+        `DevSwitcher: nothing to clean for ${project.name}.`,
       );
       return;
     }
@@ -346,7 +379,7 @@ export class Orchestrator {
 
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
-    let candidates: string[];
+    let candidates: BuildTreeDir[];
     try {
       candidates = await adapter.buildTreeDirs(project, selection, config);
     } catch (error) {
@@ -355,9 +388,9 @@ export class Orchestrator {
       return;
     }
 
-    const existing: string[] = [];
+    const existing: BuildTreeDir[] = [];
     for (const dir of candidates) {
-      if (await this.directoryExists(dir)) {
+      if (await this.directoryExists(dir.path)) {
         existing.push(dir);
       }
     }
@@ -390,7 +423,7 @@ export class Orchestrator {
     }
 
     const failed: string[] = [];
-    for (const dir of deletable) {
+    for (const { path: dir } of deletable) {
       const uri = vscode.Uri.file(dir);
       try {
         await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: true });

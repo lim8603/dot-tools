@@ -1,0 +1,9 @@
+{
+  "name": "third-party-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vendored dependency stand-in. Not a project you would want in the switcher.",
+  "scripts": {
+    "build": "echo vendored build"
+  }
+}

@@ -206,15 +206,21 @@ export interface LanguageAdapter {
   validateAction?(action: 'run' | 'debug', project: ProjectInfo, sel: Selection,
                   config: InvocationConfig): Promise<string | undefined>;
 
-  // 【v1.3.0】 B-4 — 산출물만 지우는 clean Task. actions.clean === true일 때만 호출.
-  // undefined = 정리할 것 없음(가장 중요하게는 CMake 미구성 트리). clean이 빌드 트리를
-  // 만들어내면 v1.2.1이 막은 결함이 돌아오므로, 이 경로는 prepareInvocation을 호출하지 않는다.
-  createCleanTask?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.Task | undefined>;
+  // 【v1.3.0】 B-4 — 이 어댑터가 **실제로 제공할 수 있는** 정리 범위. 빈 배열 = 지금 정리할
+  // 것 없음(가장 중요하게는 CMake 미구성 트리). clean이 빌드 트리를 만들어내면 v1.2.1이
+  // 막은 결함이 돌아오므로, 이 경로는 prepareInvocation을 호출하지 않는다.
+  // "clean"의 의미가 툴체인마다 달라 하나로 고정할 수 없으므로, 칩과 같은 선언 모델을 쓴다.
+  cleanScopes?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<CleanScope[]>;
 
-  // 【v1.3.0】 B-4 — 삭제 가능한 빌드 디렉토리의 절대경로. 빈 배열 = 삭제할 트리 없음.
+  // 【v1.3.0】 B-4 — 선택된 범위의 clean Task. scopeId는 cleanScopes가 준 id.
+  createCleanTask?(project: ProjectInfo, sel: Selection, config: InvocationConfig,
+                   scopeId: string): Promise<vscode.Task | undefined>;
+
+  // 【v1.3.0】 B-4 — 삭제 가능한 빌드 디렉토리. 빈 배열 = 삭제할 트리 없음.
+  // 경로만으로는 `<project>/build`와 `<root>/build`를 구분할 수 없으므로 설명을 함께 준다.
   // 반환값은 '후보'이지 '허가'가 아니다 — core/cleanPlan.ts가 워크스페이스 밖·소스
   // 디렉토리를 거부한 뒤에야 실제 삭제가 일어난다.
-  buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string[]>;
+  buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<BuildTreeDir[]>;
 
   createProject(target: NewProjectTarget): ProjectCreation;   // F20 (§5)
 
@@ -454,11 +460,11 @@ v1.3.0 구현 기준(각 `src/adapters/*/​*Adapter.ts`의 실제 선언값). �
 
 | 어댑터 | `actions.clean` | `createCleanTask` | `buildTreeDirs` |
 |---|---|---|---|
-| `cargo` | true | `cargo clean` | `target/` |
-| `cmake` | true | `cmake --build <tree> --target clean` (미구성 트리면 undefined) | 활성 빌드 트리(프리셋 `binaryDir` 또는 `build-dir` 오버레이) |
-| `vs` | true | `MSBuild <manifest> /t:Clean` (빌드와 동일 인자) | **미구현 — 의도적** (출력 경로 추측 금지, DD-05) |
+| `cargo` | true | `cargo clean -p <pkg>` (기본) · `cargo clean` (워크스페이스, 멤버 2+일 때만 노출) | `target/` |
+| `cmake` | true | `cmake --build <tree> --target clean` — **범위 1개**(타깃별 clean 없음). 미구성 트리면 빈 목록 | 활성 빌드 트리(프리셋 `binaryDir` 또는 `build-dir` 오버레이) |
+| `vs` | true | `MSBuild /t:Clean` — `.vcxproj`는 이 프로젝트/솔루션 전체 2개, `.sln`은 1개 | **미구현 — 의도적** (출력 경로 추측 금지, DD-05) |
 | `dotnet` | true | `dotnet clean` (빌드와 동일 `-c`/`-f`/`-r`) | `bin/` · `obj/` |
-| `go` | true | `go clean` (빌드 플래그 제외) | **없음** — GOCACHE는 모듈 밖 |
+| `go` | true | `go clean <pkg>` · `go clean ./...` (빌드 플래그 제외) | **없음** — GOCACHE는 모듈 밖 |
 | `node` · `python` | false | — | — |
 - **Python 리트머스:** `actions.build: false` + `configCategories: ['env','runArgs']` — profile/architecture/build 없이 스위처+환경+실행+디버그가 동작하며, 설정 페이지에서 compiler/linker/output 카테고리가 선언대로 사라진다(INV-2 검증).
 

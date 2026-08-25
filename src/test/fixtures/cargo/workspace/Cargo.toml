@@ -1,0 +1,8 @@
+# A real cargo workspace, so the Clean picker has two genuinely different scopes to offer
+# (B-4): "clean this package" (`cargo clean -p`) and "clean the whole workspace"
+# (`cargo clean`, which empties the shared target/ for every member). The single-package
+# fixture next door cannot show that difference — there, both commands do the same thing
+# and only one scope is listed.
+[workspace]
+resolver = "2"
+members = ["app-a", "app-b"]

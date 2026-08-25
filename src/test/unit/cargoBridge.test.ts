@@ -16,6 +16,7 @@ import {
   pickExecutable,
   tomlScalar,
   type CargoMetadata,
+  cargoCleanArgs,
 } from '../../adapters/cargo/cargoBridge';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -355,5 +356,25 @@ describe('buildLldbConfig', () => {
     const config = buildLldbConfig(undefined, '/w/target/debug/app', [], '/w');
     assert.equal(config.name, 'Debug');
     assert.deepEqual(config.args, []);
+  });
+});
+
+// ── cargoCleanArgs (B-4) ─────────────────────────────────────────────────────
+// `cargo clean` without -p empties the workspace target directory, from a member
+// directory too. Picking one project and losing every sibling's artifacts is not what
+// the command appears to offer, so the project scope must always carry -p.
+
+describe('cargoCleanArgs', () => {
+  it('scopes to the package by default', () => {
+    assert.deepEqual(cargoCleanArgs('project', 'hello'), ['clean', '-p', 'hello']);
+  });
+
+  it('cleans the whole workspace only when that scope was chosen', () => {
+    assert.deepEqual(cargoCleanArgs('all', 'hello'), ['clean']);
+  });
+
+  it('treats an unknown scope as the narrow one', () => {
+    // Erring toward deleting less is the right default for a destructive-ish command.
+    assert.deepEqual(cargoCleanArgs('something-else', 'hello'), ['clean', '-p', 'hello']);
   });
 });

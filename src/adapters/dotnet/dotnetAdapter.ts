@@ -251,6 +251,24 @@ export const dotnetAdapter: LanguageAdapter = {
     return makeDotnetTask('run', project, sel, config);
   },
 
+  /**
+   * `dotnet clean` is already project-scoped, so there is one honest scope to offer (B-4).
+   * It cleans the axes the build used — a clean with a different -c/-f/-r would leave the
+   * artifacts the user meant to drop.
+   */
+  async cleanScopes(project, sel) {
+    const configuration = typeof sel.values.profile === 'string' ? sel.values.profile : 'Debug';
+    const framework = typeof sel.values.target === 'string' ? sel.values.target : undefined;
+    return [
+      {
+        id: 'project',
+        label: `Clean ${project.name}`,
+        description: `dotnet clean -c ${configuration}${framework ? ` -f ${framework}` : ''}`,
+        detail: 'Removes the output for the selected configuration only. bin/ and obj/ stay.',
+      },
+    ];
+  },
+
   /** `dotnet clean` for the selected configuration/framework (B-4). */
   async createCleanTask(project, sel, config) {
     return makeDotnetTask('clean', project, sel, config);
@@ -260,7 +278,10 @@ export const dotnetAdapter: LanguageAdapter = {
    *  `dotnet clean`, removing them also clears stale obj/ state a clean leaves behind. */
   async buildTreeDirs(project) {
     const dir = cwdOf(project);
-    return [join(dir, 'bin'), join(dir, 'obj')];
+    return [
+      { path: join(dir, 'bin'), description: 'Build output for every configuration' },
+      { path: join(dir, 'obj'), description: 'Intermediate state \u2014 restore results, generated sources' },
+    ];
   },
 
   async createDebugConfig(project, sel, config) {

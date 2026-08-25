@@ -597,6 +597,32 @@ export const cmakeAdapter: LanguageAdapter = {
    * request had created a build tree — exactly the behaviour v1.2.1 removed. An
    * unconfigured project has nothing to clean, and the orchestrator says so.
    */
+  /**
+   * CMake offers exactly one scope, and it is the whole tree (B-4).
+   *
+   * There is no per-target clean in CMake — `--target clean` removes everything the tree
+   * built — and sub-projects share their root's build tree (ADR-019). Pretending otherwise
+   * would mean inventing a capability the toolchain does not have, so the description says
+   * plainly what will go, including whose tree it is when a sub-project is selected.
+   */
+  async cleanScopes(project, sel, config) {
+    const buildDir = await buildTreeFor(project, sel, config);
+    if (!(await bridge.isConfigured(buildDir))) {
+      return []; // nothing configured — and cleaning must not configure one (v1.2.1)
+    }
+    const shared = project.parentId !== undefined;
+    return [
+      {
+        id: 'all',
+        label: shared ? 'Clean the root build tree' : `Clean ${project.name}`,
+        description: `cmake --build "${buildDir}" --target clean`,
+        detail: shared
+          ? 'CMake has no per-target clean, and this tree belongs to the root project — every sub-project built here is cleaned with it.'
+          : 'CMake has no per-target clean: everything built in this tree is removed. CMakeCache.txt stays.',
+      },
+    ];
+  },
+
   async createCleanTask(project, sel, config) {
     const buildDir = await buildTreeFor(project, sel, config);
     if (!(await bridge.isConfigured(buildDir))) {
@@ -638,7 +664,16 @@ export const cmakeAdapter: LanguageAdapter = {
    * there. Clean does not remove them. This does.
    */
   async buildTreeDirs(project, sel, config) {
-    return [await buildTreeFor(project, sel, config)];
+    const path = await buildTreeFor(project, sel, config);
+    return [
+      {
+        path,
+        description:
+          project.parentId !== undefined
+            ? 'CMake build tree \u2014 belongs to the root project and is shared with every sub-project'
+            : 'CMake build tree (CMakeCache.txt, .cmake/api/, all build output)',
+      },
+    ];
   },
 
   /**

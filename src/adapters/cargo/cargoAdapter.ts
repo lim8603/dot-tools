@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import {
   ChipItem,
+  CleanScope,
   DiagnosticProbe,
   InvocationConfig,
   LanguageAdapter,
@@ -18,6 +19,7 @@ import {
   buildLldbConfig,
   buildProfileList,
   buildRustflags,
+  cargoCleanArgs,
   CargoBridge,
   CargoMetadata,
   defaultBinTarget,
@@ -334,8 +336,36 @@ export const cargoAdapter: LanguageAdapter = {
     return makeCargoTask('run', project, sel, config);
   },
 
-  /** `cargo clean` — removes the whole target directory contents (B-4). */
-  async createCleanTask(project) {
+  /**
+   * Cargo can clean one package or the whole workspace, so both are offered — but only
+   * when they differ. `cargo clean` from a member directory empties the *workspace* target
+   * dir, wiping every sibling's artifacts, which is not what picking one project suggests.
+   */
+  async cleanScopes(project) {
+    const scopes: CleanScope[] = [
+      {
+        id: 'project',
+        label: `Clean ${project.name}`,
+        description: `cargo clean -p ${project.name}`,
+        detail: 'Removes only this package\u2019s artifacts from the target directory.',
+      },
+    ];
+    // Offer the workspace-wide scope only in a real workspace — in a single-package repo
+    // the two commands do the same thing and a second entry is just noise.
+    const metadata = bridge.peekMetadata(project.manifestPath) ?? (await bridge.fetchMetadata(project.manifestPath));
+    if (parseWorkspacePackages(metadata).length > 1) {
+      scopes.push({
+        id: 'all',
+        label: 'Clean the whole workspace',
+        description: 'cargo clean',
+        detail: 'Empties the shared target directory \u2014 every package in the workspace, not just this one.',
+      });
+    }
+    return scopes;
+  },
+
+  /** `cargo clean`, scoped per cleanScopes (B-4). */
+  async createCleanTask(project, _sel, _config, scopeId) {
     const definition: vscode.TaskDefinition = {
       type: CARGO_TASK_TYPE,
       action: 'clean',
@@ -346,7 +376,9 @@ export const cargoAdapter: LanguageAdapter = {
       project.workspaceFolder,
       `clean ${project.name}`,
       'cargo',
-      new vscode.ProcessExecution('cargo', ['clean'], { cwd: cwdOf(project) }),
+      new vscode.ProcessExecution('cargo', cargoCleanArgs(scopeId, project.name), {
+        cwd: cwdOf(project),
+      }),
     );
     task.presentationOptions = {
       reveal: vscode.TaskRevealKind.Always,
@@ -359,7 +391,16 @@ export const cargoAdapter: LanguageAdapter = {
   /** The cargo build tree. `cargo clean` empties it; this removes it, which also works
    *  when cargo itself is missing or the tree was left in a state cargo will not touch. */
   async buildTreeDirs(project) {
-    return [join(cwdOf(project), 'target')];
+    const metadata = bridge.peekMetadata(project.manifestPath);
+    const shared = metadata !== undefined && parseWorkspacePackages(metadata).length > 1;
+    return [
+      {
+        path: join(cwdOf(project), 'target'),
+        description: shared
+          ? 'Cargo build tree \u2014 shared by every package in this workspace'
+          : 'Cargo build tree',
+      },
+    ];
   },
 
   async createDebugConfig(project, sel, config) {

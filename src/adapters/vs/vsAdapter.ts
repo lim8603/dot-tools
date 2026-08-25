@@ -1,8 +1,9 @@
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import { ensureExtension } from '../../core/ensureExtension';
 import {
+  CleanScope,
   DiagnosticProbe,
   InvocationConfig,
   LanguageAdapter,
@@ -57,6 +58,14 @@ function solutionDirOf(project: ProjectInfo): string | undefined {
   if (project.parentId?.startsWith('vs:')) {
     const rel = project.parentId.slice('vs:'.length);
     return dirname(join(project.workspaceFolder.uri.fsPath, rel));
+  }
+  return undefined;
+}
+
+/** The owning solution's path for a member .vcxproj (parentId is `vs:<rel to sln>`). */
+function solutionPathOf(project: ProjectInfo): string | undefined {
+  if (project.parentId?.startsWith('vs:')) {
+    return join(project.workspaceFolder.uri.fsPath, project.parentId.slice('vs:'.length));
   }
   return undefined;
 }
@@ -271,11 +280,50 @@ export const vsAdapter: LanguageAdapter = {
    * output the build produced (including the /p:SolutionDir injection that keeps member
    * projects writing where the solution build put them).
    */
-  async createCleanTask(project, sel, config) {
+  /**
+   * A `.vcxproj` inside a solution can be cleaned alone or with the whole solution; a
+   * solution itself has only the one scope (B-4). MSBuild is told the same
+   * Configuration/Platform the build used, so it removes the output the build produced.
+   */
+  async cleanScopes(project, sel) {
+    const cfg = `${activeCfg(sel)}|${activePlatform(sel)}`;
+    if (isSolution(project)) {
+      return [
+        {
+          id: 'all',
+          label: `Clean ${project.name}`,
+          description: `MSBuild /t:Clean (${cfg})`,
+          detail: 'Cleans every project in the solution for the selected configuration.',
+        },
+      ];
+    }
+    const scopes: CleanScope[] = [
+      {
+        id: 'project',
+        label: `Clean ${project.name}`,
+        description: `MSBuild "${basename(project.manifestPath)}" /t:Clean (${cfg})`,
+        detail: 'Cleans this project only.',
+      },
+    ];
+    const solution = solutionPathOf(project);
+    if (solution) {
+      scopes.push({
+        id: 'all',
+        label: `Clean the whole solution`,
+        description: `MSBuild "${basename(solution)}" /t:Clean (${cfg})`,
+        detail: 'Cleans every project in the solution, not just this one.',
+      });
+    }
+    return scopes;
+  },
+
+  async createCleanTask(project, sel, config, scopeId) {
+    const solution = scopeId === 'all' ? solutionPathOf(project) : undefined;
+    const manifest = solution ?? project.manifestPath;
     const execution = new vscode.ProcessExecution(
       bridge.peekMsbuild(),
       [
-        ...msbuildBuildArgs(project.manifestPath, activeCfg(sel), activePlatform(sel), solutionDirOf(project)),
+        ...msbuildBuildArgs(manifest, activeCfg(sel), activePlatform(sel), solutionDirOf(project)),
         '/t:Clean',
       ],
       { cwd: dirname(project.manifestPath), env: taskEnv(config) },

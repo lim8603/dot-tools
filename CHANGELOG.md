@@ -10,13 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - **Clean, and Delete Build Tree.** Neither VS Code nor DevSwitcher had a clean concept
   (VS Code's task groups are `build` and `test`), so tidying a project meant dropping to a
   terminal. Two commands now cover it, in the Command Palette:
-  - **Clean** removes build output and leaves the build tree configured — `cargo clean`,
-    `cmake --build … --target clean`, `MSBuild /t:Clean`, `dotnet clean`, `go clean`. Node
-    and Python have no standard clean command and do not offer this.
+  - **Clean** removes build output and leaves the build tree configured. It asks which
+    scope first, because "clean" means something different in every toolchain: cargo
+    offers this package or the whole workspace, a `.vcxproj` offers itself or its whole
+    solution, and CMake offers a single entry because it has no per-target clean. Only
+    what a toolchain can genuinely do is listed, and each entry says which command runs
+    and what disappears. Node and Python have no standard clean command and do not offer
+    this.
   - **Delete Build Tree…** removes the build directory itself. This is what it takes to
     undo a `build/` directory that versions before 1.2.1 wrote into a vendored tree or a
     git submodule — 1.2.1 stopped new ones appearing but could not remove the old ones.
-    It lists every directory before deleting, refuses anything outside the workspace
+    It lists every directory before deleting — each with what it actually is, since
+    `<project>/build` and `<root>/build` are indistinguishable as bare paths and a
+    sub-project's CMake tree belongs to its root — refuses anything outside the workspace
     folder or equal to the project's source directory, and uses the trash where the
     platform has one. Available for Cargo, CMake and .NET; Go builds outside the module,
     and the Visual Studio adapter would have to guess where MSBuild put its output.

@@ -171,6 +171,44 @@ export interface ActionCapabilities {
   // run/debug are common to every language and need no declaration.
 }
 
+/**
+ * B-4 — one scope the Clean command can run at, declared by the adapter.
+ *
+ * "Clean" means different things per toolchain: `cargo clean` empties the whole workspace
+ * target dir, `dotnet clean` touches one project, and CMake has no per-target clean at all.
+ * Rather than pick one meaning and be wrong for most adapters, each adapter declares the
+ * scopes it can actually offer and the UI lists them. Same shape as ChipDescriptor: the UI
+ * renders a declaration and stays language-ignorant (ADR-003 / INV-2).
+ */
+export interface CleanScope {
+  /** Stable id, handed back to createCleanTask. Conventionally 'target' | 'project' | 'all'. */
+  id: string;
+  /** QuickPick label — the adapter's own wording. */
+  label: string;
+  /** What exactly this removes; shown beside the label. */
+  description?: string;
+  /** A second line for anything the user should know before choosing (e.g. a shared tree). */
+  detail?: string;
+}
+
+/**
+ * B-4 — a directory the adapter says can be deleted outright, with what it actually is.
+ *
+ * A bare path is not enough to decide by. `<project>/build` and `<root>/build` look alike
+ * in a confirmation prompt, and a sub-project's CMake tree belongs to its root and is
+ * shared with its siblings — the kind of thing that has to be said, not inferred. The
+ * description is shown next to the path before anything is removed.
+ *
+ * These are candidates, not permissions: core/cleanPlan.ts refuses anything outside the
+ * workspace or equal to the project source directory before a byte is deleted.
+ */
+export interface BuildTreeDir {
+  /** Absolute path. */
+  path: string;
+  /** What this directory is, in the user's terms. */
+  description: string;
+}
+
 /** Result of running a task, surfaced by the TaskRunner (ADR-002). */
 export interface TaskResult {
   exitCode: number | undefined;
@@ -398,7 +436,25 @@ export interface LanguageAdapter {
    * not ask it to build, and a clean command is not that request. The orchestrator
    * deliberately skips `prepareInvocation` on this path for the same reason.
    */
-  createCleanTask?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.Task | undefined>;
+  createCleanTask?(
+    project: ProjectInfo,
+    sel: Selection,
+    config: InvocationConfig,
+    scopeId: string,
+  ): Promise<vscode.Task | undefined>;
+
+  /**
+   * B-4 — the clean scopes this adapter can offer for this project and selection.
+   *
+   * Returning an empty list means there is nothing to clean right now — most importantly
+   * a CMake project with no configured build tree. Cleaning must never *create* one: the
+   * whole point of v1.2.1 was that DevSwitcher does not configure a project the user did
+   * not ask it to build, and a clean request is not that request. The orchestrator
+   * deliberately skips `prepareInvocation` on this path for the same reason.
+   *
+   * Only called when `actions.clean` is true.
+   */
+  cleanScopes?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<CleanScope[]>;
 
   /**
    * B-4 — absolute paths of the build directories that can be deleted outright, the
@@ -416,7 +472,7 @@ export interface LanguageAdapter {
    * anything outside the workspace folder or equal to the project source directory
    * before a single byte is removed.
    */
-  buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string[]>;
+  buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<BuildTreeDir[]>;
 
   /**
    * F20 — scaffold a default-template project. Native tools return a `task`

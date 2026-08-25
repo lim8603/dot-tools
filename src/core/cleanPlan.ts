@@ -16,6 +16,12 @@
  * vscode-free so it can be unit tested (coding_convention §pure/IO split).
  */
 
+/** One candidate directory: an absolute path plus what the adapter says it is. */
+export interface CandidateDir {
+  path: string;
+  description: string;
+}
+
 /** A directory that will not be deleted, and the reason to show for it. */
 export interface RefusedDeletion {
   dir: string;
@@ -24,7 +30,7 @@ export interface RefusedDeletion {
 
 export interface DeletionPlan {
   /** Directories that passed every guard, de-duplicated, in the order given. */
-  deletable: string[];
+  deletable: CandidateDir[];
   /** Directories the guards rejected, with a user-facing reason each. */
   refused: RefusedDeletion[];
 }
@@ -63,13 +69,16 @@ function isAbsolute(path: string): boolean {
  * Order is preserved and duplicates are collapsed, so a caller can show `deletable`
  * verbatim in the confirmation prompt and then delete exactly that list.
  */
-export function classifyDeletions(dirs: readonly string[], guard: DeletionGuard): DeletionPlan {
-  const deletable: string[] = [];
+export function classifyDeletions(
+  dirs: readonly CandidateDir[],
+  guard: DeletionGuard,
+): DeletionPlan {
+  const deletable: CandidateDir[] = [];
   const refused: RefusedDeletion[] = [];
   const seen = new Set<string>();
 
-  for (const dir of dirs) {
-    const trimmed = dir.trim();
+  for (const candidate of dirs) {
+    const trimmed = candidate.path.trim();
     if (trimmed.length === 0) {
       continue; // an adapter returning a blank entry means "nothing here", not an error
     }
@@ -95,7 +104,7 @@ export function classifyDeletions(dirs: readonly string[], guard: DeletionGuard)
       refused.push({ dir: trimmed, reason: 'this is the project source directory' });
       continue;
     }
-    deletable.push(trimmed);
+    deletable.push({ path: trimmed, description: candidate.description });
   }
 
   return { deletable, refused };
@@ -106,12 +115,18 @@ export function classifyDeletions(dirs: readonly string[], guard: DeletionGuard)
  * user's last chance to notice that a directory they care about is on the list, and a
  * summary like "3 directories" would defeat that.
  */
-export function describeDeletionPrompt(projectName: string, deletable: readonly string[]): string {
+export function describeDeletionPrompt(
+  projectName: string,
+  deletable: readonly CandidateDir[],
+): string {
   const heading =
     deletable.length === 1
       ? `Delete this build directory for ${projectName}?`
       : `Delete these ${deletable.length} build directories for ${projectName}?`;
-  return `${heading}\n\n${deletable.join('\n')}`;
+  // Path first, then what it is. A bare path does not tell you that a sub-project's CMake
+  // tree belongs to its root and takes its siblings with it.
+  const lines = deletable.map((d) => `${d.path}\n    ${d.description}`);
+  return `${heading}\n\n${lines.join('\n\n')}`;
 }
 
 /** One-line summary of what was refused, for a follow-up warning. Empty when nothing was. */

@@ -178,7 +178,7 @@ All commands live under **`DevSwitcher:`** in the Command Palette (`Ctrl/Cmd+Shi
 | **Switch Project** | Change the active project. |
 | **Build** / **Run** / **Debug** | Run the action on the active project. |
 | **Stop** | Terminate the active project's running task (e.g. a long-lived `run`). |
-| **Clean** | Remove the active project's build output — `cargo clean`, `cmake --target clean`, `msbuild /t:Clean`, `dotnet clean`, `go clean`. Node and Python have no standard clean command and do not offer this. |
+| **Clean** | Remove the active project's build output. Asks which scope first, listing only what the toolchain can actually do and what each choice removes — cargo offers this package or the whole workspace, CMake offers one tree because it has no per-target clean. Node and Python have no standard clean command and do not offer this. |
 | **Delete Build Tree…** | Delete the build directory itself, after showing you every path and asking. Use it when Clean is not enough — most of all to remove a `build/` that older versions wrote into a vendored tree or submodule. |
 | **Open Settings** | Open the settings page. |
 | **Doctor (environment diagnostics)** | Diagnose toolchains and debug extensions. |
@@ -211,9 +211,16 @@ script picker). **Run Groups** opens the group menu (run / stop / stop all).
 **Clean** and **Delete Build Tree…** are command-palette only, and they are different things.
 Clean removes build output but leaves the build tree configured — for CMake, `CMakeCache.txt`
 and `.cmake/api/` stay. Delete Build Tree removes the directory outright; it is the one that
-undoes a `build/` that appeared inside a repository you only meant to read. It lists every
-directory it is about to remove, refuses anything outside the workspace or equal to the
-project source directory, and moves files to the trash where the platform supports it.
+undoes a `build/` that appeared inside a repository you only meant to read.
+
+Both say what they will do before doing it, because "clean" means something different in
+every toolchain. Clean opens a picker of the scopes that toolchain genuinely supports, each
+showing the command it runs and what disappears: cargo offers this package (`cargo clean -p`)
+or the whole workspace, a `.vcxproj` offers itself or its whole solution, and CMake offers one
+entry — it has no per-target clean, and a sub-project's tree belongs to its root and is
+shared with its siblings. Delete Build Tree lists each directory with what it is, refuses
+anything outside the workspace or equal to the project source directory, and moves files to
+the trash where the platform supports it.
 
 Change any of them in VS Code's **Keyboard Shortcuts** editor — the settings page's **General**
 tab lists them and links straight there (filtered to DevSwitcher). VS Code's built-in keys

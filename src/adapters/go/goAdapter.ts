@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { dirname } from 'node:path';
 import {
+  CleanScope,
   DevSwitcherError,
   DiagnosticProbe,
   InvocationConfig,
@@ -40,8 +41,8 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
 }
 
 /** Build a ProcessExecution-backed `go build`/`go run` Task (no shell, array args — NFR-002). */
-function makeGoTask(action: 'build' | 'run' | 'clean', project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
-  const args = assembleGoArgs(action, targetOf(sel), config);
+function makeGoTask(action: 'build' | 'run' | 'clean', project: ProjectInfo, sel: Selection, config: InvocationConfig, targetOverride?: string): vscode.Task {
+  const args = assembleGoArgs(action, targetOverride ?? targetOf(sel), config);
   const execution = new vscode.ProcessExecution('go', args, {
     cwd: moduleDirOf(project),
     env: taskEnv(config),
@@ -228,10 +229,35 @@ export const goAdapter: LanguageAdapter = {
     return makeGoTask('run', project, sel, config);
   },
 
-  /** `go clean` (B-4). Go writes compiled output to GOCACHE outside the module, so this
-   *  is the only cleanup available — and there is no build tree to delete afterwards. */
-  async createCleanTask(project, sel, config) {
-    return makeGoTask('clean', project, sel, config);
+  /**
+   * Go can clean the selected package or the whole module (B-4). Note that `go clean`
+   * does less than it sounds like — compiled output lives in GOCACHE, outside the module —
+   * so the descriptions say what actually goes.
+   */
+  async cleanScopes(_project, sel) {
+    const target = targetOf(sel);
+    const scopes: CleanScope[] = [
+      {
+        id: 'all',
+        label: 'Clean the whole module',
+        description: 'go clean ./...',
+        detail: 'Removes build artifacts left in the module directories. The build cache (GOCACHE) is not touched.',
+      },
+    ];
+    if (target !== '.') {
+      scopes.unshift({
+        id: 'target',
+        label: `Clean ${target}`,
+        description: `go clean ${target}`,
+        detail: 'Removes artifacts for the selected package only.',
+      });
+    }
+    return scopes;
+  },
+
+  /** `go clean`, scoped per cleanScopes (B-4). */
+  async createCleanTask(project, sel, config, scopeId) {
+    return makeGoTask('clean', project, sel, config, scopeId === 'all' ? './...' : targetOf(sel));
   },
 
   async createDebugConfig(project, sel, config) {
