@@ -3,7 +3,7 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [1.2.1] - 2026-08-24
+## [1.2.1] - 2026-08-25
 
 ### Fixed
 
