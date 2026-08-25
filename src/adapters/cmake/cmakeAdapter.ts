@@ -2,6 +2,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import { ensureExtension } from '../../core/ensureExtension';
+import { displayPath } from '../../core/cleanPlan';
 import {
   ChipItem,
   DiagnosticProbe,
@@ -611,14 +612,17 @@ export const cmakeAdapter: LanguageAdapter = {
       return []; // nothing configured — and cleaning must not configure one (v1.2.1)
     }
     const shared = project.parentId !== undefined;
+    // Relative to the workspace: the QuickPick elides a long description, and an absolute
+    // build path is long enough that the elision lands mid-path.
+    const shown = displayPath(buildDir, project.workspaceFolder.uri.fsPath);
     return [
       {
         id: 'all',
         label: shared ? 'Clean the root build tree' : `Clean ${project.name}`,
-        description: `cmake --build "${buildDir}" --target clean`,
+        description: `cmake --build ${shown} --target clean`,
         detail: shared
-          ? 'CMake has no per-target clean, and this tree belongs to the root project — every sub-project built here is cleaned with it.'
-          : 'CMake has no per-target clean: everything built in this tree is removed. CMakeCache.txt stays.',
+          ? 'Belongs to the root project - every sub-project built here is cleaned too. CMakeCache.txt stays.'
+          : 'Removes everything built in this tree. CMakeCache.txt stays.',
       },
     ];
   },
