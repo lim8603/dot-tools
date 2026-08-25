@@ -268,6 +268,27 @@ function buildDirFor(srcDir: string, config: InvocationConfig): string {
   return config.outputDir ? resolve(srcDir, config.outputDir) : defaultBuildDir(srcDir);
 }
 
+/**
+ * The build tree for the clean/delete flows, resolved without configuring anything.
+ *
+ * The build-task version of this (`peekActivePreset`) reads a cache that prepareInvocation
+ * warmed. Clean deliberately never runs prepareInvocation — configuring a project someone
+ * asked to *clean* would re-create the build tree v1.2.1 stopped us from writing — so this
+ * reads CMakePresets.json directly instead. That is a plain file read, no cmake process
+ * and no build tree.
+ */
+async function buildTreeFor(
+  project: ProjectInfo,
+  sel: Selection,
+  config: InvocationConfig,
+): Promise<string> {
+  const rootDir = rootSrcDirOf(project);
+  const presets = await readPresetsFor(project);
+  const name = activePresetName(sel, presets);
+  const preset = presets.find((p) => p.name === name);
+  return preset ? resolvePresetBinaryDir(preset, rootDir) : buildDirFor(rootDir, config);
+}
+
 /** Configure options from the selection + overlay (§8): build type, platform, and -D flags. */
 function configureOptsFor(sel: Selection, config: InvocationConfig): ConfigureOptions {
   return {
@@ -376,7 +397,7 @@ function debuggerOverride(): DebuggerOverride {
 export const cmakeAdapter: LanguageAdapter = {
   id: 'cmake',
   displayName: 'C++ (CMake)',
-  actions: { build: true, runRequiresBuild: true }, // run = build the target, then execute the artifact
+  actions: { build: true, runRequiresBuild: true, clean: true }, // run = build the target, then execute the artifact
   manifestGlobs: ['**/CMakeLists.txt'],
   // Build/run are extension-free (ADR-014/ADR-009). The debugger extension (cpptools or
   // CodeLLDB) is added here once the debugger is finalized in TASK-035.
@@ -566,6 +587,58 @@ export const cmakeAdapter: LanguageAdapter = {
   },
   createRunTask(project, sel, config) {
     return makeCmakeRunTask(project, sel, config);
+  },
+
+  /**
+   * `cmake --build <tree> --target clean` (B-4).
+   *
+   * Returns undefined when the tree has not been configured. That is the whole point:
+   * `--target clean` needs a configured tree, and generating one here would mean a clean
+   * request had created a build tree — exactly the behaviour v1.2.1 removed. An
+   * unconfigured project has nothing to clean, and the orchestrator says so.
+   */
+  async createCleanTask(project, sel, config) {
+    const buildDir = await buildTreeFor(project, sel, config);
+    if (!(await bridge.isConfigured(buildDir))) {
+      return undefined;
+    }
+    const preset = peekActivePreset(project, sel);
+    const buildConfig = preset ? undefined : activeCfg(sel);
+    const execution = new vscode.ProcessExecution('cmake', buildArgs(buildDir, buildConfig, 'clean'), {
+      cwd: rootSrcDirOf(project),
+      env: taskEnv(config),
+    });
+    const definition: vscode.TaskDefinition = {
+      type: CMAKE_TASK_TYPE,
+      action: 'clean',
+      projectId: project.id,
+    };
+    const task = new vscode.Task(
+      definition,
+      project.workspaceFolder,
+      `clean ${project.name}`,
+      'cmake',
+      execution,
+    );
+    task.presentationOptions = {
+      reveal: vscode.TaskRevealKind.Always,
+      panel: vscode.TaskPanelKind.Shared,
+      clear: true,
+    };
+    return task;
+  },
+
+  /**
+   * The CMake build tree — the directory `clean` leaves behind, holding CMakeCache.txt
+   * and .cmake/api/.
+   *
+   * This is the reason B-4 exists. Every version before v1.2.1 configured projects the
+   * user only browsed, writing `<project>/build` into source trees they had no intention
+   * of modifying; in a workspace of git submodules those directories are still sitting
+   * there. Clean does not remove them. This does.
+   */
+  async buildTreeDirs(project, sel, config) {
+    return [await buildTreeFor(project, sel, config)];
   },
 
   /**

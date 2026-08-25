@@ -178,6 +178,8 @@ All commands live under **`DevSwitcher:`** in the Command Palette (`Ctrl/Cmd+Shi
 | **Switch Project** | Change the active project. |
 | **Build** / **Run** / **Debug** | Run the action on the active project. |
 | **Stop** | Terminate the active project's running task (e.g. a long-lived `run`). |
+| **Clean** | Remove the active project's build output — `cargo clean`, `cmake --target clean`, `msbuild /t:Clean`, `dotnet clean`, `go clean`. Node and Python have no standard clean command and do not offer this. |
+| **Delete Build Tree…** | Delete the build directory itself, after showing you every path and asking. Use it when Clean is not enough — most of all to remove a `build/` that older versions wrote into a vendored tree or submodule. |
 | **Open Settings** | Open the settings page. |
 | **Doctor (environment diagnostics)** | Diagnose toolchains and debug extensions. |
 | **Rescan Projects** | Force a re-scan when a folder moved or changed outside the editor. |
@@ -205,6 +207,13 @@ present, so they never clash in unrelated workspaces):
 **Stop** terminates the active project's running task (handy for a long-lived `run` — a dev
 server or watcher). **Switch Target** opens the active project's target picker (Node: the npm
 script picker). **Run Groups** opens the group menu (run / stop / stop all).
+
+**Clean** and **Delete Build Tree…** are command-palette only, and they are different things.
+Clean removes build output but leaves the build tree configured — for CMake, `CMakeCache.txt`
+and `.cmake/api/` stay. Delete Build Tree removes the directory outright; it is the one that
+undoes a `build/` that appeared inside a repository you only meant to read. It lists every
+directory it is about to remove, refuses anything outside the workspace or equal to the
+project source directory, and moves files to the trash where the platform supports it.
 
 Change any of them in VS Code's **Keyboard Shortcuts** editor — the settings page's **General**
 tab lists them and links straight there (filtered to DevSwitcher). VS Code's built-in keys

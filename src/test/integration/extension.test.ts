@@ -17,6 +17,8 @@ const CONTRIBUTED_COMMANDS = [
   'devSwitcher.switchProject',
   'devSwitcher.pickChip',
   'devSwitcher.build',
+  'devSwitcher.clean',
+  'devSwitcher.deleteBuildTree',
   'devSwitcher.run',
   'devSwitcher.stop',
   'devSwitcher.debug',

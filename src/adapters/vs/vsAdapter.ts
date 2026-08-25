@@ -137,7 +137,7 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
 export const vsAdapter: LanguageAdapter = {
   id: 'vs',
   displayName: 'C++ (Visual Studio)',
-  actions: { build: true, runRequiresBuild: true }, // run = build, then execute TargetPath
+  actions: { build: true, runRequiresBuild: true, clean: true }, // run = build, then execute TargetPath
   manifestGlobs: ['**/*.sln', '**/*.slnx', '**/*.vcxproj'],
   // Build/run need no extension (ADR-009); cppvsdbg is ensured dynamically on debug.
   requiredExtensions: [],
@@ -264,6 +264,44 @@ export const vsAdapter: LanguageAdapter = {
     };
     return task;
   },
+
+  /**
+   * `MSBuild <manifest> /t:Clean` for the selected configuration + platform (B-4) —
+   * Visual Studio's "Clean Solution", reusing the exact build args so it cleans the same
+   * output the build produced (including the /p:SolutionDir injection that keeps member
+   * projects writing where the solution build put them).
+   */
+  async createCleanTask(project, sel, config) {
+    const execution = new vscode.ProcessExecution(
+      bridge.peekMsbuild(),
+      [
+        ...msbuildBuildArgs(project.manifestPath, activeCfg(sel), activePlatform(sel), solutionDirOf(project)),
+        '/t:Clean',
+      ],
+      { cwd: dirname(project.manifestPath), env: taskEnv(config) },
+    );
+    const definition: vscode.TaskDefinition = { type: VS_TASK_TYPE, action: 'clean', projectId: project.id };
+    const task = new vscode.Task(
+      definition,
+      project.workspaceFolder,
+      `clean ${project.name}`,
+      'vs',
+      execution,
+      ['$msCompile'],
+    );
+    task.presentationOptions = {
+      reveal: vscode.TaskRevealKind.Always,
+      panel: vscode.TaskPanelKind.Shared,
+      clear: true,
+    };
+    return task;
+  },
+
+  // No buildTreeDirs on purpose. MSBuild output goes to $(Platform)/$(Configuration)
+  // per project plus a solution-level directory, all of it redirectable by properties we
+  // do not evaluate here. Guessing which directories those are is exactly the path
+  // guessing DD-05 forbids, and the cost of guessing wrong is a deleted directory. Clean
+  // covers the real need; deleting a VS build tree stays a manual job.
 
   /** Run task: execute the evaluated TargetPath directly. The path comes from the warm
    *  eval cache (prepareInvocation ran; the orchestrator built first via runRequiresBuild). */

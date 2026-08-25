@@ -85,6 +85,16 @@
         "category": "DevSwitcher"
       },
       {
+        "command": "devSwitcher.clean",
+        "title": "Clean",
+        "category": "DevSwitcher"
+      },
+      {
+        "command": "devSwitcher.deleteBuildTree",
+        "title": "Delete Build Tree…",
+        "category": "DevSwitcher"
+      },
+      {
         "command": "devSwitcher.run",
         "title": "Run",
         "category": "DevSwitcher"
@@ -322,7 +332,7 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "The DevSwitcher action this task runs (build or run)."
+            "description": "The DevSwitcher action this task runs (build, run, or clean)."
           },
           "projectId": {
             "type": "string",
@@ -335,7 +345,7 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "The DevSwitcher action this task runs (build or run)."
+            "description": "The DevSwitcher action this task runs (build, run, or clean)."
           },
           "projectId": {
             "type": "string",
@@ -374,7 +384,7 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "The DevSwitcher action this task runs (build or run)."
+            "description": "The DevSwitcher action this task runs (build, run, or clean)."
           },
           "projectId": {
             "type": "string",
@@ -387,7 +397,7 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "The DevSwitcher action this task runs (build or run)."
+            "description": "The DevSwitcher action this task runs (build, run, or clean)."
           },
           "projectId": {
             "type": "string",
@@ -400,7 +410,7 @@
         "properties": {
           "action": {
             "type": "string",
-            "description": "The DevSwitcher action this task runs (build or run)."
+            "description": "The DevSwitcher action this task runs (build, run, or clean)."
           },
           "projectId": {
             "type": "string",

@@ -1,4 +1,4 @@
-import { join, sep } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
@@ -13,6 +13,7 @@ import { ensureExtension } from './ensureExtension';
 import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
 import { buildDiagnostics, worstStatus } from './diagnostics';
 import { createBuildEventTask, type BuildEventPhase } from './buildEvents';
+import { classifyDeletions, describeDeletionPrompt, describeRefusals } from './cleanPlan';
 
 /** Default filename offered by the export/import dialogs (F12). */
 const DEFAULT_PROFILE_FILE = 'devswitcher.profile.json';
@@ -243,6 +244,196 @@ export class Orchestrator {
     const context = this.activeContext();
     if (context) {
       await this.runCargoTask(context.project, context.adapter, 'run');
+    }
+  }
+
+  /**
+   * Clean the active project's build output (B-4) — Visual Studio's "Clean Solution".
+   *
+   * Note what this flow does *not* do: it never calls `prepareInvocation`. For CMake that
+   * is the configure step, and configuring a project the user asked to *clean* would
+   * re-create the very build tree v1.2.1 stopped us from writing. An adapter with nothing
+   * to clean says so by returning no task, and we tell the user rather than making one.
+   */
+  async clean(): Promise<void> {
+    const context = this.activeContext();
+    if (!context) {
+      return;
+    }
+    const { project, adapter } = context;
+    if (!adapter.actions.clean || !adapter.createCleanTask) {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: ${adapter.displayName} has no clean command.`,
+      );
+      return;
+    }
+    if (!this.ensureTrusted('clean')) {
+      return;
+    }
+    if (this.taskRunner.isRunning(project.id)) {
+      void vscode.window.showInformationMessage(`DevSwitcher: a task is already running for ${project.name}.`);
+      return;
+    }
+    if (!(await this.ensureRequiredChips(project, adapter))) {
+      return; // user cancelled a required-chip pick (E4)
+    }
+    const selection = this.store.getSelection(project.id);
+    const config = this.activeConfig(project);
+
+    let task: vscode.Task | undefined;
+    try {
+      task = await adapter.createCleanTask(project, selection, config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: clean failed — ${message}`);
+      return;
+    }
+    if (!task) {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: nothing to clean for ${project.name} — it has not been built yet.`,
+      );
+      return;
+    }
+
+    this.statusBar.markActionBusy('build'); // clean reuses the build indicator
+    this.statusBar.setStopVisible(true);
+    try {
+      const result = await this.taskRunner.run(task, project.id);
+      // A user-initiated stop ends the task as "not succeeded"; that is not a failure.
+      if (!result.succeeded && !this.stopping.has(project.id)) {
+        await this.showTaskFailure('clean', result.exitCode);
+      }
+    } finally {
+      this.stopping.delete(project.id);
+      await this.renderActive(); // clear the busy spinner
+    }
+  }
+
+  /**
+   * Delete the active project's build tree outright (B-4).
+   *
+   * Clean removes artifacts and leaves the tree configured; this removes the directory.
+   * It exists because v1.2.1 only stopped *new* in-source CMake build trees from
+   * appearing — the ones already written into vendored trees and submodules still had to
+   * be removed by hand.
+   *
+   * This is the one destructive action in the extension, so: the adapter only proposes
+   * paths, `classifyDeletions` decides which of them are allowed, the user sees every
+   * surviving path in full in a modal, and deletion goes to the trash where the platform
+   * supports it.
+   */
+  async deleteBuildTree(): Promise<void> {
+    const context = this.activeContext();
+    if (!context) {
+      return;
+    }
+    const { project, adapter } = context;
+    if (!adapter.actions.clean || !adapter.buildTreeDirs) {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: ${adapter.displayName} has no build tree to delete.`,
+      );
+      return;
+    }
+    if (!this.ensureTrusted('delete a build tree')) {
+      return;
+    }
+    if (this.taskRunner.isRunning(project.id)) {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: a task is running for ${project.name} — stop it first.`,
+      );
+      return;
+    }
+
+    const selection = this.store.getSelection(project.id);
+    const config = this.activeConfig(project);
+    let candidates: string[];
+    try {
+      candidates = await adapter.buildTreeDirs(project, selection, config);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      void vscode.window.showErrorMessage(`DevSwitcher: could not work out the build tree — ${message}`);
+      return;
+    }
+
+    const existing: string[] = [];
+    for (const dir of candidates) {
+      if (await this.directoryExists(dir)) {
+        existing.push(dir);
+      }
+    }
+
+    const { deletable, refused } = classifyDeletions(existing, {
+      workspaceRoot: project.workspaceFolder.uri.fsPath,
+      sourceDir: dirname(project.manifestPath),
+    });
+    if (refused.length > 0) {
+      // Refusals are a guard tripping, not routine filtering — say so out loud.
+      void vscode.window.showWarningMessage(
+        `DevSwitcher: refused to delete ${describeRefusals(refused)}.`,
+      );
+    }
+    if (deletable.length === 0) {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: no build tree to delete for ${project.name}.`,
+      );
+      return;
+    }
+
+    const confirm = 'Delete';
+    const choice = await vscode.window.showWarningMessage(
+      describeDeletionPrompt(project.name, deletable),
+      { modal: true, detail: 'This cannot be undone from inside VS Code.' },
+      confirm,
+    );
+    if (choice !== confirm) {
+      return;
+    }
+
+    const failed: string[] = [];
+    for (const dir of deletable) {
+      const uri = vscode.Uri.file(dir);
+      try {
+        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: true });
+      } catch {
+        // Some filesystems (network shares, containers) have no trash. Ask again rather
+        // than silently escalating to a permanent delete the user did not agree to.
+        const permanently = 'Delete permanently';
+        const retry = await vscode.window.showWarningMessage(
+          `DevSwitcher: could not move ${dir} to the trash.`,
+          { modal: true, detail: 'Delete it permanently instead?' },
+          permanently,
+        );
+        if (retry !== permanently) {
+          continue;
+        }
+        try {
+          await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
+        } catch (error) {
+          failed.push(`${dir} (${error instanceof Error ? error.message : String(error)})`);
+        }
+      }
+    }
+
+    if (failed.length > 0) {
+      void vscode.window.showErrorMessage(`DevSwitcher: could not delete ${failed.join('; ')}.`);
+    } else {
+      void vscode.window.showInformationMessage(
+        `DevSwitcher: deleted the build tree for ${project.name}.`,
+      );
+    }
+    // The tree is gone, so anything the adapter cached about it (CMake File API replies,
+    // resolved artifact paths) is stale.
+    adapter.invalidateCache(project);
+    await this.refresh();
+  }
+
+  /** Whether a path exists and is a directory. False on any stat failure (absent, denied). */
+  private async directoryExists(path: string): Promise<boolean> {
+    try {
+      const stat = await vscode.workspace.fs.stat(vscode.Uri.file(path));
+      return (stat.type & vscode.FileType.Directory) !== 0;
+    } catch {
+      return false;
     }
   }
 

@@ -74,6 +74,21 @@ describe('goBuildFlags', () => {
 });
 
 describe('assembleGoArgs', () => {
+  // `go clean` removes files; it does not compile, so build flags are not just useless
+  // here — go rejects the command outright when they are passed.
+  it('clean drops the build flags (B-4)', () => {
+    assert.deepEqual(
+      assembleGoArgs('clean', './cmd/api', { compiler: { race: true, trimpath: true } }),
+      ['clean', './cmd/api'],
+    );
+  });
+
+  it('clean ignores runArgs (B-4)', () => {
+    assert.deepEqual(assembleGoArgs('clean', './cmd/api', { runArgs: ['-x'] }), [
+      'clean', './cmd/api',
+    ]);
+  });
+
   it('build puts flags before the target package', () => {
     assert.deepEqual(assembleGoArgs('build', './cmd/api', { compiler: { race: true } }), [
       'build', '-race', './cmd/api',

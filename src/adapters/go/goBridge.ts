@@ -131,8 +131,13 @@ export function goBuildFlags(compiler: Record<string, OptionValue>): string[] {
  * package and are passed to the program (F16 — `go run` takes program args directly, no `--`).
  * `go build` without `-o` writes the binary to the module dir named after the package.
  */
-export function assembleGoArgs(action: 'build' | 'run', target: string, config: InvocationConfig): string[] {
+export function assembleGoArgs(action: 'build' | 'run' | 'clean', target: string, config: InvocationConfig): string[] {
   const flags = goBuildFlags(config.compiler ?? {});
+  if (action === 'clean') {
+    // Build flags do not apply to `go clean` (it removes files, it does not compile), and
+    // passing them would just make go reject the command.
+    return ['clean', target];
+  }
   if (action === 'build') {
     return ['build', ...flags, target];
   }

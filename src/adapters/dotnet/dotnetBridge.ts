@@ -147,7 +147,7 @@ export function buildMsbuildProps(
  * `props` are the `-p:` overlay properties; runArgs follow `--` for run (F16).
  */
 export function assembleDotnetArgs(
-  action: 'build' | 'run',
+  action: 'build' | 'run' | 'clean',
   projectPath: string,
   sel: Selection,
   config: InvocationConfig,
@@ -165,6 +165,11 @@ export function assembleDotnetArgs(
   ];
   if (action === 'build') {
     return ['build', projectPath, ...common];
+  }
+  // Clean takes the same axes as the build so it removes the output that build produced —
+  // a clean run with a different -c/-f/-r would leave the artifacts the user meant to drop.
+  if (action === 'clean') {
+    return ['clean', projectPath, ...common];
   }
   const runArgs = config.runArgs ?? [];
   return [

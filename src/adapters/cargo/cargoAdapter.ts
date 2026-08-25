@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import {
@@ -165,7 +165,7 @@ async function metadataFor(
 export const cargoAdapter: LanguageAdapter = {
   id: 'cargo',
   displayName: 'Rust (Cargo)',
-  actions: { build: true },
+  actions: { build: true, clean: true },
   manifestGlobs: ['**/Cargo.toml'],
   requiredExtensions: ['vadimcn.vscode-lldb'],
   canCreateProject: true,
@@ -332,6 +332,34 @@ export const cargoAdapter: LanguageAdapter = {
 
   createRunTask(project, sel, config) {
     return makeCargoTask('run', project, sel, config);
+  },
+
+  /** `cargo clean` — removes the whole target directory contents (B-4). */
+  async createCleanTask(project) {
+    const definition: vscode.TaskDefinition = {
+      type: CARGO_TASK_TYPE,
+      action: 'clean',
+      projectId: project.id,
+    };
+    const task = new vscode.Task(
+      definition,
+      project.workspaceFolder,
+      `clean ${project.name}`,
+      'cargo',
+      new vscode.ProcessExecution('cargo', ['clean'], { cwd: cwdOf(project) }),
+    );
+    task.presentationOptions = {
+      reveal: vscode.TaskRevealKind.Always,
+      panel: vscode.TaskPanelKind.Shared,
+      clear: true,
+    };
+    return task;
+  },
+
+  /** The cargo build tree. `cargo clean` empties it; this removes it, which also works
+   *  when cargo itself is missing or the tree was left in a state cargo will not touch. */
+  async buildTreeDirs(project) {
+    return [join(cwdOf(project), 'target')];
   },
 
   async createDebugConfig(project, sel, config) {

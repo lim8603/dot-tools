@@ -1,0 +1,123 @@
+/**
+ * Build-tree deletion safety (B-4) — pure classification, no I/O.
+ *
+ * "Delete build tree" is the only destructive thing DevSwitcher does. Everything else it
+ * runs is a build tool doing its own job; this removes directories directly, recursively,
+ * on paths an adapter computed. An adapter bug, an overlay pointing `build-dir` somewhere
+ * unexpected, or an in-source CMake configuration is enough to aim it at a source tree —
+ * so the decision of what may be deleted lives here, in code that can be tested
+ * exhaustively, rather than inline next to the `fs.delete` call.
+ *
+ * The rule is deliberately narrow: a directory must sit strictly *inside* the workspace
+ * folder and must not be the project's own source directory. Anything else is refused
+ * with a reason the caller can show, because silently skipping a path the user was told
+ * would be deleted is worse than saying no.
+ *
+ * vscode-free so it can be unit tested (coding_convention §pure/IO split).
+ */
+
+/** A directory that will not be deleted, and the reason to show for it. */
+export interface RefusedDeletion {
+  dir: string;
+  reason: string;
+}
+
+export interface DeletionPlan {
+  /** Directories that passed every guard, de-duplicated, in the order given. */
+  deletable: string[];
+  /** Directories the guards rejected, with a user-facing reason each. */
+  refused: RefusedDeletion[];
+}
+
+export interface DeletionGuard {
+  /** Absolute path of the workspace folder the project belongs to. */
+  workspaceRoot: string;
+  /** Absolute path of the project's source directory (never deletable). */
+  sourceDir: string;
+}
+
+/** Normalise for comparison: forward slashes, no trailing separator, case-folded. */
+function canonical(path: string): string {
+  const slashed = path.replace(/\\/g, '/').replace(/\/+$/, '');
+  // Windows paths are case-insensitive, and a mixed-case match here would be a hole in
+  // the "not the source directory" guard. POSIX users lose nothing: a real pair of paths
+  // differing only in case is not something an adapter produces for a build tree.
+  return slashed.toLowerCase();
+}
+
+/** Whether `child` is strictly inside `parent` (equal paths are not "inside"). */
+function isInside(child: string, parent: string): boolean {
+  const c = canonical(child);
+  const p = canonical(parent);
+  return c.length > p.length && c.startsWith(`${p}/`);
+}
+
+/** Whether the path is absolute in either the POSIX or the Windows sense. */
+function isAbsolute(path: string): boolean {
+  return path.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(path);
+}
+
+/**
+ * Decide which of an adapter's candidate build directories may actually be deleted.
+ *
+ * Order is preserved and duplicates are collapsed, so a caller can show `deletable`
+ * verbatim in the confirmation prompt and then delete exactly that list.
+ */
+export function classifyDeletions(dirs: readonly string[], guard: DeletionGuard): DeletionPlan {
+  const deletable: string[] = [];
+  const refused: RefusedDeletion[] = [];
+  const seen = new Set<string>();
+
+  for (const dir of dirs) {
+    const trimmed = dir.trim();
+    if (trimmed.length === 0) {
+      continue; // an adapter returning a blank entry means "nothing here", not an error
+    }
+    const key = canonical(trimmed);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    if (!isAbsolute(trimmed)) {
+      refused.push({ dir: trimmed, reason: 'not an absolute path' });
+      continue;
+    }
+    if (canonical(trimmed) === canonical(guard.workspaceRoot)) {
+      refused.push({ dir: trimmed, reason: 'this is the workspace folder itself' });
+      continue;
+    }
+    if (!isInside(trimmed, guard.workspaceRoot)) {
+      refused.push({ dir: trimmed, reason: 'outside the workspace folder' });
+      continue;
+    }
+    if (canonical(trimmed) === canonical(guard.sourceDir)) {
+      refused.push({ dir: trimmed, reason: 'this is the project source directory' });
+      continue;
+    }
+    deletable.push(trimmed);
+  }
+
+  return { deletable, refused };
+}
+
+/**
+ * The confirmation prompt. Every path is listed in full and unabbreviated — this is the
+ * user's last chance to notice that a directory they care about is on the list, and a
+ * summary like "3 directories" would defeat that.
+ */
+export function describeDeletionPrompt(projectName: string, deletable: readonly string[]): string {
+  const heading =
+    deletable.length === 1
+      ? `Delete this build directory for ${projectName}?`
+      : `Delete these ${deletable.length} build directories for ${projectName}?`;
+  return `${heading}\n\n${deletable.join('\n')}`;
+}
+
+/** One-line summary of what was refused, for a follow-up warning. Empty when nothing was. */
+export function describeRefusals(refused: readonly RefusedDeletion[]): string {
+  if (refused.length === 0) {
+    return '';
+  }
+  return refused.map((r) => `${r.dir} (${r.reason})`).join('; ');
+}

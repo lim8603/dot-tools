@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
 import {
   ChipItem,
@@ -48,7 +48,7 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
 
 /** Build a ProcessExecution-backed dotnet Task (no shell, array args — NFR-002). */
 function makeDotnetTask(
-  action: 'build' | 'run',
+  action: 'build' | 'run' | 'clean',
   project: ProjectInfo,
   sel: Selection,
   config: InvocationConfig,
@@ -66,7 +66,7 @@ function makeDotnetTask(
     `${action} ${project.name}`,
     'dotnet',
     execution,
-    action === 'build' ? ['$msCompile'] : undefined, // built-in MSBuild matcher, no extension needed
+    action === 'run' ? undefined : ['$msCompile'], // built-in MSBuild matcher, no extension needed
   );
   if (action === 'build') {
     task.group = vscode.TaskGroup.Build;
@@ -111,7 +111,7 @@ function makeDotnetNewTask(target: NewProjectTarget): vscode.Task {
 export const dotnetAdapter: LanguageAdapter = {
   id: 'dotnet',
   displayName: 'C# (.NET)',
-  actions: { build: true },
+  actions: { build: true, clean: true },
   manifestGlobs: ['**/*.csproj'],
   requiredExtensions: ['ms-dotnettools.csdevkit'],
   canCreateProject: true,
@@ -249,6 +249,18 @@ export const dotnetAdapter: LanguageAdapter = {
 
   createRunTask(project, sel, config) {
     return makeDotnetTask('run', project, sel, config);
+  },
+
+  /** `dotnet clean` for the selected configuration/framework (B-4). */
+  async createCleanTask(project, sel, config) {
+    return makeDotnetTask('clean', project, sel, config);
+  },
+
+  /** bin/ and obj/ — the two directories the SDK owns and rebuilds from nothing. Unlike
+   *  `dotnet clean`, removing them also clears stale obj/ state a clean leaves behind. */
+  async buildTreeDirs(project) {
+    const dir = cwdOf(project);
+    return [join(dir, 'bin'), join(dir, 'obj')];
   },
 
   async createDebugConfig(project, sel, config) {

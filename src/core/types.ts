@@ -158,6 +158,16 @@ export interface ActionCapabilities {
    * projects without a `build` script. Ignored when `build` is false.
    */
   debugRequiresBuild?: boolean;
+  /**
+   * Whether the toolchain has a "clean" concept worth exposing (B-4). True for the five
+   * languages with a real clean command (cargo/cmake/msbuild/dotnet/go); false for Node
+   * and Python, which have no standard one — npm scripts may define `clean`, but
+   * `actions` is a static declaration and cannot vary per project.
+   *
+   * Gates BOTH clean and delete-build-tree in the orchestrator, so an adapter that
+   * declares false is never asked for either.
+   */
+  clean?: boolean;
   // run/debug are common to every language and need no declaration.
 }
 
@@ -376,6 +386,37 @@ export interface LanguageAdapter {
     sel: Selection,
     config: InvocationConfig,
   ): Promise<string | undefined>;
+
+  /**
+   * B-4 — the task that removes build *output* while leaving the build tree itself
+   * configured (`cargo clean`, `cmake --build <dir> --target clean`, `msbuild /t:Clean`,
+   * `dotnet clean`, `go clean`). Only called when `actions.clean` is true.
+   *
+   * Returns undefined when there is nothing to clean — most importantly when a CMake
+   * project has no configured build tree yet. Cleaning must never *create* one: the
+   * whole point of v1.2.1 was that DevSwitcher does not configure a project the user did
+   * not ask it to build, and a clean command is not that request. The orchestrator
+   * deliberately skips `prepareInvocation` on this path for the same reason.
+   */
+  createCleanTask?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<vscode.Task | undefined>;
+
+  /**
+   * B-4 — absolute paths of the build directories that can be deleted outright, the
+   * counterpart to `createCleanTask`. Clean removes artifacts; this removes the tree,
+   * which is what it takes to undo an in-source CMake build tree that should never have
+   * been written (everything before v1.2.1 wrote them freely).
+   *
+   * Only called when `actions.clean` is true. An empty list means the adapter has no
+   * deletable tree — Go builds into GOCACHE outside the project, and the Visual Studio
+   * adapter deliberately declines to guess, since MSBuild output splits across
+   * per-configuration and solution-level directories that cannot be derived reliably
+   * (the DD-05 "no path guessing" rule).
+   *
+   * The returned paths are candidates, not permissions: `core/cleanPlan.ts` refuses
+   * anything outside the workspace folder or equal to the project source directory
+   * before a single byte is removed.
+   */
+  buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<string[]>;
 
   /**
    * F20 — scaffold a default-template project. Native tools return a `task`

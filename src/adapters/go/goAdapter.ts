@@ -40,7 +40,7 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
 }
 
 /** Build a ProcessExecution-backed `go build`/`go run` Task (no shell, array args — NFR-002). */
-function makeGoTask(action: 'build' | 'run', project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
+function makeGoTask(action: 'build' | 'run' | 'clean', project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
   const args = assembleGoArgs(action, targetOf(sel), config);
   const execution = new vscode.ProcessExecution('go', args, {
     cwd: moduleDirOf(project),
@@ -88,7 +88,7 @@ async function readModulePath(manifestPath: string): Promise<string | undefined>
 export const goAdapter: LanguageAdapter = {
   id: 'go',
   displayName: 'Go',
-  actions: { build: true },
+  actions: { build: true, clean: true },
   manifestGlobs: ['**/go.mod'],
   requiredExtensions: ['golang.go'],
   canCreateProject: true,
@@ -226,6 +226,12 @@ export const goAdapter: LanguageAdapter = {
   createRunTask(project, sel, config) {
     // `go run` compiles and runs in one command (single-command run, no runRequiresBuild).
     return makeGoTask('run', project, sel, config);
+  },
+
+  /** `go clean` (B-4). Go writes compiled output to GOCACHE outside the module, so this
+   *  is the only cleanup available — and there is no build tree to delete afterwards. */
+  async createCleanTask(project, sel, config) {
+    return makeGoTask('clean', project, sel, config);
   },
 
   async createDebugConfig(project, sel, config) {

@@ -113,6 +113,26 @@ describe('assembleDotnetArgs', () => {
     ]);
   });
 
+  // Clean must target the same output the build produced. If it dropped -c/-f/-r it
+  // would clean the default configuration and leave the artifacts the user meant to drop.
+  it('cleans with the same axes the build used (B-4)', () => {
+    const args = assembleDotnetArgs(
+      'clean',
+      'App.csproj',
+      sel({ profile: 'Release', target: 'net10.0', architecture: 'win-x64' }),
+      {},
+      ['-p:Optimize=true'],
+    );
+    assert.deepEqual(args, [
+      'clean', 'App.csproj', '-c', 'Release', '-f', 'net10.0', '-r', 'win-x64', '-p:Optimize=true',
+    ]);
+  });
+
+  it('clean ignores runArgs, which belong to run alone (B-4)', () => {
+    const args = assembleDotnetArgs('clean', 'App.csproj', sel({}), { runArgs: ['--verbose'] });
+    assert.deepEqual(args, ['clean', 'App.csproj', '-c', 'Debug']);
+  });
+
   it('defaults configuration to Debug and omits optional -f/-r', () => {
     assert.deepEqual(assembleDotnetArgs('build', 'App.csproj', sel({}), {}), [
       'build', 'App.csproj', '-c', 'Debug',

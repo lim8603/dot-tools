@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import type { OptionValue } from '../../core/types';
 import { DevSwitcherError } from '../../core/errors';
@@ -812,6 +812,23 @@ export class CMakeBridge {
       return cached;
     }
     return readReplyDir(join(buildDir, '.cmake', 'api', 'v1', 'reply'), config);
+  }
+
+  /**
+   * Whether `buildDir` holds a configured CMake tree, judged by CMakeCache.txt.
+   *
+   * Used by the clean flow, which must never configure: `--target clean` needs a
+   * configured tree, and generating one to satisfy a *clean* request would put back the
+   * behaviour v1.2.1 removed. Reads nothing but a directory entry — no cmake process, no
+   * files written.
+   */
+  async isConfigured(buildDir: string): Promise<boolean> {
+    try {
+      await access(join(buildDir, 'CMakeCache.txt'));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /** Request codemodel (targets/paths) + toolchains (compiler id) replies on the next
