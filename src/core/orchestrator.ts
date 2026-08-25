@@ -412,10 +412,14 @@ export class Orchestrator {
       return;
     }
 
+    const workspaceRoot = project.workspaceFolder.uri.fsPath;
     const confirm = 'Delete';
     const choice = await vscode.window.showWarningMessage(
-      describeDeletionPrompt(project.name, deletable),
-      { modal: true, detail: 'This cannot be undone from inside VS Code.' },
+      describeDeletionPrompt(project.name, deletable, workspaceRoot),
+      {
+        modal: true,
+        detail: `Paths are relative to ${project.workspaceFolder.name}. This cannot be undone from inside VS Code.`,
+      },
       confirm,
     );
     if (choice !== confirm) {

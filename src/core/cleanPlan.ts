@@ -111,13 +111,32 @@ export function classifyDeletions(
 }
 
 /**
- * The confirmation prompt. Every path is listed in full and unabbreviated — this is the
- * user's last chance to notice that a directory they care about is on the list, and a
- * summary like "3 directories" would defeat that.
+ * A path as the prompt should show it: relative to the workspace folder when it is inside
+ * one, which every deletable path is by the time it gets here.
+ *
+ * Absolute paths get elided in the middle by the modal ("d:\\GitHub\\...\\target"), and an
+ * elided path defeats the entire point of listing them — you cannot tell a workspace's
+ * target directory from a package's. Relative paths are short enough to survive intact and
+ * read better besides.
+ */
+export function displayPath(path: string, workspaceRoot: string): string {
+  const p = path.replace(/\\/g, '/').replace(/\/+$/, '');
+  const root = workspaceRoot.replace(/\\/g, '/').replace(/\/+$/, '');
+  if (p.toLowerCase().startsWith(`${root.toLowerCase()}/`)) {
+    return p.slice(root.length + 1);
+  }
+  return path; // outside the workspace — the guards refuse these, but never shorten one
+}
+
+/**
+ * The confirmation prompt. Every path is listed and unabbreviated — this is the user's
+ * last chance to notice that a directory they care about is on the list, and a summary
+ * like "3 directories" would defeat that.
  */
 export function describeDeletionPrompt(
   projectName: string,
   deletable: readonly CandidateDir[],
+  workspaceRoot: string,
 ): string {
   const heading =
     deletable.length === 1
@@ -125,7 +144,7 @@ export function describeDeletionPrompt(
       : `Delete these ${deletable.length} build directories for ${projectName}?`;
   // Path first, then what it is. A bare path does not tell you that a sub-project's CMake
   // tree belongs to its root and takes its siblings with it.
-  const lines = deletable.map((d) => `${d.path}\n    ${d.description}`);
+  const lines = deletable.map((d) => `${displayPath(d.path, workspaceRoot)}\n    ${d.description}`);
   return `${heading}\n\n${lines.join('\n\n')}`;
 }
 

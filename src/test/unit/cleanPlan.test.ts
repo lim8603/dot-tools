@@ -3,6 +3,7 @@ import {
   classifyDeletions,
   describeDeletionPrompt,
   describeRefusals,
+  displayPath,
 } from '../../core/cleanPlan';
 
 const GUARD = {
@@ -110,31 +111,65 @@ describe('classifyDeletions', () => {
   });
 });
 
+// Found in F5: the modal elides the middle of a long absolute path
+// ("d:\\GitHub\\lim8603\\dot-tools...\\target"), which makes a workspace's target
+// directory indistinguishable from a package's — the one distinction the prompt exists to
+// draw. Everything deletable is inside the workspace by then, so relative is both shorter
+// and more precise.
+describe('displayPath', () => {
+  it('drops the workspace prefix', () => {
+    assert.equal(displayPath('C:/ws/app/build', 'C:/ws'), 'app/build');
+  });
+
+  it('handles backslashes and a trailing separator on the root', () => {
+    assert.equal(displayPath('C:\\ws\\app\\build', 'C:\\ws\\'), 'app/build');
+  });
+
+  it('ignores case, since Windows paths do', () => {
+    assert.equal(displayPath('C:/WS/app/build', 'C:/ws'), 'app/build');
+  });
+
+  it('leaves a path outside the workspace exactly as it is', () => {
+    // The guards refuse these, so one should never reach the prompt — but if it did,
+    // shortening it would hide the very thing that makes it alarming.
+    assert.equal(displayPath('D:/elsewhere/build', 'C:/ws'), 'D:/elsewhere/build');
+  });
+
+  it('does not treat a sibling with a shared prefix as inside', () => {
+    assert.equal(displayPath('C:/ws-backup/build', 'C:/ws'), 'C:/ws-backup/build');
+  });
+});
+
 describe('describeDeletionPrompt', () => {
   // The prompt is the last chance to notice a directory that should not be on the list,
   // so every path is spelled out — no "3 directories" summary.
-  it('lists every path in full', () => {
-    const text = describeDeletionPrompt('app', dirs('C:/ws/app/bin', 'C:/ws/app/obj'));
-    assert.ok(text.includes('C:/ws/app/bin'));
-    assert.ok(text.includes('C:/ws/app/obj'));
+  it('lists every path, relative to the workspace', () => {
+    const text = describeDeletionPrompt('app', dirs('C:/ws/app/bin', 'C:/ws/app/obj'), 'C:/ws');
+    assert.ok(text.includes('app/bin'));
+    assert.ok(text.includes('app/obj'));
     assert.ok(text.includes('2'));
+    assert.ok(!text.includes('C:/ws/app/bin'), 'the absolute form is what gets elided');
   });
 
   it('reads naturally for a single directory', () => {
-    const text = describeDeletionPrompt('app', dirs('C:/ws/app/build'));
+    const text = describeDeletionPrompt('app', dirs('C:/ws/app/build'), 'C:/ws');
     assert.match(text, /this build directory for app/);
   });
 
   // A path alone does not tell you that a sub-project's CMake tree belongs to its root and
   // takes its siblings with it. That is exactly the case someone needs to catch here.
   it('says what each directory is, next to its path', () => {
-    const text = describeDeletionPrompt('mathlib', [
-      {
-        path: 'C:/ws/build',
-        description: 'CMake build tree — belongs to the root project and is shared',
-      },
-    ]);
-    assert.ok(text.includes('C:/ws/build'));
+    const text = describeDeletionPrompt(
+      'mathlib',
+      [
+        {
+          path: 'C:/ws/nested/build',
+          description: 'CMake build tree — belongs to the root project and is shared',
+        },
+      ],
+      'C:/ws',
+    );
+    assert.ok(text.includes('nested/build'));
     assert.ok(text.includes('shared'));
   });
 });
