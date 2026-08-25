@@ -87,6 +87,20 @@ function showLibraries(): boolean {
   return vscode.workspace.getConfiguration('devSwitcher').get<boolean>('projects.showLibraries', true);
 }
 
+/**
+ * Opt-in (B-5): configure a project just to fill in its Target list, even on the paths
+ * that pass `probe: false`. Off by default, which is the v1.2.1 behaviour — configuring
+ * writes a build tree into the source directory, and that is exactly what v1.2.1 stopped
+ * doing to repositories the user only reads. Turning it on is a promise that every CMake
+ * project in the workspace is one the user owns.
+ *
+ * The adapter reads this itself rather than the UI passing it down: the orchestrator and
+ * the settings page keep sending `probe: false` and stay ignorant of CMake (INV-2).
+ */
+function configureOnSelect(): boolean {
+  return vscode.workspace.getConfiguration('devSwitcher.cmake').get<boolean>('configureOnSelect', false);
+}
+
 /** Default build tree (gitignored) — the overlay `build-dir` can override it in TASK-034. */
 function defaultBuildDir(srcDir: string): string {
   return join(srcDir, 'build');
@@ -473,7 +487,9 @@ export const cmakeAdapter: LanguageAdapter = {
       // "All targets" entry (build the whole tree, MS-021). Single-target projects
       // auto-select via defaultValue.
       listItems: async (project, opts) => {
-        const targets = await listSwitcherTargetsFor(project, { configure: opts?.probe !== false });
+        const targets = await listSwitcherTargetsFor(project, {
+          configure: opts?.probe !== false || configureOnSelect(),
+        });
         const items: ChipItem[] = targets.map((t) => ({
           id: t.name,
           label: t.name,
@@ -489,7 +505,9 @@ export const cmakeAdapter: LanguageAdapter = {
       // action seeds it for real. Seeding before build/run/debug (and before a run group
       // starts its members) leaves probing on, so a sole target is still auto-picked.
       defaultValue: async (project, opts) => {
-        const targets = await listSwitcherTargetsFor(project, { configure: opts?.probe !== false });
+        const targets = await listSwitcherTargetsFor(project, {
+          configure: opts?.probe !== false || configureOnSelect(),
+        });
         return targets.length === 1 ? targets[0].name : undefined;
       },
       // Chip caption for the sentinel — 'All' reads better than the raw '__all__' id.

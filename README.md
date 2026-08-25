@@ -253,6 +253,7 @@ rest of the group still starts.
 | `devSwitcher.statusBar.selectedOnly` | `false` | Hide optional chips that have no value (required chips stay). |
 | `devSwitcher.projects.showLibraries` | `true` | List library projects/targets (static/shared) in the switcher and Target picker. They build, but cannot run or debug. |
 | `devSwitcher.cmake.debugger` | `auto` | Which debugger the CMake adapter uses: `auto` (from the compiler), `cpptools`, or `codelldb`. |
+| `devSwitcher.cmake.configureOnSelect` | `false` | Configure a CMake project when it is merely selected, so its target list is ready before the first build. Off by default because configuring writes a build tree into the source directory — in vendored trees and submodules those files show up as local changes in repositories you only meant to read. Turn it on only when you own every CMake project in the workspace. |
 
 ## Known limitations
 

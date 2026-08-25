@@ -26,6 +26,15 @@ describe('getSettingsHtml', () => {
     assert.match(html, /class="card/);
   });
 
+  it('explains an empty chip list instead of showing a bare 0 (B-5)', () => {
+    const html = getSettingsHtml(webview, 'TESTNONCE');
+    // A CMake project that has never been built lists no targets, because selecting a
+    // project does not configure it (v1.2.1). The card must say so rather than render
+    // a 0 that reads as broken.
+    assert.match(html, /not listed yet/);
+    assert.match(html, /Number\(ch\.count\) > 0/);
+  });
+
   it('renders the per-member readiness editor (MS-018)', () => {
     const html = getSettingsHtml(webview, 'TESTNONCE');
     // The Run Groups tab lets each member pick a readiness gate and posts setMemberReadiness.

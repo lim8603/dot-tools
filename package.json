@@ -257,6 +257,11 @@
           ],
           "default": "auto",
           "description": "Which debugger the CMake adapter uses. 'auto' picks the right one from the configured compiler; override only when you prefer a specific debugger (e.g. CodeLLDB for Clang)."
+        },
+        "devSwitcher.cmake.configureOnSelect": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Configure a CMake project when it is merely selected, so its Target list is filled in before the first build.\n\n**Off by default, and that default matters.** Configuring runs `cmake -S . -B <project>/build`, which writes a build tree into the source directory. With this on, browsing the project switcher is enough to create those files - in vendored trees and git submodules they then show up as local changes in repositories you only meant to read.\n\nTurn it on only when every CMake project in the workspace is one you own. With it off, a target list appears after the first Build, or as soon as you open the Target picker."
         }
       }
     },

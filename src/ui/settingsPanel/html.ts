@@ -236,10 +236,19 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     }
     const html = cards.map((c) => {
       const tc = c.toolchain || { status: 'unknown', label: '' };
+      // A count of 0 is not an error and not an empty project - it means nobody has
+      // asked this adapter for the list yet, and DevSwitcher will not run a build or a
+      // configure just to populate a card (that is what v1.2.1 stopped doing). Saying
+      // so beats a bare 0, which reads as broken.
       const chipRows = (c.chips || []).map((ch) =>
         '<span class="card-chip"><span class="muted">' + esc(ch.label) + ':</span> ' +
-        (ch.value ? esc(ch.value) : '<span class="muted">—</span>') +
-        ' <span class="badge" title="options available">' + esc(ch.count) + '</span></span>').join('');
+        (ch.value ? esc(ch.value) : '<span class="muted">—</span>') + ' ' +
+        (Number(ch.count) > 0
+          ? '<span class="badge" title="options available">' + esc(ch.count) + '</span>'
+          : '<span class="badge" title="Nothing listed yet. DevSwitcher does not build or ' +
+            'configure a project just to fill this in - run Build once, or open the chip ' +
+            'from the status bar.">not listed yet</span>') +
+        '</span>').join('');
       return '<div class="card' + (c.active ? ' active' : '') + (c.sub ? ' card-sub' : '') +
         '" data-action="switch-project" data-project-id="' + esc(c.id) + '">' +
         '<div class="card-head"><b>' + (c.sub ? '<span class="muted">↳</span> ' : '') + esc(c.name) + '</b>' +
