@@ -39,6 +39,7 @@ const MANIFEST = '/w/Cargo.toml';
 
 const METADATA_JSON = JSON.stringify({
   workspace_root: '/w',
+  target_directory: '/w/target',
   workspace_members: ['app 0.1.0 (path+file:///w)'],
   packages: [
     {
@@ -72,6 +73,15 @@ describe('CargoBridge.fetchMetadata', () => {
       MANIFEST,
     ]);
     assert.equal(calls[0].cwd, dirname(MANIFEST));
+  });
+
+  // Deleting a build tree has to go where cargo actually writes. For a workspace member
+  // that is the shared <workspace_root>/target, not <package>/target — assembling the path
+  // from the package directory found nothing at all for every member (ADR-005 / DD-05).
+  it('keeps the target directory cargo reports, rather than one we assemble', async () => {
+    const { exec } = fakeExec(() => ({ stdout: METADATA_JSON }));
+    const metadata = await new CargoBridge(exec).fetchMetadata('/w/members/app-b/Cargo.toml');
+    assert.equal(metadata.target_directory, '/w/target');
   });
 
   it('parses the JSON into metadata', async () => {

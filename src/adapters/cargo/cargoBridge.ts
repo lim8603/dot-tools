@@ -44,6 +44,13 @@ export interface CargoMetadata {
   packages: CargoPackage[];
   workspace_members: string[]; // package ids that belong to the workspace
   workspace_root: string;
+  /**
+   * Where cargo actually writes build output. In a workspace this is the shared
+   * `<workspace_root>/target`, not a per-package directory, and it moves with
+   * CARGO_TARGET_DIR or `build.target-dir`. Same rule as the debug executable path
+   * (ADR-005 / DD-05): ask cargo instead of assembling the path ourselves.
+   */
+  target_directory: string;
 }
 
 /** One `cargo build --message-format=json` line we care about (subset). */

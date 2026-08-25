@@ -23,6 +23,7 @@ import {
 
 const metadata: CargoMetadata = {
   workspace_root: '/w',
+  target_directory: '/w/target',
   workspace_members: ['app 0.1.0 (path+file:///w/app)', 'lib 0.1.0 (path+file:///w/lib)'],
   packages: [
     {
@@ -57,6 +58,7 @@ const metadata: CargoMetadata = {
 
 const singleBin: CargoMetadata = {
   workspace_root: '/s',
+  target_directory: '/s/target',
   workspace_members: ['solo 0.1.0 (path+file:///s)'],
   packages: [
     {

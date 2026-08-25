@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import {
@@ -391,13 +391,19 @@ export const cargoAdapter: LanguageAdapter = {
   /** The cargo build tree. `cargo clean` empties it; this removes it, which also works
    *  when cargo itself is missing or the tree was left in a state cargo will not touch. */
   async buildTreeDirs(project) {
-    const metadata = bridge.peekMetadata(project.manifestPath);
-    const shared = metadata !== undefined && parseWorkspacePackages(metadata).length > 1;
+    // cargo reports where it writes; we do not assemble the path. A workspace member's
+    // output goes to the shared <workspace_root>/target, not <package>/target, and
+    // CARGO_TARGET_DIR or build.target-dir moves it again. Assembling it meant finding
+    // nothing at all for every workspace member (ADR-005 / DD-05 - the same rule that
+    // governs the debug executable path: ask cargo, do not guess).
+    const metadata =
+      bridge.peekMetadata(project.manifestPath) ?? (await bridge.fetchMetadata(project.manifestPath));
+    const shared = parseWorkspacePackages(metadata).length > 1;
     return [
       {
-        path: join(cwdOf(project), 'target'),
+        path: metadata.target_directory,
         description: shared
-          ? 'Cargo build tree \u2014 shared by every package in this workspace'
+          ? 'Cargo build tree - shared by every package in this workspace, not just this one'
           : 'Cargo build tree',
       },
     ];
