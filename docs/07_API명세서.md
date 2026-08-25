@@ -218,6 +218,8 @@ export interface LanguageAdapter {
 
   // 【v1.3.0】 B-4 — 삭제 가능한 빌드 디렉토리. 빈 배열 = 삭제할 트리 없음.
   // 경로만으로는 `<project>/build`와 `<root>/build`를 구분할 수 없으므로 설명을 함께 준다.
+  // 경로는 **도구에 물어서** 얻는다(cargo `target_directory` 등). 조합하면 워크스페이스·
+  // 환경변수 재지정에서 어긋난다 — v1.3.0 F5에서 실제로 그렇게 빗나갔다(ADR-005/DD-05).
   // 반환값은 '후보'이지 '허가'가 아니다 — core/cleanPlan.ts가 워크스페이스 밖·소스
   // 디렉토리를 거부한 뒤에야 실제 삭제가 일어난다.
   buildTreeDirs?(project: ProjectInfo, sel: Selection, config: InvocationConfig): Promise<BuildTreeDir[]>;
@@ -242,6 +244,8 @@ export interface LanguageAdapter {
 - **【v1.2.1】 어댑터는 "묻는 쪽이 무엇을 요청했는지"를 구분해야 한다.** `listItems`/`defaultValue`의 `opts.probe`가 `false`면 부작용이나 프로세스 비용이 있는 작업을 해서는 안 된다(§2.1). 이것은 성능 권고가 아니라 **계약**이다 — 이 구분이 없던 시절 CMake 어댑터는 사용자가 프로젝트를 보기만 해도 소스 디렉토리에 빌드 트리를 썼다.
 - **【v1.3.0】 정리(clean)는 구성(configure)을 유발하지 않는다.** `createCleanTask`·`buildTreeDirs` 경로에서 오케스트레이터는 `prepareInvocation`을 호출하지 않는다. 어댑터도 이 두 메서드 안에서 빌드 트리를 생성해서는 안 된다.
 - **【v1.3.0】 삭제 경로에서 경로를 추측하지 않는다**(DD-05의 연장). 출력 경로가 여러 축으로 갈리는 어댑터(vs)는 `buildTreeDirs`를 **구현하지 않는 것이 옳다** — 틀린 추측의 대가가 지워진 디렉토리이기 때문이다.
+- **【v1.3.0】 정리(clean)는 빌드와 같은 축을 넘긴다.** 출력 경로를 가르는 축(아키텍처·구성·프레임워크)을 빠뜨리면 사용자가 지우려던 산출물이 그대로 남는다. 단, **넓히는 방향이면 생략이 옳다** — `cargo clean`은 `--profile` 없이 프로파일 전체를 정리하지만 `dotnet clean`은 `-c` 없이 Debug만 뜻하므로, 같은 규칙이 어댑터마다 반대 결론을 낸다.
+- **【v1.3.0】 사용자에게 보이는 경로는 워크스페이스 상대경로로 표시한다**(`core/cleanPlan.ts`의 `displayPath`). 모달과 QuickPick은 긴 문자열의 **가운데를 생략**하는데, 절대경로에서 그 생략이 하필 두 후보를 구분하는 지점에 떨어진다. 워크스페이스 **밖** 경로는 축약하지 않는다 — 그 경로가 이상하다는 사실 자체가 사용자가 봐야 할 신호이기 때문이다.
 
 ---
 
@@ -460,7 +464,7 @@ v1.3.0 구현 기준(각 `src/adapters/*/​*Adapter.ts`의 실제 선언값). �
 
 | 어댑터 | `actions.clean` | `createCleanTask` | `buildTreeDirs` |
 |---|---|---|---|
-| `cargo` | true | `cargo clean -p <pkg>` (기본) · `cargo clean` (워크스페이스, 멤버 2+일 때만 노출) | `target/` |
+| `cargo` | true | `cargo clean -p <pkg>` (기본) · `cargo clean` (워크스페이스, 멤버 2+일 때만 노출). **선택된 아키텍처가 있으면 `--target <triple>` 동반** — 없으면 `target/<triple>/` 빌드가 남는다. `--profile`은 **의도적 미전달**(빼면 프로파일 전체 정리 = "이 패키지를 정리한다"의 올바른 의미) | `cargo metadata`의 **`target_directory`** — 워크스페이스는 루트의 공유 트리이며 `CARGO_TARGET_DIR`도 반영(경로 조합 금지, ADR-005) |
 | `cmake` | true | `cmake --build <tree> --target clean` — **범위 1개**(타깃별 clean 없음). 미구성 트리면 빈 목록 | 활성 빌드 트리(프리셋 `binaryDir` 또는 `build-dir` 오버레이) |
 | `vs` | true | `MSBuild /t:Clean` — `.vcxproj`는 이 프로젝트/솔루션 전체 2개, `.sln`은 1개 | **미구현 — 의도적** (출력 경로 추측 금지, DD-05) |
 | `dotnet` | true | `dotnet clean` (빌드와 동일 `-c`/`-f`/`-r`) | `bin/` · `obj/` |

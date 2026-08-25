@@ -31,6 +31,12 @@ toolchain's own CLI and resolves paths from real build output, so **your `Cargo.
   language is an adapter — the UI never learns which language it's showing. Don't use some
   of them? Untick languages in the settings page's **General** tab
   (`devSwitcher.languages.enabled`) to hide them entirely.
+- **Keep other people's code out of the switcher.** Vendored trees and git submodules hold
+  real manifests, and they fill the switcher with projects you never wanted to switch to.
+  List their folders in `devSwitcher.scan.exclude` and the scan skips them — it re-runs the
+  moment you save, no manual rescan. Your own exclusions and a project's are **combined**,
+  not overridden, so committing a shared list to `.vscode/settings.json` never discards a
+  rule you set for yourself.
 - **Chips instead of commands.** The active project and its build options (profile, target,
   architecture, features, interpreter, CMake preset, npm script, package manager…) are
   status-bar chips you click to change — no memorizing per-toolchain flags.
@@ -38,6 +44,15 @@ toolchain's own CLI and resolves paths from real build output, so **your `Cargo.
   the toolchain (e.g. CodeLLDB for Rust, `cppvsdbg`/`gdb`/`lldb` for CMake by compiler, coreclr
   for .NET, debugpy for Python, delve for Go, the built-in js-debug for Node/TypeScript) and
   installs the needed extension on demand.
+- **Clean, and delete build trees.** VS Code has no clean concept of its own, so tidying up
+  meant dropping to a terminal. **Clean** removes build output and leaves the tree
+  configured; **Delete Build Tree…** removes the directory itself. Because "clean" means
+  something different in every toolchain, Clean asks which scope first and lists only what
+  that toolchain can genuinely do — cargo offers this package or the whole workspace, a
+  `.vcxproj` offers itself or its solution, CMake offers one entry because it has no
+  per-target clean — each showing the command it will run and what disappears. Deletion
+  lists every directory with what it is, refuses anything outside the workspace or equal to
+  the project's own source directory, and uses the trash where the platform has one.
 - **Per-config settings, zero file edits.** A settings page lets you set compiler flags,
   linker flags, output dirs, environment variables, and pre/post-build commands. They're
   stored per _(project × profile)_ and injected at invocation time (`--config`, `-p:`, `-D`,
