@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **없음** — **🚀 v1.2.0 게시 완료(세션 #017)·MS-022 Done.** MS-001~022 전부 Done. 다음 사이클은 Human 결정(INT-002·TC-11) |
-| 마지막 갱신일 | 2026-08-24 |
-| 참조 세션 로그 | session_2026-08-24_018.md |
+| 활성 Milestone | **MS-023 (v1.3.0)** — 구현·F5 검증 완료, **릴리즈만 남음**(Human이 내일로 결정). v1.2.1은 오늘 게시 완료 |
+| 마지막 갱신일 | 2026-08-25 |
+| 참조 세션 로그 | session_2026-08-25_019.md |
 
 ---
 
@@ -20,9 +20,11 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| (없음) | TASK-001~065 전부 Done — v1.2.0 게시 완료 | — | — | — | 다음 Task는 Human 결정 후 등록 |
+| (미채번) | **v1.3.0 릴리즈** — 브랜치 `feature/ms-023-v1.3.0` 13커밋 | MS-023 | Review | 코드·검증 100% | 없음 — 내일 게시만 하면 됨 |
 
-> **🚀 v1.2.0 게시(세션 #017, D-25/ADR-021) — MS-022 Done.** Visual Studio 어댑터(7번째 툴체인: .sln/.slnx/.vcxproj·MSBuild 직접 구동·CMakeCache 마커 제외·A안 .csproj=dotnet 소유)+B-3 언어 필터+플랫 벡터 아이콘. F5 통과(토스트 축약 피드백 반영) → Marketplace 게시+GitHub Release. 버전 이력: …→v1.1.0→**v1.2.0**.
+> **✅ v1.3.0 F5 검증 완주(세션 #019, MS-023) — 릴리즈 대기.** 백로그 4항목(B-4 Clean/Delete·B-5 configureOnSelect·B-6 probe 정합성·scan.exclude) + **docs 13종 누적 동기화**. 착수 직전 Human 질문("Clean Target? Clean All?")으로 **같은 버튼이 어댑터마다 다르게 동작**함이 드러나 어댑터가 `CleanScope[]`를 선언하고 UI는 나열만 하도록 재설계(칩과 같은 모델). **F5에서 결함 3건 발견·수정** — 셋 다 화면상 "정상 완료"로 보였고 파일시스템·실행 명령 대조로 드러났다(KB #16·#17). unit **379**·통합 6.
+> (직전) **🚀 v1.2.1 게시(세션 #019 전반).** "보기만 해도 configure" 6경로 차단 + 목록 순서 고정. 릴리즈 직전 **stale vsix 발견**(패키징이 최종 수정보다 22분 앞섬 — #018의 스모크는 F5 실패본으로 통과한 것)해 재패키징 후 게시(KB #14).
+> (직전) **🚀 v1.2.0 게시(세션 #017, D-25/ADR-021) — MS-022 Done.** Visual Studio 어댑터(7번째 툴체인: .sln/.slnx/.vcxproj·MSBuild 직접 구동·CMakeCache 마커 제외·A안 .csproj=dotnet 소유)+B-3 언어 필터+플랫 벡터 아이콘. F5 통과(토스트 축약 피드백 반영) → Marketplace 게시+GitHub Release. 버전 이력: …→v1.1.0→**v1.2.0**.
 > (직전) **🚀 v1.1.0 게시(세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건: CMake 중첩 하위 프로젝트(VS 솔루션식)·lib 타겟+차단 토스트·All targets·**런그룹 멤버 디버그**·Ctrl+Alt+T·설정창 블랭크 fix·아이콘 투명화. F5 2회 통과 → Marketplace 게시+GitHub Release. 버전 이력: …→v1.0.0→**v1.1.0**. 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft, v1.2.0+ 후보).
 
 ---
@@ -49,16 +51,15 @@
 | #017 | 2026-08-19 | **🚀 MS-022 v1.2.0 Visual Studio 지원 완주 — 세 번째 Marketplace 게시.** Human 신규 요구 "VS 프로젝트 대응 가능?" → 타당성 검토(어댑터 독립·CMake 생성물 충돌 1건) → **D-25**(CMakeCache 마커 제외·A안 .csproj=dotnet 소유·Windows 전용)·**ADR-021** → 당일 구현: `vsBridge`(순수 sln/slnx/vcxproj 파서+vswhere/MSBuild I/O)·`vsAdapter`(솔루션=루트 계층[ADR-019 재사용]·Configuration/Platform 칩·`-getProperty:TargetPath`·cppvsdbg)·**KB #3**(솔루션 vs 단독 빌드 출력 불일치→`/p:SolutionDir` 주입, 실측)·**B-3 해소**(`languages.enabled` fail-open 필터+General 탭 체크박스)·아이콘 플랫 벡터(Human 제작). F5 통과(피드백=토스트 축약, KB 안티패턴 #11) → v1.2.0 스탬프·docs 7툴체인 주석 갱신·vsix 스모크·main 병합(`330b2b0`)·태그·**`vsce publish` DONE**·**GitHub Release**. unit 318·통합 3 | MS-022 | TASK-063~065 | **v1.2.0 게시 완료.** 다음: Human 결정(INT-002·TC-11) |
 | #018 | 2026-08-24 | **리포 정리 + v1.2.1 결함 수정(F5 대기).** ① vsix 10개 → `release/`(+`package:vsix`) **커밋 완료** ② 기능1(전후 이벤트)=착수 전 취소 · 기능2(`scan.exclude`)=구현 후 **전량 롤백**(재검토 예정) ③ **v1.2.1**: "프로젝트를 보기만 해도 cmake configure되어 읽기 전용 서브모듈에 `build/`가 생긴다" 결함 수정 — 유발 경로 **6개**(최대는 활성화 시 `gatherValidItems`)를 `probe` 옵션 도입으로 차단, 파급 2건(reconcile이 저장값 삭제 / Run Group 시딩 차단) 선제 방어. 곁가지로 **목록 순서 재배치 버그**(findFiles 미정렬, v1.0.0부터 잠복) 수정. README 설치 예제 버전 고착도 수정. unit 321·통합 3·vsix 스모크 통과. **AI가 두 번 오진 → 계측으로 특정**(KB 인사이트 #5·안티패턴 #13). 백로그 B-4·B-5 추가 | — | — | **v1.2.1 코드 완료·F5만 남음(내일)** |
 | #016 | 2026-08-18~19 | **🚀 MS-021 v1.1.0 실사용 피드백 완주 — 두 번째 Marketplace 게시.** 회사 실사용 7건(Human): ① 중첩 CMake 하위 프로젝트(**ADR-019**: 루트=솔루션·타겟 선언 디렉토리=하위·`paths.source` 스코프·`ProjectInfo.parentId/library`) ② lib 타겟+`validateAction` 차단 토스트+`projects.showLibraries` ③ 설정창 블랭크 fix(퀵 페인트·가드·에러 배너) ④ 아이콘 투명화(flood fill+밝기×거리 페이드) ⑤ Ctrl+Alt+T(`pickTarget`, Node=script 폴백) ⑥ All targets(`--target` 생략) ⑦ **런그룹 멤버 Launch Run/Debug**(**ADR-020**, ADR-015 "Run 전용" 대체)+`N running` 표기. D-24(3결정). F5 2회 통과·unit 286·통합 3·실 cmake 스모크 → v1.1.0 스탬프·vsix 스모크·main 병합·태그·**`vsce publish` DONE**·**GitHub Release**. nested 픽스처 신설 | MS-021 | TASK-056~062 | **v1.1.0 게시 완료.** 다음: Human 결정(INT-002·B-3·TC-11) |
+| #019 | 2026-08-25 | **🚀 v1.2.1 게시 + v1.3.0 완주(릴리즈만 남음).** 전반: v1.2.1 F5 검증(파일시스템 PASS) → dotnet 픽스처 오탐을 **실험 3건으로 C# Dev Kit design-time build로 규명**(KB #15) → **stale vsix 발견**(패키징이 최종 커밋보다 앞섬, KB #14) → 재패키징·게시. 후반: **v1.3.0** 계획→구현 5항목(B-4·B-5·B-6·scan.exclude·docs 동기화)→F5. Human 설계 개입 2건: ① Clean 범위를 **어댑터 선언 모델**로("못하는 걸 억지로 시킬 수 없으니 행위를 상세히 표현하고 할 수 있는 것만 제공") ② 테스트 픽스처 보강 지시(cargo 워크스페이스·vendor 트리 신설). **F5 결함 3건**: cargo 워크스페이스 `target/` 위치 오판(ADR-005 미준수)·`cargo clean` 축 누락·모달/피커 **가운데 잘림으로 안전장치 무력화**. docs 13종+README 반영. KB 안티패턴 #14~#17 | MS-023 | v1.3.0 5항목 | **v1.2.1 게시 완료 / v1.3.0 릴리즈 대기(내일)** |
 
 ---
 
 ## 다음 시작점
 
-1. **v1.2.1 마무리(5분)** — 브랜치 `fix/target-chip-no-configure-on-switch`. F5 1회 → **파일시스템으로 검증**(`find src/test/fixtures -maxdepth 4 -type d \( -name build -o -name out \)` 가 비어야 함; 화면만 보면 안 됨) → main FF → `v1.2.1` 태그 → push → `vsce publish` → GitHub Release. 상세 체크리스트는 세션 로그 #018 말미.
-2. **스캔 무시 폴더(`scan.exclude`) 재검토** — 세션 #018에서 구현 후 롤백. 설계 결론·실증 전부 세션 로그 #018에 보존되어 재착수 시 구현부터 가능. 재착수하면 정식 Task/Milestone 등록.
-3. **백로그** — B-4(Clean / 빌드 트리 삭제) · B-5(칩 목록 미리 채우기 옵션, 기본 false 필수). 다음 기능 묶음에서 함께.
-4. **성능·품질 코드리뷰** (세션 #018 미착수분).
-5. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
+1. **v1.3.0 릴리즈 (내일)** — 브랜치 `feature/ms-023-v1.3.0`(13커밋). **코드 변경 없음. F5 검증 완료.** 순서: ① **CHANGELOG 날짜를 실제 게시일로** (현재 `2026-08-25` 고정 — v1.2.1에서 고친 것과 같은 드리프트라 첫 단계) ② `npm run package:vsix` — **최종 커밋 이후에**(KB #14) ③ 번들 역검증(`cleanScopes`·`displayPath` grep) ④ 격리 프로필 스모크 `@1.3.0` ⑤ main FF 병합·`v1.3.0` 태그·push ⑥ `vsce publish` → GitHub Release. 상세는 세션 로그 #019 말미.
+2. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
+3. **성능·품질 코드리뷰** — 세션 #018부터 계속 이월 중. v1.4.0 묶음 후보.
 
 ## 최근 결정/작업 메모
 
@@ -72,13 +73,13 @@
 
 ## 이월 항목
 
-- C-1: `ui_spec.md`(화면설계서, 권장) — UI 구현 착수 시 작성 (설정 페이지 옵션 브라우저 포함)
-- C-2: MS-002~008 상세 Task 분해 — 해당 Milestone 착수 시
-- C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영(편집/승격, 구 §8.7) — v2 착수 시
-- (완료) C-4: `ProfileExport` 확정 + data_model §2 정합화 — TASK-015에서 해소(세션 #005)
-- (완료) MS-006 전체 main FF 병합 완료 (코어 335f982 + TASK-015 b7864cf, 세션 #005). MS-006 Done
-- (완료) MS-003·004·005 main FF 병합 완료 (TASK-004~011)
-- C-5: pre/postBuild 실행 배선 + buildEvent 편집 — MS-007
+- **성능·품질 코드리뷰** — #018에서 착수 예정이었으나 계속 밀림. 다음 기능 묶음에서.
+- (완료) **B-4** Clean / 빌드 트리 삭제 — v1.3.0에서 둘 다 구현(명령 팔레트만)
+- (완료) **B-5** 미구성 프로젝트 칩 목록 옵션 — v1.3.0 `cmake.configureOnSelect`(기본 false) + "not listed yet" 플레이스홀더
+- (완료) **B-6** dotnet probe 미준수 — v1.3.0에서 dotnet·cargo·go·python 전 어댑터 감사·수정
+- (완료) **`scan.exclude`** — #018 롤백분을 v1.3.0에서 설계 그대로 재구현
+- (완료) C-4 `ProfileExport` 확정(세션 #005) · MS-003~006 병합 · C-5 pre/postBuild 배선
+- C-3: (v2) 호출 구성 오버레이 → 캐노니컬 파일 영구 반영 — **폐기됨**(D-15/ADR-013, 파일 무편집이 영구 불변식)
 
 ---
 
