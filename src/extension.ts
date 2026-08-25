@@ -71,6 +71,11 @@ export function activate(context: vscode.ExtensionContext): void {
       if (e.affectsConfiguration('devSwitcher.languages')) {
         void orchestrator.refresh();
       }
+      // Scan exclusions: a folder added to (or removed from) the list changes what the
+      // workspace scan finds, so re-scan instead of making the user hunt for Rescan.
+      if (e.affectsConfiguration('devSwitcher.scan.exclude')) {
+        void orchestrator.refresh();
+      }
     }),
     // Debug sessions aren't tasks, so track them for the Stop button as they start/end.
     vscode.debug.onDidStartDebugSession((session) => orchestrator.noteDebugSessionStarted(session)),

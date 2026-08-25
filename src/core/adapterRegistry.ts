@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ALL_ADAPTERS } from '../adapters';
 import { enabledAdapterIds } from './languageFilter';
+import { mergeExcludePatterns, toExcludeGlob } from './scanExclude';
 import type { LanguageAdapter, ProjectInfo } from './types';
 
 /**
@@ -10,7 +11,31 @@ import type { LanguageAdapter, ProjectInfo } from './types';
  * would otherwise flood the Node switcher; it only exists in extension-dev workspaces but
  * is always non-project.
  */
-const EXCLUDE_GLOB = '**/{target,node_modules,.git,.vscode-test}/**';
+const BUILTIN_EXCLUDE_DIRS = ['target', 'node_modules', '.git', '.vscode-test'];
+
+/**
+ * The exclude pattern for one scan pass: the built-in directories plus whatever
+ * `devSwitcher.scan.exclude` adds (vendored trees, submodules, anything the user does not
+ * want listed at all).
+ *
+ * `inspect()` rather than `get()` on purpose — exclusions are additive, so the User and
+ * Workspace levels are unioned. With `get()`, a workspace setting would override and
+ * silently discard the user's personal rules (see core/scanExclude.ts).
+ *
+ * Computed once per scan, not per glob: the setting cannot change mid-pass, and a scan
+ * asks once per adapter manifest glob.
+ */
+function excludeGlob(): string {
+  const inspected = vscode.workspace
+    .getConfiguration('devSwitcher')
+    .inspect<string[]>('scan.exclude');
+  const patterns = mergeExcludePatterns(
+    inspected?.globalValue,
+    inspected?.workspaceValue,
+    inspected?.workspaceFolderValue,
+  );
+  return toExcludeGlob(BUILTIN_EXCLUDE_DIRS, patterns);
+}
 
 /**
  * AdapterRegistry — workspace scan and project→adapter matching (TASK-007, ADR-006 /
@@ -51,10 +76,11 @@ export class AdapterRegistry {
   /** Rescan the workspace and refresh the project list. */
   async scan(): Promise<ProjectInfo[]> {
     const found: ProjectInfo[] = [];
+    const exclude = excludeGlob();
     for (const adapter of this.enabledAdapters()) {
       const uris: vscode.Uri[] = [];
       for (const glob of adapter.manifestGlobs) {
-        uris.push(...(await vscode.workspace.findFiles(glob, EXCLUDE_GLOB)));
+        uris.push(...(await vscode.workspace.findFiles(glob, exclude)));
       }
       // findFiles makes no ordering promise and its order does vary between runs, so the
       // project list would reshuffle on every rescan — entries jumping around the switcher
@@ -120,9 +146,10 @@ export class AdapterRegistry {
    */
   async detectAdapters(): Promise<LanguageAdapter[]> {
     const present: LanguageAdapter[] = [];
+    const exclude = excludeGlob();
     for (const adapter of this.enabledAdapters()) {
       for (const glob of adapter.manifestGlobs) {
-        const hits = await vscode.workspace.findFiles(glob, EXCLUDE_GLOB, 1);
+        const hits = await vscode.workspace.findFiles(glob, exclude, 1);
         if (hits.length > 0) {
           present.push(adapter);
           break;

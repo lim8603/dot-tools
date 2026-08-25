@@ -238,6 +238,14 @@
           ],
           "description": "Languages DevSwitcher scans and shows. Remove a language to hide its projects from the switcher (an empty or invalid list falls back to all languages)."
         },
+        "devSwitcher.scan.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Folders the workspace scan skips, so their manifests never become projects. Use it for vendored trees, git submodules and anything else you do not want in the switcher.\n\nWrite a folder path (`vendor`, `third_party/grpc`) or a glob (`**/examples/**`). A bare folder name matches that folder anywhere in the workspace.\n\nUser and Workspace values are **combined**, not overridden, so a project can add exclusions without discarding your personal ones. Build and VCS directories (`node_modules`, `target`, `.git`) are always skipped and do not need listing. Re-inclusion with `!` is not supported."
+        },
         "devSwitcher.projects.showLibraries": {
           "type": "boolean",
           "default": true,

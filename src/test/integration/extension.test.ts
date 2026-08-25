@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import * as vscode from 'vscode';
+import { toExcludeGlob } from '../../core/scanExclude';
 
 /**
  * Integration smoke tests (TASK-020, 상세설계서 §15.2). Run in a real VSCode host via
@@ -48,5 +49,34 @@ describe('DevSwitcher — activation smoke', () => {
 
   it('opens the settings page without throwing', async () => {
     await vscode.commands.executeCommand('devSwitcher.openSettings');
+  });
+});
+
+/**
+ * `devSwitcher.scan.exclude` rests on one assumption: that VS Code's glob engine accepts
+ * a **top-level** brace list, where each alternative is a whole pattern. Everything the
+ * scan used before nested the brace inside a single path instead, so this form was never
+ * exercised. It cannot be checked by a unit test — only the real engine knows — and if it
+ * silently failed the scan would either exclude nothing or exclude everything.
+ */
+describe('DevSwitcher — scan exclusions against the real glob engine', () => {
+  const RS = '**/*.rs';
+
+  it('finds the fixture source with no exclusions (baseline)', async () => {
+    const hits = await vscode.workspace.findFiles(RS, toExcludeGlob(['target'], []));
+    assert.ok(hits.length > 0, 'the cargo fixture should have at least one .rs file');
+  });
+
+  it('honours a user alternative in a top-level brace list', async () => {
+    const hits = await vscode.workspace.findFiles(RS, toExcludeGlob(['target'], ['**/src/**']));
+    assert.equal(hits.length, 0, 'excluding **/src/** should hide the fixture source');
+  });
+
+  it('excludes only what was listed — the other alternatives do not over-match', async () => {
+    const hits = await vscode.workspace.findFiles(
+      RS,
+      toExcludeGlob(['target'], ['**/no-such-folder/**']),
+    );
+    assert.ok(hits.length > 0, 'an unrelated exclusion must leave the source visible');
   });
 });
