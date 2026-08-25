@@ -16,18 +16,18 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Evolve** (v1.2.0 게시 완료. **v1.2.1 결함 수정 코드 완료 — F5 대기**, 세션 #018) |
+| 현재 Phase | **Evolve** (**v1.2.1 게시 완료**, 세션 #019) |
 | 활성 Intent | **없음** — 유지보수(MS-022). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
 | 활성 Milestone | **없음** — MS-022 Done(v1.2.0 게시, 2026-08-19) |
-| 활성 Task | **v1.2.1 릴리즈 마무리**(브랜치 `fix/target-chip-no-configure-on-switch`, F5→병합→게시). 미등록 — 재개 시 정식 Task 채번 |
+| 활성 Task | **없음** — v1.2.1 릴리즈 완주. 다음 Task는 Human 결정(INT-002·TC-11·v1.3.0 묶음) 후 등록 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-24 |
+| 마지막 갱신일 | 2026-08-25 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-24_018.md |
-| 최신 배포 | **v1.2.0 — Marketplace 게시 완료**(2026-08-19, `vsce publish` DONE) + **GitHub Release v1.2.0**(vsix 첨부). Visual Studio 어댑터(7번째 툴체인, ADR-021) + B-3 언어 필터 + 플랫 벡터 아이콘 |
+| 참조 세션 로그 | session_2026-08-25_019.md |
+| 최신 배포 | **v1.2.1 — Marketplace 게시 완료**(2026-08-25, `vsce publish` DONE) + **GitHub Release v1.2.1**(vsix 첨부). CMake "보기만 해도 configure" 6경로 차단 + 프로젝트 목록 순서 고정 |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -43,6 +43,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
+- **🚀 v1.2.1 게시 완료(2026-08-25, 세션 #019).** Human F5 3회차 통과 → **파일시스템 검증 PASS**(CMake 픽스처 7곳 `build`/`out`/`CMakeCache.txt` 0건). 검증 중 dotnet 픽스처 `obj/` 2파일이 F5 시각에 갱신된 것을 발견했으나 **실험 3건으로 DevSwitcher 결백 확정**(`-getProperty`는 깨끗한 사본에서 `obj/`조차 안 만듦) — 진범은 `--disable-extensions` 없는 "Run Extension"이 띄운 **C# Dev Kit의 design-time build**. 릴리즈 직전 **stale vsix 발견**(패키징 22:47 < 최종 수정 23:09 — #018 스모크는 F5 실패본으로 통과한 것) → 재패키징(247.65 KB)·번들 역검증 후 게시. CHANGELOG 날짜=게시일로 정정. unit 321·lint·check-types 클린. main FF 병합 `46870a6`·push 7커밋·태그·**`vsce publish` DONE**·GitHub Release. 백로그 B-6 추가.
 - **🐛 세션 #018(2026-08-24) — 리포 정리 + v1.2.1 결함 수정(F5 대기).** ① vsix 10개를 루트→`release/`(+`package:vsix`·`.vscodeignore` 자기포함 방지) **커밋 완료** ② 기능 3건 중 전후 이벤트=착수 전 취소, `scan.exclude`=구현 후 **Human 지시로 롤백**(설계 결론은 세션 로그에 보존), 코드리뷰=미착수 ③ **v1.2.1**: Human 실사용 제보(서브모듈 오염)에서 출발해 **"보기만 해도 configure" 경로 6개** 차단 + **목록 순서 재배치 버그**(findFiles 미정렬, v1.0.0부터 잠복) 수정. unit 321·통합 3·vsix 스모크 통과, **F5만 남음**. AI 2회 오진 후 계측으로 특정 → KB 인사이트 #4·#5, 안티패턴 #12·#13. 백로그 B-4(Clean/삭제)·B-5(목록 미리채우기 옵션).
 - **🚀 v1.2.0 게시 완료(2026-08-19, 세션 #017, D-25/ADR-021) — MS-022 Done.** F5 통과(Human, 피드백 1건=토스트 축약 반영) → v1.2.0 스탬프·vsix(15파일 247.06KB) 스모크·main FF 병합(`330b2b0`)·태그·push → **Marketplace 게시**·**GitHub Release**(EV-023/024, Gate 5 Pass). 이하 구현 요약: Human 지시 3건: ① **`vs` 어댑터**(7번째) — `.sln`/`.slnx`/`.vcxproj` 감지(CMakeCache 마커로 CMake 생성물 제외·A안 .csproj=dotnet 소유)·솔루션=루트 계층·MSBuild 빌드(vswhere 발견·`/p:SolutionDir` 주입)·`-getProperty:TargetPath` 실행경로·cppvsdbg 디버그 ② **B-3 해소** — `devSwitcher.languages.enabled` 필터+General 탭 체크박스 ③ 아이콘 플랫 벡터 교체(Human 제작, 커밋 포함). unit **318**·통합 3·esbuild 149.4kb·**실 MSBuild(VS18) 스모크**(솔루션/멤버 빌드·TargetPath 평가·exe 실행). 브랜치 `feature/ms-022-v1.2.0` 미병합. **다음=F5 → v1.2.0 릴리즈 시퀀스.**
 - (직전) **🚀 v1.1.0 게시 완료(2026-08-19, 세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건(중첩 CMake 하위 프로젝트·lib 타겟·설정창 블랭크 fix·아이콘 투명화·Ctrl+Alt+T·All targets·**런그룹 멤버 디버그**) 전부 F5 통과(2회) → v1.1.0 스탬프·vsix 스모크·main FF 병합(`67fe903`)·태그·push → **Marketplace 게시**·**GitHub Release**(EV-021/022, Gate 5 Pass). 다음 사이클은 Human 결정: INT-002 승인·B-3·TC-11.
@@ -54,7 +55,7 @@
 - **진행(세션 #017)**: **MS-022 v1.2.0** — TASK-063(VS 어댑터)·064(B-3) 코드 완료(Review·F5 대기), TASK-065(릴리즈) Planned. ADR-021·KB #3(SolutionDir)·픽스처 `fixtures/vs/demo`. 상세는 핸드오프.
 - **완료(세션 #015)**: **🏁 MS-014 v1.0.0 완주 — INT-001 Closed.** TASK-054(최종점검 EV-019·docs 13종·Gate 5) + TASK-055(repo public·기여차단·GitHub Release·**Marketplace 게시**). Human 온보딩(Azure DevOps 조직→PAT→publisher `lim8603`→`vsce login`) 후 `vsce publish` DONE.
 - **완료(세션 #014)**: MS-018 준비 감지 → v0.8.0 배포 + B-2 Project 카드 + README 스크린샷 6언어 리프레시. 상세는 핸드오프.
-- **다음**: Human 결정 대기 — ① INT-002(원격·크로스) 승인·착수 ② B-3(언어별 enable) ③ TC-11(WSL) 검증으로 Known Issue 해소 ④ Marketplace 반응 후 폴리시.
+- **다음**: Human 결정 대기 — ① INT-002(원격·크로스) 승인·착수 ② TC-11(WSL) 검증으로 Known Issue 해소 ③ v1.3.0 묶음(B-4·B-5·B-6·scan.exclude 재검토·성능 코드리뷰).
 
 ---
 
@@ -63,7 +64,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| (없음) | TASK-001~065 전부 Done — v1.2.0 게시 완료 | — | — | 2026-08-19 | 다음 Task는 Human 결정(INT-002·TC-11) 후 등록 |
+| (없음) | TASK-001~065 전부 Done — **v1.2.1 게시 완료** | — | — | 2026-08-25 | 다음 Task는 Human 결정(INT-002·TC-11·v1.3.0 묶음) 후 등록 |
 
 > **TASK-001~050 Done(039 제외)·MS-017 키보드 단축키 완료·v0.7.0 배포**(세션 #013, unit **235**, 통합 16커맨드). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → MS-017 단축키(✅ v0.7.0) → **MS-018 준비감지(TASK-039, 다음)** → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). MS-017 상세(단축키·stop·Stop버튼)는 session #013. C-3 폐기(D-15). TC-11(WSL) Deferred. 백로그 B-2·B-3.
 
@@ -75,10 +76,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **v1.2.1 마무리(5분)** — 브랜치 `fix/target-chip-no-configure-on-switch`(3커밋). F5 1회 → **파일시스템으로 검증**(픽스처에 `build`/`out` 디렉토리가 다시 생기지 않아야 함 — gitignore라 화면엔 안 보임, KB 안티패턴 #13) → main FF 병합 → `v1.2.1` 태그 → push → `vsce publish` → GitHub Release. 상세는 세션 로그 #018 말미.
-2. **스캔 무시 폴더(`devSwitcher.scan.exclude`) 재검토(Human)** — 세션 #018에서 구현 후 전량 롤백. 설계 결론(저장 위치·User∪Workspace 합집합·`!` 미지원)과 실증(최상위 중괄호 글롭 동작)은 세션 로그 #018에 보존 → 재착수 시 구현부터 가능.
-3. **성능·품질 코드리뷰**(미착수) 및 백로그 B-4·B-5 — 다음 기능 묶음(v1.3.0)에서 함께.
-4. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
+1. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
+2. **v1.3.0 묶음 후보** — B-4(Clean/빌드 트리 삭제)·B-5(`configureOnSelect` 옵션, 기본 false 필수)·B-6(dotnet framework 칩 probe 미준수)·`devSwitcher.scan.exclude` 재검토(#018 롤백분, 설계 결론 보존)·성능/품질 코드리뷰(미착수).
+3. **릴리즈 절차 보강(권장)** — 패키징 시각이 최종 커밋 시각보다 이후인지 대조하는 단계를 체크리스트에 추가. #018에서 stale vsix가 스모크를 통과했다.
 
 ---
 
@@ -90,6 +90,7 @@
 
 | # | 항목 | 내용 | 출처 |
 |---|------|------|------|
+| **B-6** | **dotnet `framework` 칩이 `probe`를 무시** | `dotnetAdapter.ts:201-207`의 `listItems`/`defaultValue`가 `opts.probe`와 무관하게 `bridge.fetchMetadata`를 호출한다. v1.2.1이 CMake에 세운 계약("부작용 있는 작업 없이 아는 것만 답하라")을 dotnet 어댑터는 따르지 않는 상태. **파일 오염은 없음이 실험으로 확정**(`dotnet msbuild -getProperty`는 obj/bin 없는 깨끗한 프로젝트에서 `obj/`조차 만들지 않음) — 따라서 v1.2.1 결함의 재발이 아니라 **프로세스 기동 비용**만의 문제이고, 메타데이터가 캐시되므로 프로젝트당 1회. 고치려면 `peekMetadata`(이미 존재)를 probe:false 경로에 물리면 됨 — CMake의 `targetsIfConfigured`와 같은 패턴. 저우선 | 세션 #019 검증 중 발견 |
 | **B-5** | **미구성 프로젝트의 칩 목록을 미리 채울지 설정으로** | v1.2.1이 "선택은 빌드가 아니다"를 지키느라, **한 번도 빌드 안 한 CMake 프로젝트는 설정 페이지 Target 드롭다운이 비어 있다**(상태바 칩 클릭 또는 Build 한 번이면 채워짐). 안전한 기본값이지만 빈 드롭다운이 고장처럼 보일 수 있음. → **설정으로 열어주자**(Human 결정): 예) `devSwitcher.cmake.configureOnSelect` **기본 false**(= v1.2.1 동작 유지, 오염 없음), true면 프로젝트 선택·설정 페이지 렌더 시에도 configure해서 목록을 미리 채움. 자기 소유 리포만 다루는 사용자를 위한 opt-in. 구현은 이미 깔린 `probe` 옵션(`ChipDescriptor.listItems`/`defaultValue`)에 설정값을 흘려보내면 됨 — `settingsPanel.buildChipViews`와 `orchestrator.applyDefaults`의 `probe:false`를 설정 기반으로 바꾸는 수준. **기본값은 반드시 false 유지**(true가 기본이면 v1.2.1이 고친 결함이 그대로 돌아옴). 대안으로 검토했던 "설정 페이지에서 요청 시 목록 로드"(웹뷰가 칩 탭 클릭 시 loadChipItems 메시지)는 더 낫지만 범위가 커서 보류 | 세션 #018 Human 결정 |
 | **B-4** | **프로젝트 정리(Clean) / 빌드 트리 삭제(Delete build tree)** | Visual Studio의 "솔루션 정리"에 해당하는 기능이 DevSwitcher에도 VSCode에도 없다(VSCode Task 그룹은 `build`/`test`만 표준이고 `clean` 개념 자체가 없음. CMake Tools 확장엔 있으나 우리는 미의존 — ADR-014). 어댑터별 정리 명령이 이미 존재해 선언 패턴에 자연스럽게 들어감: cargo `clean` · cmake `--target clean` · vs `msbuild /t:Clean` · dotnet `clean` · go `clean` · node=표준 없음(스크립트 있으면) · python=해당없음. `ActionCapabilities`에 플래그 추가 + 미지원 어댑터는 false. **두 기능을 구분할 것**: `clean`은 산출물만 지우고 빌드 디렉토리(`CMakeCache.txt`·`.cmake/api/`)는 남으므로, v1.2.1 이전에 서브모듈에 생긴 `build/`를 원상복구하려면 **"빌드 트리 삭제"가 따로 필요**(VS로 치면 정리 vs bin/obj 폴더 삭제). 일상 정리=Clean, 완전 초기화=Delete 둘 다 후보. **v1.2.1은 새 오염을 막을 뿐 이미 생긴 `build/`는 지우지 않으므로, 그 정리는 당분간 수동** | 세션 #018 Human 제안 |
 | ~~**B-2**~~ | **해소(2026-08-17, 세션 #014, v0.8.0)** — 설정 Project 탭 카드형 강화 완료. 프로젝트별 displayName·매니페스트 경로·툴체인 ✅/❌(Doctor probe)·활성 프로파일·칩 요약+개수를 카드로. 어댑터 무지(INV-2) 유지=선언적 필드. 순수 `projectCard.ts`(deriveToolchain·formatChipValue) 분리·단위테스트. F5 통과 | 세션 #013 Human 제안 → #014 구현 |
