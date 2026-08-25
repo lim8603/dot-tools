@@ -164,12 +164,26 @@ export const pythonAdapter: LanguageAdapter = {
       // dependency on the Python extension's interpreter picker). System commands are
       // deduped by their real sys.executable so PATH aliases that resolve to one
       // interpreter (python vs python3 vs py) list only once, highest-preference first.
-      listItems: async (project) => {
+      // Probing costs one process per candidate (every venv dir plus every system
+      // interpreter), so a probe:false ask — project switch, settings-page render, the
+      // rescan bookkeeping pass — answers from the cache only. Nothing cached yet is a
+      // valid "no answer": the chip stays as it was until the picker or an action asks
+      // for real. (v1.2.1 contract; the same rule CMake follows for configure.)
+      listItems: async (project, opts) => {
+        const probing = opts?.probe !== false;
         const items: ChipItem[] = [];
         const seen = new Set<string>(); // real interpreter paths already listed
         const projectDir = dirname(project.manifestPath);
         for (const venv of VENV_DIRS) {
           const interpreter = venvInterpreter(join(projectDir, venv), process.platform);
+          if (!probing) {
+            const cached = bridge.peekInterpreter(interpreter);
+            if (cached) {
+              seen.add(interpreterKey(cached.executable, process.platform));
+              items.push({ id: interpreter, label: venv, description: cached.version });
+            }
+            continue; // fileExists is cheap but pointless without a probe result to show
+          }
           if (await fileExists(interpreter)) {
             const info = await bridge.detectInterpreter(interpreter);
             seen.add(interpreterKey(info?.executable ?? interpreter, process.platform));
@@ -177,7 +191,9 @@ export const pythonAdapter: LanguageAdapter = {
           }
         }
         for (const command of SYSTEM_INTERPRETERS) {
-          const info = await bridge.detectInterpreter(command);
+          const info = probing
+            ? await bridge.detectInterpreter(command)
+            : (bridge.peekInterpreter(command) ?? undefined);
           if (!info) {
             continue;
           }
@@ -190,7 +206,14 @@ export const pythonAdapter: LanguageAdapter = {
         }
         return items;
       },
-      defaultValue: async () => (await bridge.checkToolchain()).command,
+      defaultValue: async (_project, opts) => {
+        if (opts?.probe === false) {
+          // Answer only if a system interpreter is already known — checkToolchain probes.
+          const known = SYSTEM_INTERPRETERS.find((c) => bridge.peekInterpreter(c));
+          return known;
+        }
+        return (await bridge.checkToolchain()).command;
+      },
     },
     {
       id: 'target',

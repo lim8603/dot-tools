@@ -19,6 +19,7 @@ import {
   buildProfileList,
   buildRustflags,
   CargoBridge,
+  CargoMetadata,
   defaultBinTarget,
   execCapture,
   formatFeatureCount,
@@ -146,6 +147,21 @@ function makeCargoNewTask(target: NewProjectTarget): vscode.Task {
   return task;
 }
 
+/**
+ * Cargo metadata for a chip callback, honouring `opts.probe` (v1.2.1 contract): a
+ * probe:false ask is answered from the cache only, never by running cargo. undefined
+ * means "no answer" — callers return an empty list / no default, which the orchestrator
+ * treats as "unknown" and leaves the stored selection alone.
+ */
+async function metadataFor(
+  project: ProjectInfo,
+  opts?: { probe?: boolean },
+): Promise<CargoMetadata | undefined> {
+  return opts?.probe === false
+    ? bridge.peekMetadata(project.manifestPath)
+    : await bridge.fetchMetadata(project.manifestPath);
+}
+
 export const cargoAdapter: LanguageAdapter = {
   id: 'cargo',
   displayName: 'Rust (Cargo)',
@@ -176,8 +192,12 @@ export const cargoAdapter: LanguageAdapter = {
       // a not-installed one runs `rustup target add` via onPick. The 'Host default' entry
       // returns to the unset state (no --target).
       secondaryToggle: 'Show installable targets',
-      listItems: async () => {
-        const targets = await bridge.listAllTargets();
+      listItems: async (_project, opts) => {
+        // probe:false answers from the cache only — `rustup target list` is a process.
+        const targets = opts?.probe === false ? bridge.peekAllTargets() : await bridge.listAllTargets();
+        if (!targets) {
+          return [];
+        }
         const items: ChipItem[] = [
           { id: HOST_DEFAULT_TARGET, label: 'Host default', description: 'no --target override' },
         ];
@@ -230,16 +250,24 @@ export const cargoAdapter: LanguageAdapter = {
       // 'default'-only (or nothing) is the baseline → blank for selectedOnly (hidden
       // when a leaner bar is requested); any real feature makes the chip non-blank.
       isBlank: (value) => !Array.isArray(value) || value.every((f) => f === 'default'),
-      listItems: async (project) => {
-        const metadata = await bridge.fetchMetadata(project.manifestPath);
+      // probe:false answers from the cache only — `cargo metadata` is a process, and
+      // the switch/render/rescan paths run this for every project with stored state.
+      listItems: async (project, opts) => {
+        const metadata = await metadataFor(project, opts);
+        if (!metadata) {
+          return [];
+        }
         return parseFeatures(metadata, project.name).names.map((name) => ({
           id: name,
           label: name, // 'default' is self-explanatory — no redundant description
         }));
       },
       format: (value) => formatFeatureCount(Array.isArray(value) ? value : []),
-      defaultValue: async (project) => {
-        const metadata = await bridge.fetchMetadata(project.manifestPath);
+      defaultValue: async (project, opts) => {
+        const metadata = await metadataFor(project, opts);
+        if (!metadata) {
+          return undefined;
+        }
         return parseFeatures(metadata, project.name).hasDefault ? ['default'] : [];
       },
     },
@@ -248,13 +276,13 @@ export const cargoAdapter: LanguageAdapter = {
       icon: 'symbol-method',
       label: 'Target',
       required: true,
-      listItems: async (project) => {
-        const metadata = await bridge.fetchMetadata(project.manifestPath);
-        return parseBinTargets(metadata, project.name);
+      listItems: async (project, opts) => {
+        const metadata = await metadataFor(project, opts);
+        return metadata ? parseBinTargets(metadata, project.name) : [];
       },
-      defaultValue: async (project) => {
-        const metadata = await bridge.fetchMetadata(project.manifestPath);
-        return defaultBinTarget(metadata, project.name);
+      defaultValue: async (project, opts) => {
+        const metadata = await metadataFor(project, opts);
+        return metadata ? defaultBinTarget(metadata, project.name) : undefined;
       },
     },
   ],

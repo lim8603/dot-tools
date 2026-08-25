@@ -505,6 +505,13 @@ export class CargoBridge {
    * chip click resolves from cache instantly even on slow, large workspaces.
    */
   private readonly metadataCache = new Map<string, CargoMetadata>();
+  /**
+   * `rustup target list` output, cached for the session. The list is global (not
+   * per-project) and only changes when a target is installed, which goes through
+   * addTarget below. Without this the Architecture chip re-ran rustup on every
+   * activation and rescan, once per cargo project.
+   */
+  private allTargets: TargetInfo[] | undefined;
 
   constructor(exec: CargoExec = defaultExec) {
     this.exec = exec;
@@ -572,16 +579,31 @@ export class CargoBridge {
    * Returns [] when rustup is absent (E1 handles the toolchain warning separately).
    */
   async listAllTargets(): Promise<TargetInfo[]> {
+    if (this.allTargets) {
+      return this.allTargets;
+    }
     const result = await execCapture('rustup', ['target', 'list'], undefined, this.exec);
     if (result.exitCode !== 0) {
-      return [];
+      return []; // not cached — a missing rustup should be retried, not remembered
     }
-    return parseTargetList(result.stdout);
+    this.allTargets = parseTargetList(result.stdout);
+    return this.allTargets;
+  }
+
+  /**
+   * Cached target list without running rustup — for the `probe: false` chip path
+   * (v1.2.1 contract). undefined = never fetched, i.e. no answer.
+   */
+  peekAllTargets(): TargetInfo[] | undefined {
+    return this.allTargets;
   }
 
   /** Install a target via `rustup target add` (§13.4, tier 1 — no admin rights). */
   async addTarget(triple: string): Promise<{ ok: boolean; stderr: string }> {
     const result = await execCapture('rustup', ['target', 'add', triple], undefined, this.exec);
+    if (result.exitCode === 0) {
+      this.allTargets = undefined; // the installed flag just changed — re-read on next ask
+    }
     return { ok: result.exitCode === 0, stderr: result.stderr };
   }
 

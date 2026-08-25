@@ -198,13 +198,23 @@ export const dotnetAdapter: LanguageAdapter = {
       required: true,
       // The TFM to build/run against. Single-TFM projects auto-select (defaultValue);
       // multi-target (<TargetFrameworks>) projects list each framework (MS-010 scope).
-      listItems: async (project) => {
-        const metadata = await bridge.fetchMetadata(project.manifestPath);
-        return targetFrameworkItems(metadata.targetFrameworks);
+      // probe:false (project switch, settings-page render, rescan bookkeeping) answers
+      // from the cache only: reading the TFM means running `dotnet msbuild`, and this
+      // path runs for every project with stored state. No answer is a valid answer —
+      // the orchestrator keeps the stored selection and the next real ask reconciles it.
+      listItems: async (project, opts) => {
+        const metadata =
+          opts?.probe === false
+            ? bridge.peekMetadata(project.manifestPath)
+            : await bridge.fetchMetadata(project.manifestPath);
+        return metadata ? targetFrameworkItems(metadata.targetFrameworks) : [];
       },
-      defaultValue: async (project) => {
-        const metadata = await bridge.fetchMetadata(project.manifestPath);
-        return metadata.targetFrameworks.length === 1 ? metadata.targetFrameworks[0] : undefined;
+      defaultValue: async (project, opts) => {
+        const metadata =
+          opts?.probe === false
+            ? bridge.peekMetadata(project.manifestPath)
+            : await bridge.fetchMetadata(project.manifestPath);
+        return metadata?.targetFrameworks.length === 1 ? metadata.targetFrameworks[0] : undefined;
       },
     },
   ],

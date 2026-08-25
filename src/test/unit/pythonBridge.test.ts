@@ -3,9 +3,12 @@ import {
   assemblePythonArgs,
   buildDebugpyConfig,
   interpreterKey,
+  PythonBridge,
   pythonProjectName,
   resolveInterpreter,
   venvInterpreter,
+  type ExecResult,
+  type PythonExec,
 } from '../../adapters/python/pythonBridge';
 
 describe('pythonProjectName', () => {
@@ -89,5 +92,55 @@ describe('buildDebugpyConfig', () => {
     assert.equal(cfg.name, 'Debug');
     assert.equal(cfg.python, 'python');
     assert.ok(!('env' in cfg));
+  });
+});
+
+// ── PythonBridge probe cache (v1.2.1 `probe: false` contract) ─────────────────
+// Listing interpreters costs one process per candidate — every venv dir plus every
+// system interpreter — and the chip is asked on activation, on every rescan and on
+// every settings-page render. peekInterpreter is what makes those asks free.
+
+function fakePython(script: (command: string) => Partial<ExecResult>): {
+  exec: PythonExec;
+  calls: string[];
+} {
+  const calls: string[] = [];
+  const exec: PythonExec = (command) => {
+    calls.push(command);
+    return Promise.resolve({ stdout: '', stderr: '', exitCode: 0, ...script(command) });
+  };
+  return { exec, calls };
+}
+
+describe('PythonBridge.peekInterpreter', () => {
+  it('never spawns, and answers undefined until the interpreter has been probed', async () => {
+    const { exec, calls } = fakePython(() => ({ stdout: '3.12.1\n/usr/bin/python3\n' }));
+    const bridge = new PythonBridge(exec);
+
+    assert.equal(bridge.peekInterpreter('python3'), undefined);
+    assert.equal(calls.length, 0, 'peek must not run an interpreter');
+
+    await bridge.detectInterpreter('python3');
+    assert.deepEqual(bridge.peekInterpreter('python3'), {
+      version: 'Python 3.12.1',
+      executable: '/usr/bin/python3',
+    });
+    assert.equal(calls.length, 1);
+  });
+
+  it('reports a probed-but-absent interpreter as null, distinct from never-probed', async () => {
+    const { exec } = fakePython(() => ({ exitCode: 1 }));
+    const bridge = new PythonBridge(exec);
+    await bridge.detectInterpreter('nope');
+    assert.equal(bridge.peekInterpreter('nope'), null);
+    assert.equal(bridge.peekInterpreter('other'), undefined);
+  });
+
+  it('forgets everything after invalidateCache so a re-probe is possible', async () => {
+    const { exec } = fakePython(() => ({ stdout: '3.12.1\n/usr/bin/python3\n' }));
+    const bridge = new PythonBridge(exec);
+    await bridge.detectInterpreter('python3');
+    bridge.invalidateCache();
+    assert.equal(bridge.peekInterpreter('python3'), undefined);
   });
 });

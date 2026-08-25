@@ -173,17 +173,23 @@ export const goAdapter: LanguageAdapter = {
       required: true,
       // The main package to build/run/debug. Single-main modules auto-select; a module with
       // several cmd/ mains lists each by import path.
-      listItems: async (project) => {
-        const pkgs = await bridge.listMainPackages(moduleDirOf(project));
-        return pkgs.map((p) => ({
+      // probe:false answers from the cache only — listing main packages runs `go list`,
+      // and the switch/render/rescan paths must not spawn a process per project.
+      listItems: async (project, opts) => {
+        const dir = moduleDirOf(project);
+        const pkgs =
+          opts?.probe === false ? bridge.peekMainPackages(dir) : await bridge.listMainPackages(dir);
+        return (pkgs ?? []).map((p) => ({
           id: p.importPath,
           label: p.importPath.split('/').pop() ?? p.importPath,
           description: p.importPath,
         }));
       },
-      defaultValue: async (project) => {
-        const pkgs = await bridge.listMainPackages(moduleDirOf(project));
-        return pkgs.length === 1 ? pkgs[0].importPath : undefined;
+      defaultValue: async (project, opts) => {
+        const dir = moduleDirOf(project);
+        const pkgs =
+          opts?.probe === false ? bridge.peekMainPackages(dir) : await bridge.listMainPackages(dir);
+        return pkgs?.length === 1 ? pkgs[0].importPath : undefined;
       },
     },
   ],

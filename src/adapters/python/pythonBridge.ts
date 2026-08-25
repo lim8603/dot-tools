@@ -213,6 +213,15 @@ export class PythonBridge {
     return info;
   }
 
+  /**
+   * Cached probe result without probing — for the `probe: false` chip path (v1.2.1
+   * contract): a project switch or a settings-page render must not spawn an interpreter
+   * per candidate. `undefined` = never probed (no answer); `null` = probed and absent.
+   */
+  peekInterpreter(interpreter: string): InterpreterInfo | null | undefined {
+    return this.infoCache.get(interpreter);
+  }
+
   /** `<interpreter>` version string (cached), or undefined when absent. */
   async detectVersion(interpreter: string): Promise<string | undefined> {
     return (await this.detectInterpreter(interpreter))?.version;

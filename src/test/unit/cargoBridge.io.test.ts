@@ -184,6 +184,38 @@ describe('CargoBridge.listAllTargets', () => {
     const { exec } = fakeExec(() => ({ exitCode: 1 }));
     assert.deepEqual(await new CargoBridge(exec).listAllTargets(), []);
   });
+
+  // The Architecture chip asks on every activation and rescan, once per cargo project.
+  it('caches the list so repeated asks run rustup once', async () => {
+    const { exec, calls } = fakeExec(() => ({ stdout: 'a-triple (installed)\n' }));
+    const bridge = new CargoBridge(exec);
+    await bridge.listAllTargets();
+    await bridge.listAllTargets();
+    assert.equal(calls.length, 1);
+  });
+
+  it('does not cache a failure — a missing rustup is retried, not remembered', async () => {
+    let exitCode = 1;
+    const { exec, calls } = fakeExec(() => ({ exitCode, stdout: 'a-triple\n' }));
+    const bridge = new CargoBridge(exec);
+    assert.deepEqual(await bridge.listAllTargets(), []);
+    exitCode = 0;
+    assert.deepEqual(await bridge.listAllTargets(), [{ triple: 'a-triple', installed: false }]);
+    assert.equal(calls.length, 2);
+  });
+});
+
+// The probe:false chip path (v1.2.1 contract): a project switch, a settings-page render
+// and the rescan bookkeeping pass must answer from the cache, never by running rustup.
+describe('CargoBridge.peekAllTargets', () => {
+  it('is undefined before any fetch, and returns the cached list after one', async () => {
+    const { exec, calls } = fakeExec(() => ({ stdout: 'a-triple (installed)\n' }));
+    const bridge = new CargoBridge(exec);
+    assert.equal(bridge.peekAllTargets(), undefined);
+    assert.equal(calls.length, 0, 'peek must not run rustup');
+    await bridge.listAllTargets();
+    assert.deepEqual(bridge.peekAllTargets(), [{ triple: 'a-triple', installed: true }]);
+  });
 });
 
 describe('CargoBridge.addTarget', () => {
@@ -192,6 +224,27 @@ describe('CargoBridge.addTarget', () => {
     const result = await new CargoBridge(exec).addTarget('wasm32-unknown-unknown');
     assert.equal(result.ok, true);
     assert.deepEqual(calls[0].args, ['target', 'add', 'wasm32-unknown-unknown']);
+  });
+
+  it('drops the cached target list on success — the installed flag just changed', async () => {
+    const { exec } = fakeExec((_c, args) =>
+      args[1] === 'list' ? { stdout: 'a-triple\n' } : { exitCode: 0 },
+    );
+    const bridge = new CargoBridge(exec);
+    await bridge.listAllTargets();
+    assert.notEqual(bridge.peekAllTargets(), undefined);
+    await bridge.addTarget('a-triple');
+    assert.equal(bridge.peekAllTargets(), undefined);
+  });
+
+  it('keeps the cached list when the install fails', async () => {
+    const { exec } = fakeExec((_c, args) =>
+      args[1] === 'list' ? { stdout: 'a-triple\n' } : { exitCode: 1 },
+    );
+    const bridge = new CargoBridge(exec);
+    await bridge.listAllTargets();
+    await bridge.addTarget('bogus');
+    assert.notEqual(bridge.peekAllTargets(), undefined);
   });
 
   it('reports failure with stderr on a non-zero exit', async () => {
