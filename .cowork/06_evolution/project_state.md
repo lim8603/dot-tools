@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Evolve** (**v1.2.1 게시 완료**, 세션 #019) |
+| 현재 Phase | **Evolve** (v1.2.1 게시 완료. **v1.3.0 코드 완료 — F5 대기**, 세션 #019) |
 | 활성 Intent | **없음** — 유지보수(MS-022). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
-| 활성 Milestone | **없음** — MS-022 Done(v1.2.0 게시, 2026-08-19) |
-| 활성 Task | **없음** — v1.2.1 릴리즈 완주. 다음 Task는 Human 결정(INT-002·TC-11·v1.3.0 묶음) 후 등록 |
+| 활성 Milestone | **MS-023 (v1.3.0)** — 구현 5/5 완료, F5 검증만 남음 |
+| 활성 Task | **v1.3.0 F5 검증 → 릴리즈**(브랜치 `feature/ms-023-v1.3.0`, 5커밋). 유지보수 릴리즈라 Task 미채번 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -43,6 +43,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
+- **🛠 v1.3.0 코드 완료 — F5 대기(2026-08-25, 세션 #019, MS-023).** 백로그 4항목 + **docs 동기화**. ① **B-6** 전 어댑터 probe 정합성(감사 결과 cmake만 지키고 있었다 — dotnet·cargo·go·**python**이 전환/렌더/재스캔마다 프로세스 기동. `rustup target list`엔 캐시가 아예 없었음) ② **B-5** `cmake.configureOnSelect`(기본 false, **어댑터가 설정을 직접 읽어 INV-2 유지**) + 카드의 `0`→**"not listed yet"**(원 동기를 설정 없이 해소) ③ **scan.exclude**(#018 설계 그대로, 중첩 중괄호 회피 위해 builtin 전개) ④ **B-4 Clean/Delete Build Tree**(둘 다·명령 팔레트만·**prepareInvocation 미호출**로 v1.2.1 무효화 차단·삭제 판정은 순수 `cleanPlan.ts`) ⑤ **docs 13종 누적 동기화** — Human 질문으로 방치 발견(사용자 메뉴얼에 7번째 툴체인 없음, v1.2.1은 13종 전부 미반영). 동기화 중 드러난 사실: FR-004가 v1.2.1까지 깨져 있었음 · WBS의 INT-002 예약 번호를 실사용 피드백이 가져감 · 저장 스키마 무변경. **unit 321→367 · 통합 3→6**(실 glob 엔진 검증). **F5만 남음.**
 - **🚀 v1.2.1 게시 완료(2026-08-25, 세션 #019).** Human F5 3회차 통과 → **파일시스템 검증 PASS**(CMake 픽스처 7곳 `build`/`out`/`CMakeCache.txt` 0건). 검증 중 dotnet 픽스처 `obj/` 2파일이 F5 시각에 갱신된 것을 발견했으나 **실험 3건으로 DevSwitcher 결백 확정**(`-getProperty`는 깨끗한 사본에서 `obj/`조차 안 만듦) — 진범은 `--disable-extensions` 없는 "Run Extension"이 띄운 **C# Dev Kit의 design-time build**. 릴리즈 직전 **stale vsix 발견**(패키징 22:47 < 최종 수정 23:09 — #018 스모크는 F5 실패본으로 통과한 것) → 재패키징(247.65 KB)·번들 역검증 후 게시. CHANGELOG 날짜=게시일로 정정. unit 321·lint·check-types 클린. main FF 병합 `46870a6`·push 7커밋·태그·**`vsce publish` DONE**·GitHub Release. 백로그 B-6 추가.
 - **🐛 세션 #018(2026-08-24) — 리포 정리 + v1.2.1 결함 수정(F5 대기).** ① vsix 10개를 루트→`release/`(+`package:vsix`·`.vscodeignore` 자기포함 방지) **커밋 완료** ② 기능 3건 중 전후 이벤트=착수 전 취소, `scan.exclude`=구현 후 **Human 지시로 롤백**(설계 결론은 세션 로그에 보존), 코드리뷰=미착수 ③ **v1.2.1**: Human 실사용 제보(서브모듈 오염)에서 출발해 **"보기만 해도 configure" 경로 6개** 차단 + **목록 순서 재배치 버그**(findFiles 미정렬, v1.0.0부터 잠복) 수정. unit 321·통합 3·vsix 스모크 통과, **F5만 남음**. AI 2회 오진 후 계측으로 특정 → KB 인사이트 #4·#5, 안티패턴 #12·#13. 백로그 B-4(Clean/삭제)·B-5(목록 미리채우기 옵션).
 - **🚀 v1.2.0 게시 완료(2026-08-19, 세션 #017, D-25/ADR-021) — MS-022 Done.** F5 통과(Human, 피드백 1건=토스트 축약 반영) → v1.2.0 스탬프·vsix(15파일 247.06KB) 스모크·main FF 병합(`330b2b0`)·태그·push → **Marketplace 게시**·**GitHub Release**(EV-023/024, Gate 5 Pass). 이하 구현 요약: Human 지시 3건: ① **`vs` 어댑터**(7번째) — `.sln`/`.slnx`/`.vcxproj` 감지(CMakeCache 마커로 CMake 생성물 제외·A안 .csproj=dotnet 소유)·솔루션=루트 계층·MSBuild 빌드(vswhere 발견·`/p:SolutionDir` 주입)·`-getProperty:TargetPath` 실행경로·cppvsdbg 디버그 ② **B-3 해소** — `devSwitcher.languages.enabled` 필터+General 탭 체크박스 ③ 아이콘 플랫 벡터 교체(Human 제작, 커밋 포함). unit **318**·통합 3·esbuild 149.4kb·**실 MSBuild(VS18) 스모크**(솔루션/멤버 빌드·TargetPath 평가·exe 실행). 브랜치 `feature/ms-022-v1.2.0` 미병합. **다음=F5 → v1.2.0 릴리즈 시퀀스.**
@@ -76,9 +77,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
-2. **v1.3.0 묶음 후보** — B-4(Clean/빌드 트리 삭제)·B-5(`configureOnSelect` 옵션, 기본 false 필수)·B-6(dotnet framework 칩 probe 미준수)·`devSwitcher.scan.exclude` 재검토(#018 롤백분, 설계 결론 보존)·성능/품질 코드리뷰(미착수).
-3. **릴리즈 절차 보강(권장)** — 패키징 시각이 최종 커밋 시각보다 이후인지 대조하는 단계를 체크리스트에 추가. #018에서 stale vsix가 스모크를 통과했다.
+1. **v1.3.0 F5 검증 → 릴리즈** — 브랜치 `feature/ms-023-v1.3.0`(5커밋). 체크리스트는 세션 로그 #019 말미. **최우선 항목은 회귀 확인**: Clean·Delete 실행 후 CMake 픽스처에 `build/`가 다시 생기지 않아야 한다(생기면 v1.2.1이 무효화된다). 검증은 파일시스템으로 하되(KB #13) **변경의 출처를 확인**할 것(KB #15). 통과 시 → **최종 커밋 이후 재패키징**(KB #14) → 스모크 → main FF → `v1.3.0` 태그 → push → `vsce publish` → GitHub Release.
+2. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
+3. **성능·품질 코드리뷰**(미착수) — v1.3.0 이후로 계속 이월 중.
 
 ---
 
@@ -90,9 +91,9 @@
 
 | # | 항목 | 내용 | 출처 |
 |---|------|------|------|
-| **B-6** | **dotnet `framework` 칩이 `probe`를 무시** | `dotnetAdapter.ts:201-207`의 `listItems`/`defaultValue`가 `opts.probe`와 무관하게 `bridge.fetchMetadata`를 호출한다. v1.2.1이 CMake에 세운 계약("부작용 있는 작업 없이 아는 것만 답하라")을 dotnet 어댑터는 따르지 않는 상태. **파일 오염은 없음이 실험으로 확정**(`dotnet msbuild -getProperty`는 obj/bin 없는 깨끗한 프로젝트에서 `obj/`조차 만들지 않음) — 따라서 v1.2.1 결함의 재발이 아니라 **프로세스 기동 비용**만의 문제이고, 메타데이터가 캐시되므로 프로젝트당 1회. 고치려면 `peekMetadata`(이미 존재)를 probe:false 경로에 물리면 됨 — CMake의 `targetsIfConfigured`와 같은 패턴. 저우선 | 세션 #019 검증 중 발견 |
-| **B-5** | **미구성 프로젝트의 칩 목록을 미리 채울지 설정으로** | v1.2.1이 "선택은 빌드가 아니다"를 지키느라, **한 번도 빌드 안 한 CMake 프로젝트는 설정 페이지 Target 드롭다운이 비어 있다**(상태바 칩 클릭 또는 Build 한 번이면 채워짐). 안전한 기본값이지만 빈 드롭다운이 고장처럼 보일 수 있음. → **설정으로 열어주자**(Human 결정): 예) `devSwitcher.cmake.configureOnSelect` **기본 false**(= v1.2.1 동작 유지, 오염 없음), true면 프로젝트 선택·설정 페이지 렌더 시에도 configure해서 목록을 미리 채움. 자기 소유 리포만 다루는 사용자를 위한 opt-in. 구현은 이미 깔린 `probe` 옵션(`ChipDescriptor.listItems`/`defaultValue`)에 설정값을 흘려보내면 됨 — `settingsPanel.buildChipViews`와 `orchestrator.applyDefaults`의 `probe:false`를 설정 기반으로 바꾸는 수준. **기본값은 반드시 false 유지**(true가 기본이면 v1.2.1이 고친 결함이 그대로 돌아옴). 대안으로 검토했던 "설정 페이지에서 요청 시 목록 로드"(웹뷰가 칩 탭 클릭 시 loadChipItems 메시지)는 더 낫지만 범위가 커서 보류 | 세션 #018 Human 결정 |
-| **B-4** | **프로젝트 정리(Clean) / 빌드 트리 삭제(Delete build tree)** | Visual Studio의 "솔루션 정리"에 해당하는 기능이 DevSwitcher에도 VSCode에도 없다(VSCode Task 그룹은 `build`/`test`만 표준이고 `clean` 개념 자체가 없음. CMake Tools 확장엔 있으나 우리는 미의존 — ADR-014). 어댑터별 정리 명령이 이미 존재해 선언 패턴에 자연스럽게 들어감: cargo `clean` · cmake `--target clean` · vs `msbuild /t:Clean` · dotnet `clean` · go `clean` · node=표준 없음(스크립트 있으면) · python=해당없음. `ActionCapabilities`에 플래그 추가 + 미지원 어댑터는 false. **두 기능을 구분할 것**: `clean`은 산출물만 지우고 빌드 디렉토리(`CMakeCache.txt`·`.cmake/api/`)는 남으므로, v1.2.1 이전에 서브모듈에 생긴 `build/`를 원상복구하려면 **"빌드 트리 삭제"가 따로 필요**(VS로 치면 정리 vs bin/obj 폴더 삭제). 일상 정리=Clean, 완전 초기화=Delete 둘 다 후보. **v1.2.1은 새 오염을 막을 뿐 이미 생긴 `build/`는 지우지 않으므로, 그 정리는 당분간 수동** | 세션 #018 Human 제안 |
+| ~~**B-6**~~ | **해소(2026-08-25, v1.3.0)** — dotnet뿐 아니라 cargo·go·python까지 전 어댑터 감사·수정. 원 내용: **dotnet `framework` 칩이 `probe`를 무시** | `dotnetAdapter.ts:201-207`의 `listItems`/`defaultValue`가 `opts.probe`와 무관하게 `bridge.fetchMetadata`를 호출한다. v1.2.1이 CMake에 세운 계약("부작용 있는 작업 없이 아는 것만 답하라")을 dotnet 어댑터는 따르지 않는 상태. **파일 오염은 없음이 실험으로 확정**(`dotnet msbuild -getProperty`는 obj/bin 없는 깨끗한 프로젝트에서 `obj/`조차 만들지 않음) — 따라서 v1.2.1 결함의 재발이 아니라 **프로세스 기동 비용**만의 문제이고, 메타데이터가 캐시되므로 프로젝트당 1회. 고치려면 `peekMetadata`(이미 존재)를 probe:false 경로에 물리면 됨 — CMake의 `targetsIfConfigured`와 같은 패턴. 저우선 | 세션 #019 검증 중 발견 |
+| ~~**B-5**~~ | **해소(2026-08-25, v1.3.0)** — `devSwitcher.cmake.configureOnSelect`(기본 false) + 빈 칩 목록 "not listed yet" 플레이스홀더. 원 내용: **미구성 프로젝트의 칩 목록을 미리 채울지 설정으로** | v1.2.1이 "선택은 빌드가 아니다"를 지키느라, **한 번도 빌드 안 한 CMake 프로젝트는 설정 페이지 Target 드롭다운이 비어 있다**(상태바 칩 클릭 또는 Build 한 번이면 채워짐). 안전한 기본값이지만 빈 드롭다운이 고장처럼 보일 수 있음. → **설정으로 열어주자**(Human 결정): 예) `devSwitcher.cmake.configureOnSelect` **기본 false**(= v1.2.1 동작 유지, 오염 없음), true면 프로젝트 선택·설정 페이지 렌더 시에도 configure해서 목록을 미리 채움. 자기 소유 리포만 다루는 사용자를 위한 opt-in. 구현은 이미 깔린 `probe` 옵션(`ChipDescriptor.listItems`/`defaultValue`)에 설정값을 흘려보내면 됨 — `settingsPanel.buildChipViews`와 `orchestrator.applyDefaults`의 `probe:false`를 설정 기반으로 바꾸는 수준. **기본값은 반드시 false 유지**(true가 기본이면 v1.2.1이 고친 결함이 그대로 돌아옴). 대안으로 검토했던 "설정 페이지에서 요청 시 목록 로드"(웹뷰가 칩 탭 클릭 시 loadChipItems 메시지)는 더 낫지만 범위가 커서 보류 | 세션 #018 Human 결정 |
+| ~~**B-4**~~ | **해소(2026-08-25, v1.3.0)** — Clean·Delete Build Tree 둘 다 구현(명령 팔레트만). 원 내용: **프로젝트 정리(Clean) / 빌드 트리 삭제(Delete build tree)** | Visual Studio의 "솔루션 정리"에 해당하는 기능이 DevSwitcher에도 VSCode에도 없다(VSCode Task 그룹은 `build`/`test`만 표준이고 `clean` 개념 자체가 없음. CMake Tools 확장엔 있으나 우리는 미의존 — ADR-014). 어댑터별 정리 명령이 이미 존재해 선언 패턴에 자연스럽게 들어감: cargo `clean` · cmake `--target clean` · vs `msbuild /t:Clean` · dotnet `clean` · go `clean` · node=표준 없음(스크립트 있으면) · python=해당없음. `ActionCapabilities`에 플래그 추가 + 미지원 어댑터는 false. **두 기능을 구분할 것**: `clean`은 산출물만 지우고 빌드 디렉토리(`CMakeCache.txt`·`.cmake/api/`)는 남으므로, v1.2.1 이전에 서브모듈에 생긴 `build/`를 원상복구하려면 **"빌드 트리 삭제"가 따로 필요**(VS로 치면 정리 vs bin/obj 폴더 삭제). 일상 정리=Clean, 완전 초기화=Delete 둘 다 후보. **v1.2.1은 새 오염을 막을 뿐 이미 생긴 `build/`는 지우지 않으므로, 그 정리는 당분간 수동** | 세션 #018 Human 제안 |
 | ~~**B-2**~~ | **해소(2026-08-17, 세션 #014, v0.8.0)** — 설정 Project 탭 카드형 강화 완료. 프로젝트별 displayName·매니페스트 경로·툴체인 ✅/❌(Doctor probe)·활성 프로파일·칩 요약+개수를 카드로. 어댑터 무지(INV-2) 유지=선언적 필드. 순수 `projectCard.ts`(deriveToolchain·formatChipValue) 분리·단위테스트. F5 통과 | 세션 #013 Human 제안 → #014 구현 |
 | ~~**B-3**~~ | **해소(2026-08-19, 세션 #017, MS-022/TASK-064)** — `devSwitcher.languages.enabled`(fail-open: 빈/무효=전체) + AdapterRegistry scan/detect/creatable 필터 + 설정 변경 자동 rescan + General 탭 언어 체크박스. F5 대기 | 세션 #013 Human 제안 → #017 구현 |
 | ~~B-1~~ | **해소(2026-08-15, 세션 #005)** — MS-006 코어(TASK-012·013·014) main FF 병합 완료(335f982), `feature/ms-006-settings-page` 브랜치 삭제. 다음: TASK-015 착수 | 세션 #004 → #005 병합 |
