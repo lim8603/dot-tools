@@ -339,8 +339,23 @@ function findPackage(metadata: CargoMetadata, packageName?: string): CargoPackag
  * Without `-p`, cargo empties the whole workspace target directory — from a member
  * directory too. Scoping to the package is what "clean this project" has to mean.
  */
-export function cargoCleanArgs(scopeId: string, packageName: string): string[] {
-  return scopeId === 'all' ? ['clean'] : ['clean', '-p', packageName];
+export function cargoCleanArgs(
+  scopeId: string,
+  packageName: string,
+  architecture?: string,
+): string[] {
+  // --target has to match the build. Artifacts for an explicit triple live under
+  // target/<triple>/, so a clean without it empties the host directory and leaves the
+  // triple build sitting there - which is what happened in testing. Same rule the dotnet
+  // and MSBuild adapters follow with their own output-path axes.
+  const targetArgs = architecture ? ['--target', architecture] : [];
+  const scopeArgs = scopeId === 'all' ? [] : ['-p', packageName];
+  return ['clean', ...scopeArgs, ...targetArgs];
+}
+
+/** The command line `cargoCleanArgs` produces, for the scope picker's description. */
+export function describeCargoClean(scopeId: string, packageName: string, architecture?: string): string {
+  return `cargo ${cargoCleanArgs(scopeId, packageName, architecture).join(' ')}`;
 }
 
 export function parseWorkspacePackages(metadata: CargoMetadata): CargoProject[] {

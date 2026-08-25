@@ -20,6 +20,7 @@ import {
   buildProfileList,
   buildRustflags,
   cargoCleanArgs,
+  describeCargoClean,
   CargoBridge,
   CargoMetadata,
   defaultBinTarget,
@@ -341,13 +342,16 @@ export const cargoAdapter: LanguageAdapter = {
    * when they differ. `cargo clean` from a member directory empties the *workspace* target
    * dir, wiping every sibling's artifacts, which is not what picking one project suggests.
    */
-  async cleanScopes(project) {
+  async cleanScopes(project, sel) {
+    const arch = typeof sel.values.architecture === 'string' ? sel.values.architecture : undefined;
     const scopes: CleanScope[] = [
       {
         id: 'project',
         label: `Clean ${project.name}`,
-        description: `cargo clean -p ${project.name}`,
-        detail: 'Removes only this package\u2019s artifacts from the target directory.',
+        description: describeCargoClean('project', project.name, arch),
+        detail: arch
+          ? `Removes this package\u2019s artifacts built for ${arch}. Builds for other architectures live under their own directory and are left alone.`
+          : 'Removes only this package\u2019s artifacts from the target directory.',
       },
     ];
     // Offer the workspace-wide scope only in a real workspace — in a single-package repo
@@ -357,7 +361,7 @@ export const cargoAdapter: LanguageAdapter = {
       scopes.push({
         id: 'all',
         label: 'Clean the whole workspace',
-        description: 'cargo clean',
+        description: describeCargoClean('all', project.name, arch),
         detail: 'Empties the shared target directory \u2014 every package in the workspace, not just this one.',
       });
     }
@@ -365,7 +369,8 @@ export const cargoAdapter: LanguageAdapter = {
   },
 
   /** `cargo clean`, scoped per cleanScopes (B-4). */
-  async createCleanTask(project, _sel, _config, scopeId) {
+  async createCleanTask(project, sel, _config, scopeId) {
+    const arch = typeof sel.values.architecture === 'string' ? sel.values.architecture : undefined;
     const definition: vscode.TaskDefinition = {
       type: CARGO_TASK_TYPE,
       action: 'clean',
@@ -376,7 +381,7 @@ export const cargoAdapter: LanguageAdapter = {
       project.workspaceFolder,
       `clean ${project.name}`,
       'cargo',
-      new vscode.ProcessExecution('cargo', cargoCleanArgs(scopeId, project.name), {
+      new vscode.ProcessExecution('cargo', cargoCleanArgs(scopeId, project.name, arch), {
         cwd: cwdOf(project),
       }),
     );

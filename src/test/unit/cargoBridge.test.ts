@@ -375,6 +375,25 @@ describe('cargoCleanArgs', () => {
     assert.deepEqual(cargoCleanArgs('all', 'hello'), ['clean']);
   });
 
+  // The fixture that caught this: cleaning the package emptied target/debug and left a
+  // whole x86_64-pc-windows-msvc build sitting there. Artifacts for an explicit triple
+  // live under target/<triple>/, so clean has to be told the same --target the build got.
+  it('passes the selected architecture, so the triple build is reached', () => {
+    assert.deepEqual(cargoCleanArgs('project', 'hello', 'x86_64-pc-windows-msvc'), [
+      'clean', '-p', 'hello', '--target', 'x86_64-pc-windows-msvc',
+    ]);
+    assert.deepEqual(cargoCleanArgs('all', 'hello', 'x86_64-pc-windows-msvc'), [
+      'clean', '--target', 'x86_64-pc-windows-msvc',
+    ]);
+  });
+
+  // No --profile on purpose: omitting it cleans the package across profiles, which is
+  // what "clean this package" should do. (dotnet is the opposite - `dotnet clean` with no
+  // -c defaults to Debug rather than everything, so there the selection must be passed.)
+  it('does not narrow by profile', () => {
+    assert.ok(!cargoCleanArgs('project', 'hello').includes('--profile'));
+  });
+
   it('treats an unknown scope as the narrow one', () => {
     // Erring toward deleting less is the right default for a destructive-ish command.
     assert.deepEqual(cargoCleanArgs('something-else', 'hello'), ['clean', '-p', 'hello']);
