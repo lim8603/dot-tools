@@ -13,10 +13,25 @@ import { ensureExtension } from './ensureExtension';
 import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
 import { buildDiagnostics, worstStatus } from './diagnostics';
 import { createBuildEventTask, type BuildEventPhase } from './buildEvents';
-import { classifyDeletions, describeDeletionPrompt, describeRefusals } from './cleanPlan';
+import {
+  buildDeletionItems,
+  classifyDeletions,
+  describeDeletionTitle,
+  describeRefusals,
+  displayPath,
+} from './cleanPlan';
 
 /** Default filename offered by the export/import dialogs (F12). */
 const DEFAULT_PROFILE_FILE = 'devswitcher.profile.json';
+
+/**
+ * Whether Delete Build Tree asks before it deletes. On by default, like VS Code's own
+ * `explorer.confirmDelete`: the guards in cleanPlan decide what *may* go, but only the
+ * user knows whether a configured tree is one they still want.
+ */
+function confirmBeforeDelete(): boolean {
+  return vscode.workspace.getConfiguration('devSwitcher').get<boolean>('confirmDeleteBuildTree', true);
+}
 
 /**
  * Orchestrator — active-context owner and command handler (상세설계서 §3.1).
@@ -352,8 +367,12 @@ export class Orchestrator {
    *
    * This is the one destructive action in the extension, so: the adapter only proposes
    * paths, `classifyDeletions` decides which of them are allowed, the user sees every
-   * surviving path in full in a modal, and deletion goes to the trash where the platform
-   * supports it.
+   * surviving path in full and can strike any of them off, and only then does anything go.
+   *
+   * The confirmation is a QuickPick rather than a modal. Every other choice in DevSwitcher
+   * is made in a picker, a modal's single message line elides long paths in the middle, and
+   * its buttons come from the VS Code locale while ours are English — so the one dialog
+   * that most needed to be read clearly was the one that read worst.
    */
   async deleteBuildTree(): Promise<void> {
     const context = this.activeContext();
@@ -413,41 +432,38 @@ export class Orchestrator {
     }
 
     const workspaceRoot = project.workspaceFolder.uri.fsPath;
-    const confirm = 'Delete';
-    const choice = await vscode.window.showWarningMessage(
-      describeDeletionPrompt(project.name, deletable, workspaceRoot),
-      {
-        modal: true,
-        detail: `Paths are relative to ${project.workspaceFolder.name}. This cannot be undone from inside VS Code.`,
-      },
-      confirm,
-    );
-    if (choice !== confirm) {
-      return;
+    let targets: BuildTreeDir[] = [...deletable];
+    if (confirmBeforeDelete()) {
+      const picked = await vscode.window.showQuickPick(buildDeletionItems(deletable, workspaceRoot), {
+        title: describeDeletionTitle(project.name, deletable.length),
+        placeHolder: `Paths are relative to ${project.workspaceFolder.name}. Deleted outright, not moved to the trash.`,
+        canPickMany: true,
+        matchOnDetail: true,
+      });
+      // Escape gives undefined, unchecking every row gives an empty array. Both mean no.
+      if (!picked || picked.length === 0) {
+        return;
+      }
+      targets = picked.map((item) => ({ path: item.path, description: item.detail }));
     }
 
     const failed: string[] = [];
-    for (const { path: dir } of deletable) {
-      const uri = vscode.Uri.file(dir);
+    for (const { path: dir } of targets) {
       try {
-        await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: true });
-      } catch {
-        // Some filesystems (network shares, containers) have no trash. Ask again rather
-        // than silently escalating to a permanent delete the user did not agree to.
-        const permanently = 'Delete permanently';
-        const retry = await vscode.window.showWarningMessage(
-          `DevSwitcher: could not move ${dir} to the trash.`,
-          { modal: true, detail: 'Delete it permanently instead?' },
-          permanently,
-        );
-        if (retry !== permanently) {
-          continue;
-        }
-        try {
-          await vscode.workspace.fs.delete(uri, { recursive: true, useTrash: false });
-        } catch (error) {
-          failed.push(`${dir} (${error instanceof Error ? error.message : String(error)})`);
-        }
+        // Outright, not to the trash. People delete a build tree to rebuild from a clean
+        // slate, so its contents are worthless the moment they agree to this — and the
+        // other reason, getting the disk back, is one the trash actively defeats: a
+        // trashed 3 GB target/ still occupies the disk until someone empties the bin.
+        //
+        // It also keeps the operation inside VS Code. useTrash hands the delete to the
+        // Windows shell, which raises its own dialog — in the shell's language, under an
+        // admin shield — as soon as anything in the tree is locked, which for a .NET
+        // obj/ is whenever the C# extension happens to be running a design-time build.
+        // The safety net is the picker above: it comes before the deletion, not after.
+        await vscode.workspace.fs.delete(vscode.Uri.file(dir), { recursive: true, useTrash: false });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failed.push(`${displayPath(dir, workspaceRoot)} (${message})`);
       }
     }
 

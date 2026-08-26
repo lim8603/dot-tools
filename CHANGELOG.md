@@ -3,7 +3,7 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [1.3.0] - 2026-08-25
+## [1.3.0] - 2026-08-26
 
 ### Added
 
@@ -23,14 +23,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
     It lists every directory before deleting — each with what it actually is, since
     `<project>/build` and `<root>/build` are indistinguishable as bare paths and a
     sub-project's CMake tree belongs to its root — refuses anything outside the workspace
-    folder or equal to the project's source directory, and uses the trash where the
-    platform has one. Available for Cargo, CMake and .NET; Go builds outside the module,
+    folder or equal to the project's source directory. Directories go outright rather
+    than to the trash: a build tree is deleted in order to rebuild it, so its contents
+    are worthless by then, and trashing a multi-gigabyte one would not give the disk
+    space back. The list is a picker, like every other choice in DevSwitcher, and
+    each row can be unticked: a .NET project proposes `bin` and `obj` separately, so
+    keeping the restore results does not mean cancelling. Available for Cargo, CMake and .NET; Go builds outside the module,
     and the Visual Studio adapter would have to guess where MSBuild put its output.
 - **`devSwitcher.scan.exclude`** — folders the workspace scan skips, so their manifests
   never become projects. For vendored trees, git submodules and anything else you do not
   want in the switcher. Write a folder name or a glob. User and Workspace values are
   combined rather than overridden, because exclusions are additive and a project's
   settings should not silently discard your own. Re-inclusion with `!` is not supported.
+- **`devSwitcher.confirmDeleteBuildTree`** (default `true`) — whether Delete Build Tree…
+  asks first. Off deletes straight away; the path guards still apply, since they protect
+  against a wrong path rather than against a deliberate one.
 - **`devSwitcher.cmake.configureOnSelect`** (default `false`) — configure a CMake project
   when it is merely selected, so its target list is ready before the first build. Off by
   default, and that default matters: configuring writes a build tree into the source

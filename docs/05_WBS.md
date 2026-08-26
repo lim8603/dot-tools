@@ -88,7 +88,7 @@ Milestone(중간 완료 단위)을 골격으로 하고, 각 Milestone 아래에 
 | **v1.3.0** | **MS-023** | **Clean / Delete Build Tree** · 스캔 제외 폴더 · `cmake.configureOnSelect` · 전 어댑터 probe 정합성 | **2026-08-25** |
 
 - v1.2.1이 PATCH인 근거: 새 설정·명령이 없는 순수 결함 수정이라 SemVer상 패치이고, 프로젝트 규칙("패치=v1.2.x")과도 일치한다.
-- v1.3.0이 MINOR인 근거: 새 명령 2개(`devSwitcher.clean`·`devSwitcher.deleteBuildTree`)와 새 설정 2개가 추가된다.
+- v1.3.0이 MINOR인 근거: 새 명령 2개(`devSwitcher.clean`·`devSwitcher.deleteBuildTree`)와 새 설정 3개가 추가된다.
 
 - v0.9.0은 없다 — v0.8.0 → v1.0.0 점프는 정상(최종 점검+게시 단계에서 MAJOR 승격, D-21).
 - MS-009(정리)는 별도 릴리즈 버전 귀속이 기준 문서에 명시되어 있지 않다(§6).

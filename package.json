@@ -261,6 +261,11 @@
           "default": true,
           "description": "Show library projects and library targets (static/shared) in the project switcher and Target picker. Libraries build but cannot be run or debugged."
         },
+        "devSwitcher.confirmDeleteBuildTree": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Ask for confirmation before **Delete Build Tree\u2026** removes a build directory.\n\nThe confirmation lists every directory that will go, and what each one is - a CMake sub-project's tree belongs to its root and takes its siblings with it, which a bare path does not tell you.\n\nTurn it off to delete straight away.\n\nBuild trees are deleted outright rather than moved to the trash: they are regenerable output, and trashing a multi-gigabyte one would not give the disk space back. DevSwitcher still refuses any path outside the workspace folder or the project's own source directory."
+        },
         "devSwitcher.cmake.debugger": {
           "type": "string",
           "enum": [

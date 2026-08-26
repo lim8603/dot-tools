@@ -52,7 +52,7 @@ toolchain's own CLI and resolves paths from real build output, so **your `Cargo.
   `.vcxproj` offers itself or its solution, CMake offers one entry because it has no
   per-target clean — each showing the command it will run and what disappears. Deletion
   lists every directory with what it is, refuses anything outside the workspace or equal to
-  the project's own source directory, and uses the trash where the platform has one.
+  the project's own source directory.
 - **Per-config settings, zero file edits.** A settings page lets you set compiler flags,
   linker flags, output dirs, environment variables, and pre/post-build commands. They're
   stored per _(project × profile)_ and injected at invocation time (`--config`, `-p:`, `-D`,
@@ -233,9 +233,14 @@ every toolchain. Clean opens a picker of the scopes that toolchain genuinely sup
 showing the command it runs and what disappears: cargo offers this package (`cargo clean -p`)
 or the whole workspace, a `.vcxproj` offers itself or its whole solution, and CMake offers one
 entry — it has no per-target clean, and a sub-project's tree belongs to its root and is
-shared with its siblings. Delete Build Tree lists each directory with what it is, refuses
-anything outside the workspace or equal to the project source directory, and moves files to
-the trash where the platform supports it.
+shared with its siblings. Delete Build Tree opens the same kind of picker with every
+directory listed and ticked, each labelled with what it is, and you can untick any of them —
+a .NET project offers `bin` and `obj` separately, so keeping the restore results is one
+keystroke rather than a trip to a terminal. It refuses anything outside the workspace or
+equal to the project source directory. Directories are deleted outright rather than moved
+to the trash — you delete a build tree to rebuild from a clean slate, and a trashed
+multi-gigabyte `target/` would not give the disk space back. Set
+`devSwitcher.confirmDeleteBuildTree` to `false` to skip the picker and delete straight away.
 
 Change any of them in VS Code's **Keyboard Shortcuts** editor — the settings page's **General**
 tab lists them and links straight there (filtered to DevSwitcher). VS Code's built-in keys
@@ -284,6 +289,7 @@ rest of the group still starts.
 | `devSwitcher.statusBar.compact` | `false` | Show chips as icons only (value on hover/click). |
 | `devSwitcher.statusBar.selectedOnly` | `false` | Hide optional chips that have no value (required chips stay). |
 | `devSwitcher.projects.showLibraries` | `true` | List library projects/targets (static/shared) in the switcher and Target picker. They build, but cannot run or debug. |
+| `devSwitcher.confirmDeleteBuildTree` | `true` | Ask before **Delete Build Tree…** removes a directory. The confirmation lists every directory with what it is, and lets you untick any of them. Turn it off to delete straight away — paths outside the workspace are still refused. |
 | `devSwitcher.cmake.debugger` | `auto` | Which debugger the CMake adapter uses: `auto` (from the compiler), `cpptools`, or `codelldb`. |
 | `devSwitcher.cmake.configureOnSelect` | `false` | Configure a CMake project when it is merely selected, so its target list is ready before the first build. Off by default because configuring writes a build tree into the source directory — in vendored trees and submodules those files show up as local changes in repositories you only meant to read. Turn it on only when you own every CMake project in the workspace. |
 

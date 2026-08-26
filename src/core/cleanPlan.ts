@@ -114,8 +114,8 @@ export function classifyDeletions(
  * A path as the prompt should show it: relative to the workspace folder when it is inside
  * one, which every deletable path is by the time it gets here.
  *
- * Absolute paths get elided in the middle by the modal ("d:\\GitHub\\...\\target"), and an
- * elided path defeats the entire point of listing them — you cannot tell a workspace's
+ * Long absolute paths get elided in the middle ("d:\\GitHub\\...\\target"), and an
+ * elided path defeats the entire point of showing it — you cannot tell a workspace's
  * target directory from a package's. Relative paths are short enough to survive intact and
  * read better besides.
  */
@@ -128,24 +128,57 @@ export function displayPath(path: string, workspaceRoot: string): string {
   return path; // outside the workspace — the guards refuse these, but never shorten one
 }
 
+/** One row of the deletion picker: what it shows, and the directory it stands for. */
+export interface DeletionPickItem {
+  /** The path, workspace-relative where possible. */
+  label: string;
+  /**
+   * What the adapter says the directory is, on its own line.
+   *
+   * `detail`, not `description`: a picker renders `description` beside the label and
+   * elides it first when the row runs out of width. Found in F5 — the CMake sub-project
+   * warning arrived as "...belongs to the root project and is shared wit\u2026", losing the
+   * half that says it takes the siblings with it. `detail` gets a full line of its own.
+   */
+  detail: string;
+  /** Checked on arrival, so Enter means what the modal's Delete button used to mean. */
+  picked: boolean;
+  /** The absolute path to delete. Never shown - `label` is the display form. */
+  path: string;
+}
+
 /**
- * The confirmation prompt. Every path is listed and unabbreviated — this is the user's
- * last chance to notice that a directory they care about is on the list, and a summary
- * like "3 directories" would defeat that.
+ * The heading above the picker. It carries the project name and the count because the rows
+ * cannot: they read `bin` and `obj`, which says nothing about whose they are.
  */
-export function describeDeletionPrompt(
-  projectName: string,
+export function describeDeletionTitle(projectName: string, count: number): string {
+  return count === 1
+    ? `Delete this build directory for ${projectName}?`
+    : `Delete these ${count} build directories for ${projectName}?`;
+}
+
+/**
+ * One row per directory, every one checked.
+ *
+ * Every path is listed and unabbreviated - this is the user's last chance to notice that a
+ * directory they care about is on the list, so a summary like "3 directories" would defeat
+ * it. Path in the label, what it is on the line below: a bare path does not tell you that a
+ * sub-project's CMake tree belongs to its root and takes its siblings with it.
+ *
+ * Rows can also be unchecked, which the modal this replaced could not offer. A .NET project
+ * proposes `bin` and `obj` separately, so someone who wants to keep the restore results can
+ * say so instead of cancelling and reaching for a terminal.
+ */
+export function buildDeletionItems(
   deletable: readonly CandidateDir[],
   workspaceRoot: string,
-): string {
-  const heading =
-    deletable.length === 1
-      ? `Delete this build directory for ${projectName}?`
-      : `Delete these ${deletable.length} build directories for ${projectName}?`;
-  // Path first, then what it is. A bare path does not tell you that a sub-project's CMake
-  // tree belongs to its root and takes its siblings with it.
-  const lines = deletable.map((d) => `${displayPath(d.path, workspaceRoot)}\n    ${d.description}`);
-  return `${heading}\n\n${lines.join('\n\n')}`;
+): DeletionPickItem[] {
+  return deletable.map((d) => ({
+    label: displayPath(d.path, workspaceRoot),
+    detail: d.description,
+    picked: true,
+    path: d.path,
+  }));
 }
 
 /** One-line summary of what was refused, for a follow-up warning. Empty when nothing was. */

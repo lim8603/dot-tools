@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert';
 import {
   classifyDeletions,
-  describeDeletionPrompt,
+  buildDeletionItems,
+  describeDeletionTitle,
   describeRefusals,
   displayPath,
 } from '../../core/cleanPlan';
@@ -111,7 +112,7 @@ describe('classifyDeletions', () => {
   });
 });
 
-// Found in F5: the modal elides the middle of a long absolute path
+// Found in F5: a long absolute path gets elided in the middle
 // ("d:\\GitHub\\lim8603\\dot-tools...\\target"), which makes a workspace's target
 // directory indistinguishable from a package's — the one distinction the prompt exists to
 // draw. Everything deletable is inside the workspace by then, so relative is both shorter
@@ -140,27 +141,43 @@ describe('displayPath', () => {
   });
 });
 
-describe('describeDeletionPrompt', () => {
-  // The prompt is the last chance to notice a directory that should not be on the list,
-  // so every path is spelled out — no "3 directories" summary.
-  it('lists every path, relative to the workspace', () => {
-    const text = describeDeletionPrompt('app', dirs('C:/ws/app/bin', 'C:/ws/app/obj'), 'C:/ws');
-    assert.ok(text.includes('app/bin'));
-    assert.ok(text.includes('app/obj'));
-    assert.ok(text.includes('2'));
-    assert.ok(!text.includes('C:/ws/app/bin'), 'the absolute form is what gets elided');
+describe('describeDeletionTitle', () => {
+  // The rows below it read "bin" and "obj" — whose they are has to come from somewhere.
+  it('reads naturally for a single directory', () => {
+    assert.match(describeDeletionTitle('app', 1), /this build directory for app/);
   });
 
-  it('reads naturally for a single directory', () => {
-    const text = describeDeletionPrompt('app', dirs('C:/ws/app/build'), 'C:/ws');
-    assert.match(text, /this build directory for app/);
+  it('counts them when there is more than one', () => {
+    assert.match(describeDeletionTitle('app', 2), /these 2 build directories for app/);
+  });
+});
+
+describe('buildDeletionItems', () => {
+  // The picker is the last chance to notice a directory that should not be on the list, so
+  // every path gets its own row — a "2 directories" summary would defeat that.
+  it('gives every path its own row, relative to the workspace', () => {
+    const items = buildDeletionItems(dirs('C:/ws/app/bin', 'C:/ws/app/obj'), 'C:/ws');
+    assert.deepEqual(items.map((i) => i.label), ['app/bin', 'app/obj']);
+  });
+
+  it('starts with every row checked, so Enter deletes the whole list', () => {
+    const items = buildDeletionItems(dirs('C:/ws/app/bin', 'C:/ws/app/obj'), 'C:/ws');
+    assert.ok(items.every((i) => i.picked));
+  });
+
+  // The label is shortened for reading; the deletion must still use the real path.
+  it('keeps the absolute path alongside the shortened label', () => {
+    const [item] = buildDeletionItems(dirs('C:/ws/app/build'), 'C:/ws');
+    assert.equal(item.label, 'app/build');
+    assert.equal(item.path, 'C:/ws/app/build');
   });
 
   // A path alone does not tell you that a sub-project's CMake tree belongs to its root and
-  // takes its siblings with it. That is exactly the case someone needs to catch here.
-  it('says what each directory is, next to its path', () => {
-    const text = describeDeletionPrompt(
-      'mathlib',
+  // takes its siblings with it. That is exactly the case someone needs to catch here — and
+  // it has to be `detail`, which gets its own line. Found in F5: as `description` the
+  // warning arrived cut off at "...and is shared wit\u2026", losing the operative half.
+  it('carries what each directory is, on a line of its own', () => {
+    const [item] = buildDeletionItems(
       [
         {
           path: 'C:/ws/nested/build',
@@ -169,8 +186,8 @@ describe('describeDeletionPrompt', () => {
       ],
       'C:/ws',
     );
-    assert.ok(text.includes('nested/build'));
-    assert.ok(text.includes('shared'));
+    assert.equal(item.label, 'nested/build');
+    assert.match(item.detail, /shared/);
   });
 });
 
