@@ -3,7 +3,46 @@
   // Without this the bundled editor TS can resolve @types/node's typesVersions
   // layout differently and report a phantom "Cannot find name 'console'" (TS2584)
   // even though `tsc --noEmit` passes.
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
-  //"devSwitcher.scan.exclude": ["vendor"]
+  //
+  // These were "typescript.tsdk" and "typescript.enablePromptUseWorkspaceTsdk" until
+  // VS Code deprecated both. If an older VS Code ever reports them as unknown settings
+  // and TS2584 comes back, the old names are what it wants.
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true
+
+  // ── DevSwitcher's own settings, for F5 ──────────────────────────────────────
+  // Every option the extension contributes, at its shipped default. Uncomment one
+  // to exercise the non-default path in the Extension Development Host, then
+  // comment it back out - a value left on here silently changes what the next F5
+  // session sees, which is how a verification ends up testing the wrong thing.
+  //
+  // "devSwitcher.languages.enabled": ["cargo", "cmake", "vs", "dotnet", "go", "node", "python"],
+  //   Drop a language to hide its projects from the switcher.
+  //
+  // "devSwitcher.scan.exclude": [],
+  //   Folders the scan skips, so their manifests never become projects. A bare name
+  //   ("vendor") matches anywhere; globs work. User + Workspace values are combined.
+  //   Try: ["vendor"] - fixtures/vendor/ has two projects that should disappear.
+  //
+  // "devSwitcher.statusBar.compact": false,
+  //   Chips as icons only, value on hover.
+  //
+  // "devSwitcher.statusBar.selectedOnly": false,
+  //   Hide optional chips that have no value. Required chips stay.
+  //
+  // "devSwitcher.projects.showLibraries": true,
+  //   List library projects and targets. Try false against fixtures/cmake/nested,
+  //   whose mathlib sub-project is a static library.
+  //
+  // "devSwitcher.confirmDeleteBuildTree": true,
+  //   Ask before Delete Build Tree removes a directory. false deletes straight away.
+  //   Deletion is outright, not to the trash - false means no way back.
+  //
+  // "devSwitcher.cmake.debugger": "auto",
+  //   "auto" | "cpptools" | "codelldb". auto picks from the configured compiler.
+  //
+  // "devSwitcher.cmake.configureOnSelect": false
+  //   Configure a CMake project on mere selection. Off by default because
+  //   configuring writes a build tree into the source directory - the v1.2.1 defect.
+  //   Turning this on writes into fixtures/cmake/**, so undo it before verifying.
 }
