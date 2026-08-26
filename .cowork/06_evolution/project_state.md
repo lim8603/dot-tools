@@ -16,18 +16,18 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Evolve** (v1.2.1 게시 완료. **v1.3.0 F5 검증 완주 — 릴리즈만 남음**, 세션 #019) |
-| 활성 Intent | **없음** — 유지보수(MS-022). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
-| 활성 Milestone | **MS-023 (v1.3.0)** — 구현·F5 검증 완료. 릴리즈 시퀀스만 남음(Human이 내일로 결정) |
-| 활성 Task | **v1.3.0 릴리즈**(브랜치 `feature/ms-023-v1.3.0`, 11커밋). CHANGELOG 날짜 → 패키징 → 병합 → 게시 |
+| 현재 Phase | **Evolve** (**v1.3.0 게시 완료**, 2026-08-26 세션 #020. 다음 사이클 미정) |
+| 활성 Intent | **없음** — 유지보수(MS-023까지 완료). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
+| 활성 Milestone | **없음** — MS-023(v1.3.0) **Done·게시 완료**. 다음 Milestone은 Human 결정 대기 |
+| 활성 Task | **없음** — 다음 작업은 Human 결정(INT-002 · TC-11 · 실사용 피드백) 후 등록 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-25 |
+| 마지막 갱신일 | 2026-08-26 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-25_019.md |
-| 최신 배포 | **v1.2.1 — Marketplace 게시 완료**(2026-08-25, `vsce publish` DONE) + **GitHub Release v1.2.1**(vsix 첨부). CMake "보기만 해도 configure" 6경로 차단 + 프로젝트 목록 순서 고정 |
+| 참조 세션 로그 | session_2026-08-26_020.md |
+| 최신 배포 | **v1.3.0 — Marketplace 게시 완료**(2026-08-26, `vsce publish` DONE) + **GitHub Release v1.3.0**(vsix 260,896 bytes 첨부). Clean · Delete Build Tree · `scan.exclude` · `cmake.configureOnSelect` · `confirmDeleteBuildTree` |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -43,7 +43,8 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
-- **✅ v1.3.0 F5 검증 완주 — 릴리즈만 남음(2026-08-25, 세션 #019, MS-023).** 착수 직전 Human 질문("Clean Target? Clean All?")으로 **같은 버튼이 어댑터마다 다르게 동작**함이 드러나 **어댑터가 `CleanScope[]`를 선언하고 UI는 나열만** 하도록 재설계(칩과 같은 모델, INV-2 유지). Human 원칙: "못하는 걸 억지로 시킬 수 없으니 **행위를 상세히 표현하고 할 수 있는 것만 제공**". **F5에서 버그 3건 발견·수정**: ① cargo 워크스페이스 멤버의 `target/`은 루트에 있는데 조합으로 찾음(ADR-005/DD-05를 이 호출부만 미준수) ② `cargo clean`에 `--target` 미전달로 트리플 빌드 잔존(dotnet·vs엔 적용해놓고 cargo만 누락) ③ 모달·피커가 긴 경로/경고를 **가운데 잘라** 안전장치가 형식만 남음 → 워크스페이스 상대경로로 전환. **회귀 검증 통과**(창 새로고침+설정 페이지+전환 후 `build`/`CMakeCache` 0건). unit **379**·통합 6. ▸ **다음=릴리즈 시퀀스(내일)**, CHANGELOG 날짜부터.
+- **🚀 v1.3.0 게시 완주(2026-08-26, 세션 #020, MS-023 Done).** Human 지적 "이 메시지박스 쿨하지 않다"에서 출발해 **Delete Build Tree UI를 재설계**했다(**ADR-022 / D-26**). ① 조사 결과 `modal: true`는 전체 **2곳뿐**이었고 진짜 문제는 **Delete만 혼자 모달**이라는 일관성(나머지 선택 11곳은 전부 QuickPick) ② 어댑터별 반환 개수를 전수 확인하니 **dotnet만 `bin`·`obj` 2개** → 단일 선택 불가 → **`canPickMany` + 전 항목 기본 체크**로 가면서 **모달이 못 하던 부분 삭제**가 생김 ③ F5에서 튀어나온 Windows 셸 대화상자를 프로세스 증거(MSBuild PID·C# Dev Kit buildhost)로 규명하니 진범은 **`useTrash`** — 우리 모달을 없앴더니 OS가 자기 것을 올린 것 ④ Human 근거(*"다시 빌드하려고 지우는 것"*)로 **휴지통 폐기·즉시 삭제**, 그 결정이 **오보고 결함까지 제거**(결함이 fallback 분기 안에 살았으므로) ⑤ `confirmDeleteBuildTree`(기본 true) 옵트인 해제. **F5 6종 완주 PASS**, 도중 결함 2건(오보고 / 설명 잘림) 발견·수정. **배포 번들에 `modal:!0` 0건.** unit **382**. KB 인사이트 #6 · 안티패턴 #18·#19. ▸ **다음=Human 결정(INT-002 · TC-11 · 실사용 피드백).**
+- (직전) **✅ v1.3.0 F5 검증 완주(2026-08-25, 세션 #019, MS-023).** 착수 직전 Human 질문("Clean Target? Clean All?")으로 **같은 버튼이 어댑터마다 다르게 동작**함이 드러나 **어댑터가 `CleanScope[]`를 선언하고 UI는 나열만** 하도록 재설계(칩과 같은 모델, INV-2 유지). Human 원칙: "못하는 걸 억지로 시킬 수 없으니 **행위를 상세히 표현하고 할 수 있는 것만 제공**". **F5에서 버그 3건 발견·수정**: ① cargo 워크스페이스 멤버의 `target/`은 루트에 있는데 조합으로 찾음(ADR-005/DD-05를 이 호출부만 미준수) ② `cargo clean`에 `--target` 미전달로 트리플 빌드 잔존(dotnet·vs엔 적용해놓고 cargo만 누락) ③ 모달·피커가 긴 경로/경고를 **가운데 잘라** 안전장치가 형식만 남음 → 워크스페이스 상대경로로 전환. **회귀 검증 통과**(창 새로고침+설정 페이지+전환 후 `build`/`CMakeCache` 0건). unit **379**·통합 6. ▸ **다음=릴리즈 시퀀스(내일)**, CHANGELOG 날짜부터.
 - **🛠 v1.3.0 코드 완료 — F5 대기(2026-08-25, 세션 #019, MS-023).** 백로그 4항목 + **docs 동기화**. ① **B-6** 전 어댑터 probe 정합성(감사 결과 cmake만 지키고 있었다 — dotnet·cargo·go·**python**이 전환/렌더/재스캔마다 프로세스 기동. `rustup target list`엔 캐시가 아예 없었음) ② **B-5** `cmake.configureOnSelect`(기본 false, **어댑터가 설정을 직접 읽어 INV-2 유지**) + 카드의 `0`→**"not listed yet"**(원 동기를 설정 없이 해소) ③ **scan.exclude**(#018 설계 그대로, 중첩 중괄호 회피 위해 builtin 전개) ④ **B-4 Clean/Delete Build Tree**(둘 다·명령 팔레트만·**prepareInvocation 미호출**로 v1.2.1 무효화 차단·삭제 판정은 순수 `cleanPlan.ts`) ⑤ **docs 13종 누적 동기화** — Human 질문으로 방치 발견(사용자 메뉴얼에 7번째 툴체인 없음, v1.2.1은 13종 전부 미반영). 동기화 중 드러난 사실: FR-004가 v1.2.1까지 깨져 있었음 · WBS의 INT-002 예약 번호를 실사용 피드백이 가져감 · 저장 스키마 무변경. **unit 321→367 · 통합 3→6**(실 glob 엔진 검증). **F5만 남음.**
 - **🚀 v1.2.1 게시 완료(2026-08-25, 세션 #019).** Human F5 3회차 통과 → **파일시스템 검증 PASS**(CMake 픽스처 7곳 `build`/`out`/`CMakeCache.txt` 0건). 검증 중 dotnet 픽스처 `obj/` 2파일이 F5 시각에 갱신된 것을 발견했으나 **실험 3건으로 DevSwitcher 결백 확정**(`-getProperty`는 깨끗한 사본에서 `obj/`조차 안 만듦) — 진범은 `--disable-extensions` 없는 "Run Extension"이 띄운 **C# Dev Kit의 design-time build**. 릴리즈 직전 **stale vsix 발견**(패키징 22:47 < 최종 수정 23:09 — #018 스모크는 F5 실패본으로 통과한 것) → 재패키징(247.65 KB)·번들 역검증 후 게시. CHANGELOG 날짜=게시일로 정정. unit 321·lint·check-types 클린. main FF 병합 `46870a6`·push 7커밋·태그·**`vsce publish` DONE**·GitHub Release. 백로그 B-6 추가.
 - **🐛 세션 #018(2026-08-24) — 리포 정리 + v1.2.1 결함 수정(F5 대기).** ① vsix 10개를 루트→`release/`(+`package:vsix`·`.vscodeignore` 자기포함 방지) **커밋 완료** ② 기능 3건 중 전후 이벤트=착수 전 취소, `scan.exclude`=구현 후 **Human 지시로 롤백**(설계 결론은 세션 로그에 보존), 코드리뷰=미착수 ③ **v1.2.1**: Human 실사용 제보(서브모듈 오염)에서 출발해 **"보기만 해도 configure" 경로 6개** 차단 + **목록 순서 재배치 버그**(findFiles 미정렬, v1.0.0부터 잠복) 수정. unit 321·통합 3·vsix 스모크 통과, **F5만 남음**. AI 2회 오진 후 계측으로 특정 → KB 인사이트 #4·#5, 안티패턴 #12·#13. 백로그 B-4(Clean/삭제)·B-5(목록 미리채우기 옵션).
@@ -54,10 +55,11 @@
 ### 현재 작업 스트림
 > 핵심 작업 스트림만 3~5줄 이내로 유지한다.
 
-- **진행(세션 #017)**: **MS-022 v1.2.0** — TASK-063(VS 어댑터)·064(B-3) 코드 완료(Review·F5 대기), TASK-065(릴리즈) Planned. ADR-021·KB #3(SolutionDir)·픽스처 `fixtures/vs/demo`. 상세는 핸드오프.
+- **완료(세션 #020)**: **🚀 MS-023 v1.3.0 게시 완주.** Delete Build Tree UI 재설계(ADR-022/D-26: 피커·즉시 삭제·확인 해제 설정) + F5 6종 PASS + Marketplace·GitHub Release. 확장 전체에서 화면을 막는 모달이 사라짐.
+- **완료(세션 #019)**: v1.2.1 게시 + v1.3.0 구현·F5(B-4·B-5·B-6·scan.exclude·docs 13종). 상세는 세션 로그.
 - **완료(세션 #015)**: **🏁 MS-014 v1.0.0 완주 — INT-001 Closed.** TASK-054(최종점검 EV-019·docs 13종·Gate 5) + TASK-055(repo public·기여차단·GitHub Release·**Marketplace 게시**). Human 온보딩(Azure DevOps 조직→PAT→publisher `lim8603`→`vsce login`) 후 `vsce publish` DONE.
 - **완료(세션 #014)**: MS-018 준비 감지 → v0.8.0 배포 + B-2 Project 카드 + README 스크린샷 6언어 리프레시. 상세는 핸드오프.
-- **다음**: Human 결정 대기 — ① INT-002(원격·크로스) 승인·착수 ② TC-11(WSL) 검증으로 Known Issue 해소 ③ v1.3.0 묶음(B-4·B-5·B-6·scan.exclude 재검토·성능 코드리뷰).
+- **다음**: Human 결정 대기 — ① INT-002(원격·크로스) 승인·착수 ② TC-11(WSL) 검증으로 Known Issue 해소 ③ v1.3.0 실사용 피드백 수집 후 다음 MINOR. (v1.3.0 묶음은 전부 게시 완료)
 
 ---
 
@@ -66,7 +68,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| (없음) | TASK-001~065 전부 Done — **v1.2.1 게시 완료** | — | — | 2026-08-25 | 다음 Task는 Human 결정(INT-002·TC-11·v1.3.0 묶음) 후 등록 |
+| (없음) | TASK-001~065 전부 Done — **v1.3.0 게시 완료** | — | — | 2026-08-26 | 다음 Task는 Human 결정(INT-002 · TC-11 · 실사용 피드백) 후 등록 |
 
 > **TASK-001~050 Done(039 제외)·MS-017 키보드 단축키 완료·v0.7.0 배포**(세션 #013, unit **235**, 통합 16커맨드). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → MS-017 단축키(✅ v0.7.0) → **MS-018 준비감지(TASK-039, 다음)** → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). MS-017 상세(단축키·stop·Stop버튼)는 session #013. C-3 폐기(D-15). TC-11(WSL) Deferred. 백로그 B-2·B-3.
 
@@ -78,9 +80,9 @@
 ## 다음 시작점
 > 다음 세션이 바로 시작할 수 있도록 1~3개 우선 행동만 남긴다.
 
-1. **v1.3.0 릴리즈 (Human이 내일로 결정)** — 브랜치 `feature/ms-023-v1.3.0`(11커밋). **F5 검증은 이미 완료**, 코드 변경 없이 게시만 하면 된다. 순서: ① **CHANGELOG 날짜를 실제 게시일로**(현재 `2026-08-25` 고정 — v1.2.1에서 고친 것과 같은 드리프트) ② `npm run package:vsix`(**최종 커밋 이후에**, KB #14) ③ 번들 역검증(`cleanScopes`·`displayPath` grep) ④ 격리 스모크 ⑤ main FF 병합·`v1.3.0` 태그·push ⑥ `vsce publish` → GitHub Release. 상세는 세션 로그 #019 말미.
-2. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
-3. **성능·품질 코드리뷰**(미착수) — v1.2.1부터 계속 이월 중.
+1. **Human 결정 대기** — 활성 Intent·Milestone·Task 없음. 후보 셋: ① **INT-002**(원격·크로스 개발 환경 확장, Draft) 승인·착수 ② **TC-11**(WSL) 수동 검증으로 Known Issue 해소 ③ v1.3.0 실사용 피드백을 모아 다음 MINOR 범위 확정.
+2. **정리(선택)** — 병합된 `feature/ms-023-v1.3.0` 브랜치 삭제. main과 동일 커밋이라 언제 지워도 무방.
+3. **릴리즈 후 확인(선택)** — Marketplace 리스팅 반영에 몇 분 걸린다. 다음 세션 시작 시 1.3.0 표기와 첫 피드백 여부만 확인.
 
 ---
 

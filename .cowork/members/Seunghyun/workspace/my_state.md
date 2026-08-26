@@ -10,9 +10,9 @@
 |------|------|
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
-| 활성 Milestone | **MS-023 (v1.3.0)** — 구현·F5 검증 완료, **릴리즈만 남음**(Human이 내일로 결정). v1.2.1은 오늘 게시 완료 |
-| 마지막 갱신일 | 2026-08-25 |
-| 참조 세션 로그 | session_2026-08-25_019.md |
+| 활성 Milestone | **없음** — MS-023(v1.3.0) **Done·게시 완료**. 다음 Milestone은 Human 결정 대기 |
+| 마지막 갱신일 | 2026-08-26 |
+| 참조 세션 로그 | session_2026-08-26_020.md |
 
 ---
 
@@ -20,9 +20,10 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| (미채번) | **v1.3.0 릴리즈** — 브랜치 `feature/ms-023-v1.3.0` 13커밋 | MS-023 | Review | 코드·검증 100% | 없음 — 내일 게시만 하면 됨 |
+| (없음) | **v1.3.0 게시 완료** — 다음 작업은 Human 결정 후 등록 | MS-023 | Done | 100% | 없음 |
 
-> **✅ v1.3.0 F5 검증 완주(세션 #019, MS-023) — 릴리즈 대기.** 백로그 4항목(B-4 Clean/Delete·B-5 configureOnSelect·B-6 probe 정합성·scan.exclude) + **docs 13종 누적 동기화**. 착수 직전 Human 질문("Clean Target? Clean All?")으로 **같은 버튼이 어댑터마다 다르게 동작**함이 드러나 어댑터가 `CleanScope[]`를 선언하고 UI는 나열만 하도록 재설계(칩과 같은 모델). **F5에서 결함 3건 발견·수정** — 셋 다 화면상 "정상 완료"로 보였고 파일시스템·실행 명령 대조로 드러났다(KB #16·#17). unit **379**·통합 6.
+> **🚀 v1.3.0 게시 완주(세션 #020, MS-023 Done).** 세션 #019의 5항목에 더해, Human 지적("이 메시지박스 쿨하지 않다")으로 **Delete Build Tree UI를 재설계**했다(ADR-022/D-26): 모달 → **QuickPick(`canPickMany`, 전 항목 기본 체크)** + **휴지통 폐기·즉시 삭제** + `confirmDeleteBuildTree` 설정. **배포 번들에 `modal:!0` 0건** — 확장에서 화면을 막는 대화상자가 사라졌다. F5 6종 완주 PASS, 도중 결함 2건(오보고 경로 / 설명 잘림) 발견·수정. KB 인사이트 #6·안티패턴 #18·#19.
+> (직전) **✅ v1.3.0 F5 검증(세션 #019, MS-023).** 백로그 4항목(B-4 Clean/Delete·B-5 configureOnSelect·B-6 probe 정합성·scan.exclude) + **docs 13종 누적 동기화**. 착수 직전 Human 질문("Clean Target? Clean All?")으로 **같은 버튼이 어댑터마다 다르게 동작**함이 드러나 어댑터가 `CleanScope[]`를 선언하고 UI는 나열만 하도록 재설계(칩과 같은 모델). **F5에서 결함 3건 발견·수정** — 셋 다 화면상 "정상 완료"로 보였고 파일시스템·실행 명령 대조로 드러났다(KB #16·#17). unit **379**·통합 6.
 > (직전) **🚀 v1.2.1 게시(세션 #019 전반).** "보기만 해도 configure" 6경로 차단 + 목록 순서 고정. 릴리즈 직전 **stale vsix 발견**(패키징이 최종 수정보다 22분 앞섬 — #018의 스모크는 F5 실패본으로 통과한 것)해 재패키징 후 게시(KB #14).
 > (직전) **🚀 v1.2.0 게시(세션 #017, D-25/ADR-021) — MS-022 Done.** Visual Studio 어댑터(7번째 툴체인: .sln/.slnx/.vcxproj·MSBuild 직접 구동·CMakeCache 마커 제외·A안 .csproj=dotnet 소유)+B-3 언어 필터+플랫 벡터 아이콘. F5 통과(토스트 축약 피드백 반영) → Marketplace 게시+GitHub Release. 버전 이력: …→v1.1.0→**v1.2.0**.
 > (직전) **🚀 v1.1.0 게시(세션 #016, D-24/ADR-019/ADR-020) — MS-021 Done.** 실사용 피드백 7건: CMake 중첩 하위 프로젝트(VS 솔루션식)·lib 타겟+차단 토스트·All targets·**런그룹 멤버 디버그**·Ctrl+Alt+T·설정창 블랭크 fix·아이콘 투명화. F5 2회 통과 → Marketplace 게시+GitHub Release. 버전 이력: …→v1.0.0→**v1.1.0**. 원격디버그(MS-019)·크로스컴파일(MS-020)은 INT-002(Draft, v1.2.0+ 후보).
@@ -57,7 +58,9 @@
 
 ## 다음 시작점
 
-1. **v1.3.0 릴리즈 (내일)** — 브랜치 `feature/ms-023-v1.3.0`(13커밋). **코드 변경 없음. F5 검증 완료.** 순서: ① **CHANGELOG 날짜를 실제 게시일로** (현재 `2026-08-25` 고정 — v1.2.1에서 고친 것과 같은 드리프트라 첫 단계) ② `npm run package:vsix` — **최종 커밋 이후에**(KB #14) ③ 번들 역검증(`cleanScopes`·`displayPath` grep) ④ 격리 프로필 스모크 `@1.3.0` ⑤ main FF 병합·`v1.3.0` 태그·push ⑥ `vsce publish` → GitHub Release. 상세는 세션 로그 #019 말미.
+1. **Human 결정 대기** — 활성 Intent·Milestone 없음. 후보 셋: ① **INT-002**(원격·크로스, Draft) 승인·착수 ② **TC-11**(WSL) 검증으로 Known Issue 해소 ③ 실사용 피드백 수집 후 다음 MINOR.
+2. **정리(선택)** — 병합된 `feature/ms-023-v1.3.0` 브랜치 삭제. main과 동일 커밋이라 언제 지워도 무방.
+3. **릴리즈 후 확인(선택)** — Marketplace 리스팅 반영은 몇 분 걸린다. `https://marketplace.visualstudio.com/items?itemName=lim8603.devswitcher-tools` 에서 1.3.0 표기 확인.
 2. **다음 사이클 결정(Human)** — ① INT-002(원격디버그 MS-019·크로스컴파일 MS-020, Draft) 승인·착수 여부 ② TC-11(WSL) 검증으로 Known Issue 해소.
 3. **성능·품질 코드리뷰** — 세션 #018부터 계속 이월 중. v1.4.0 묶음 후보.
 
