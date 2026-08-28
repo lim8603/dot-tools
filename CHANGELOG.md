@@ -3,6 +3,30 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.1] - 2026-08-28
+
+### Fixed
+
+- **`devSwitcher.scan.exclude` was silently ignored in a multi-root workspace.** The
+  setting was contributed without a `scope`, which VS Code defaults to `window`, and a
+  window-scoped setting cannot be set from a workspace folder's `.vscode/settings.json`.
+  Writing the exclusion where it most naturally belongs — next to the folder it applies
+  to — did nothing, and the only sign was a hover: *"This setting cannot be applied in
+  this workspace."* The workaround was to move it into the `.code-workspace` file.
+
+  It is now declared `scope: "resource"`, and the scan reads each workspace folder's value
+  with that folder's uri as the resource scope — `inspect()` without a resource leaves
+  `workspaceFolderValue` undefined, so the declaration alone would not have been enough.
+  User, Workspace and Workspace Folder values are unioned, as User and Workspace already
+  were.
+
+  A pattern set on one folder still applies to the whole scan, because the scan is a
+  single workspace-wide `findFiles`. Confining an exclusion to the folder that declared it
+  would mean scanning per folder; that is not part of this fix.
+
+  Single-root workspaces are unaffected — `.vscode/settings.json` was already the
+  Workspace level there and always worked.
+
 ## [1.3.0] - 2026-08-26
 
 ### Added

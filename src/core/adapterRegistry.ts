@@ -18,9 +18,19 @@ const BUILTIN_EXCLUDE_DIRS = ['target', 'node_modules', '.git', '.vscode-test'];
  * `devSwitcher.scan.exclude` adds (vendored trees, submodules, anything the user does not
  * want listed at all).
  *
- * `inspect()` rather than `get()` on purpose — exclusions are additive, so the User and
- * Workspace levels are unioned. With `get()`, a workspace setting would override and
- * silently discard the user's personal rules (see core/scanExclude.ts).
+ * `inspect()` rather than `get()` on purpose — exclusions are additive, so every level is
+ * unioned. With `get()`, a workspace setting would override and silently discard the
+ * user's personal rules (see core/scanExclude.ts).
+ *
+ * Folder levels are read **per workspace folder**, with the folder's uri as the resource
+ * scope. `inspect()` without a resource leaves `workspaceFolderValue` undefined in a
+ * multi-root workspace, so until 1.3.1 a folder's `.vscode/settings.json` did nothing at
+ * all — VS Code only said so on hover. The setting also has to be declared
+ * `scope: "resource"` in package.json, or VS Code refuses the folder level outright.
+ *
+ * The patterns are still unioned into one workspace-wide glob rather than confined to the
+ * folder that declared them: the scan is a single `findFiles` across the workspace, so a
+ * folder's exclusion applies everywhere. Stated in the setting description.
  *
  * Computed once per scan, not per glob: the setting cannot change mid-pass, and a scan
  * asks once per adapter manifest glob.
@@ -29,10 +39,16 @@ function excludeGlob(): string {
   const inspected = vscode.workspace
     .getConfiguration('devSwitcher')
     .inspect<string[]>('scan.exclude');
+  const folderLevels = (vscode.workspace.workspaceFolders ?? []).map(
+    (folder) =>
+      vscode.workspace
+        .getConfiguration('devSwitcher', folder.uri)
+        .inspect<string[]>('scan.exclude')?.workspaceFolderValue,
+  );
   const patterns = mergeExcludePatterns(
     inspected?.globalValue,
     inspected?.workspaceValue,
-    inspected?.workspaceFolderValue,
+    ...folderLevels,
   );
   return toExcludeGlob(BUILTIN_EXCLUDE_DIRS, patterns);
 }

@@ -79,6 +79,24 @@ describe('mergeExcludePatterns', () => {
       '**/c/**',
     ]);
   });
+
+  // A multi-root workspace spreads the levels one per folder (adapterRegistry reads each
+  // with the folder's uri as the resource scope), so the call is User + Workspace + N
+  // folder values. Folders with nothing configured pass through as undefined.
+  it('unions one level per workspace folder, gaps included', () => {
+    assert.deepEqual(
+      mergeExcludePatterns(['scratch'], ['.cowork'], undefined, ['vendor'], undefined),
+      ['**/scratch/**', '**/.cowork/**', '**/vendor/**'],
+    );
+  });
+
+  // Two folders excluding the same name must not double up: the merged glob is
+  // workspace-wide, so one pattern covers both.
+  it('collapses the same folder name declared by two workspace folders', () => {
+    assert.deepEqual(mergeExcludePatterns(undefined, undefined, ['.cowork'], ['.cowork']), [
+      '**/.cowork/**',
+    ]);
+  });
 });
 
 describe('toExcludeGlob', () => {
