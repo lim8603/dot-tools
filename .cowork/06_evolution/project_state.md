@@ -16,18 +16,18 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Evolve** (**v1.3.0 게시 완료**, 2026-08-26 세션 #020. 다음 사이클 미정) |
+| 현재 Phase | **Evolve** (**v1.3.1 게시 완료**, 2026-08-28 세션 #021. 다음 사이클 미정) |
 | 활성 Intent | **없음** — 유지보수(MS-023까지 완료). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
-| 활성 Milestone | **없음** — MS-023(v1.3.0) **Done·게시 완료**. 다음 Milestone은 Human 결정 대기 |
+| 활성 Milestone | **없음** — MS-023(v1.3.0) Done. v1.3.1은 실사용 제보발 패치로 Milestone 미배정. 다음 Milestone은 Human 결정 대기 |
 | 활성 Task | **없음** — 다음 작업은 Human 결정(INT-002 · TC-11 · 실사용 피드백) 후 등록 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-26 |
+| 마지막 갱신일 | 2026-08-28 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-26_020.md |
-| 최신 배포 | **v1.3.0 — Marketplace 게시 완료**(2026-08-26, `vsce publish` DONE) + **GitHub Release v1.3.0**(vsix 260,896 bytes 첨부). Clean · Delete Build Tree · `scan.exclude` · `cmake.configureOnSelect` · `confirmDeleteBuildTree` |
+| 참조 세션 로그 | session_2026-08-28_021.md |
+| 최신 배포 | **v1.3.1 — Marketplace 게시 완료**(2026-08-28, `vsce publish` DONE) + **GitHub Release v1.3.1**(vsix 255.32 KB 첨부). `scan.exclude`가 워크스페이스 폴더 레벨에서 무시되던 결함 수정(D-27) |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -43,6 +43,7 @@
 ### 한 줄 상태
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
+- **🐛 v1.3.1 게시(2026-08-28, 세션 #021).** Human의 실사용 질문("특정 폴더 제외 어떻게 써?")에서 v1.3.0 기능의 **침묵 결함**이 드러났다 — `devSwitcher.scan.exclude`를 **폴더의 `.vscode/settings.json`에 쓰면 아무 일도 일어나지 않는다**. 원인은 `package.json`에 `scope` 미선언 → VS Code 기본값 `window` → 워크스페이스 폴더 레벨 설정 불가. 오류도 로그도 없고 **호버 툴팁 한 줄**이 전부였다. **D-27**: `scope: "resource"` 선언 + `excludeGlob()`이 **폴더 uri를 리소스 스코프로** 각 폴더 값을 읽어 합집합(선언만으론 부족 — `inspect()`를 리소스 없이 부르면 `workspaceFolderValue`가 계속 undefined). 폴더가 선언한 패턴도 스캔 전역 적용(**D-27a**, 스캔이 전역 `findFiles` 1회이므로). unit **384**·통합 6. **실사용 검증 PASS**(vsix 설치 후 Reload Window 필요). 부수적으로 **CLAUDE.md 컨텍스트 블록이 MS-004 시점에 멈춰 있던 것**을 Human 질문("MS-005는 뭐야?")으로 발견·정정. ▸ 남은 위험: 멀티루트 폴더 스코프는 **자동 테스트가 못 덮는다**(통합 테스트가 싱글루트 호스트).
 - **🚀 v1.3.0 게시 완주(2026-08-26, 세션 #020, MS-023 Done).** Human 지적 "이 메시지박스 쿨하지 않다"에서 출발해 **Delete Build Tree UI를 재설계**했다(**ADR-022 / D-26**). ① 조사 결과 `modal: true`는 전체 **2곳뿐**이었고 진짜 문제는 **Delete만 혼자 모달**이라는 일관성(나머지 선택 11곳은 전부 QuickPick) ② 어댑터별 반환 개수를 전수 확인하니 **dotnet만 `bin`·`obj` 2개** → 단일 선택 불가 → **`canPickMany` + 전 항목 기본 체크**로 가면서 **모달이 못 하던 부분 삭제**가 생김 ③ F5에서 튀어나온 Windows 셸 대화상자를 프로세스 증거(MSBuild PID·C# Dev Kit buildhost)로 규명하니 진범은 **`useTrash`** — 우리 모달을 없앴더니 OS가 자기 것을 올린 것 ④ Human 근거(*"다시 빌드하려고 지우는 것"*)로 **휴지통 폐기·즉시 삭제**, 그 결정이 **오보고 결함까지 제거**(결함이 fallback 분기 안에 살았으므로) ⑤ `confirmDeleteBuildTree`(기본 true) 옵트인 해제. **F5 6종 완주 PASS**, 도중 결함 2건(오보고 / 설명 잘림) 발견·수정. **배포 번들에 `modal:!0` 0건.** unit **382**. KB 인사이트 #6 · 안티패턴 #18·#19. ▸ **다음=Human 결정(INT-002 · TC-11 · 실사용 피드백).**
 - (직전) **✅ v1.3.0 F5 검증 완주(2026-08-25, 세션 #019, MS-023).** 착수 직전 Human 질문("Clean Target? Clean All?")으로 **같은 버튼이 어댑터마다 다르게 동작**함이 드러나 **어댑터가 `CleanScope[]`를 선언하고 UI는 나열만** 하도록 재설계(칩과 같은 모델, INV-2 유지). Human 원칙: "못하는 걸 억지로 시킬 수 없으니 **행위를 상세히 표현하고 할 수 있는 것만 제공**". **F5에서 버그 3건 발견·수정**: ① cargo 워크스페이스 멤버의 `target/`은 루트에 있는데 조합으로 찾음(ADR-005/DD-05를 이 호출부만 미준수) ② `cargo clean`에 `--target` 미전달로 트리플 빌드 잔존(dotnet·vs엔 적용해놓고 cargo만 누락) ③ 모달·피커가 긴 경로/경고를 **가운데 잘라** 안전장치가 형식만 남음 → 워크스페이스 상대경로로 전환. **회귀 검증 통과**(창 새로고침+설정 페이지+전환 후 `build`/`CMakeCache` 0건). unit **379**·통합 6. ▸ **다음=릴리즈 시퀀스(내일)**, CHANGELOG 날짜부터.
 - **🛠 v1.3.0 코드 완료 — F5 대기(2026-08-25, 세션 #019, MS-023).** 백로그 4항목 + **docs 동기화**. ① **B-6** 전 어댑터 probe 정합성(감사 결과 cmake만 지키고 있었다 — dotnet·cargo·go·**python**이 전환/렌더/재스캔마다 프로세스 기동. `rustup target list`엔 캐시가 아예 없었음) ② **B-5** `cmake.configureOnSelect`(기본 false, **어댑터가 설정을 직접 읽어 INV-2 유지**) + 카드의 `0`→**"not listed yet"**(원 동기를 설정 없이 해소) ③ **scan.exclude**(#018 설계 그대로, 중첩 중괄호 회피 위해 builtin 전개) ④ **B-4 Clean/Delete Build Tree**(둘 다·명령 팔레트만·**prepareInvocation 미호출**로 v1.2.1 무효화 차단·삭제 판정은 순수 `cleanPlan.ts`) ⑤ **docs 13종 누적 동기화** — Human 질문으로 방치 발견(사용자 메뉴얼에 7번째 툴체인 없음, v1.2.1은 13종 전부 미반영). 동기화 중 드러난 사실: FR-004가 v1.2.1까지 깨져 있었음 · WBS의 INT-002 예약 번호를 실사용 피드백이 가져감 · 저장 스키마 무변경. **unit 321→367 · 통합 3→6**(실 glob 엔진 검증). **F5만 남음.**
