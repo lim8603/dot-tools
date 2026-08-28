@@ -285,7 +285,7 @@ rest of the group still starts.
 | Setting | Default | Description |
 | --- | --- | --- |
 | `devSwitcher.languages.enabled` | all | Languages scanned and shown. Remove a language to hide its projects (also editable as checkboxes in the settings page's General tab). An empty or invalid list falls back to all. |
-| `devSwitcher.scan.exclude` | _(empty)_ | Folders the workspace scan skips — vendored trees, git submodules, anything you do not want listed as a project. A bare name (`vendor`) matches that folder anywhere; globs (`**/examples/**`) work too. User and Workspace values are combined rather than overridden. `node_modules`, `target` and `.git` are always skipped already. |
+| `devSwitcher.scan.exclude` | _(empty)_ | Folders the workspace scan skips — vendored trees, git submodules, anything you do not want listed as a project. A bare name (`vendor`) matches that folder anywhere; globs (`**/examples/**`) work too. User, Workspace and Workspace Folder values are combined rather than overridden; in a multi-root workspace a pattern set on one folder applies to the whole scan. `node_modules`, `target` and `.git` are always skipped already. |
 | `devSwitcher.statusBar.compact` | `false` | Show chips as icons only (value on hover/click). |
 | `devSwitcher.statusBar.selectedOnly` | `false` | Hide optional chips that have no value (required chips stay). |
 | `devSwitcher.projects.showLibraries` | `true` | List library projects/targets (static/shared) in the switcher and Target picker. They build, but cannot run or debug. |
