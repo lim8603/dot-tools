@@ -292,7 +292,7 @@ export const cargoAdapter: LanguageAdapter = {
 
   async listProjects(manifests) {
     const projects: ProjectInfo[] = [];
-    const covered = new Set<string>(); // manifest paths already emitted by a fetched workspace
+    const covered = new Set<string>(); // Uri-normalized manifest paths from fetched workspaces
 
     // Shorter paths first: a workspace root's metadata covers its members, so we
     // skip the members' own manifests instead of re-running cargo for each.
@@ -308,11 +308,15 @@ export const cargoAdapter: LanguageAdapter = {
         continue; // E2/E3: unreadable manifest — watcher retries on save
       }
       for (const pkg of parseWorkspacePackages(metadata)) {
-        covered.add(pkg.manifestPath);
-        if (projects.some((p) => p.manifestPath === pkg.manifestPath)) {
+        const manifestUri = vscode.Uri.file(pkg.manifestPath);
+        // Cargo can mix D:\ and d:\ within one workspace's metadata. Match the
+        // scanner's Uri.fsPath identity (drive letter normalized), not the raw
+        // Cargo string. Do not lowercase the full path: POSIX paths are case-sensitive.
+        const manifestKey = manifestUri.fsPath;
+        if (covered.has(manifestKey)) {
           continue;
         }
-        const manifestUri = vscode.Uri.file(pkg.manifestPath);
+        covered.add(manifestKey);
         const folder = vscode.workspace.getWorkspaceFolder(manifestUri);
         if (!folder) {
           continue; // outside the workspace (registry path, etc.)

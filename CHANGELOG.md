@@ -3,6 +3,17 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.2] - 2026-09-20
+
+### Fixed
+
+- **Duplicate Rust projects on Windows.** Cargo metadata can return the same manifest
+  with both uppercase and lowercase drive letters (`D:` / `d:`). Discovery now compares
+  paths using VS Code's URI normalization, so each manifest appears once in the project
+  switcher and settings page, and already-discovered workspace members are not queried
+  again. Existing project IDs, saved selections, and execution paths are unchanged.
+  Full paths are not lowercased, preserving case-sensitive paths on POSIX hosts.
+
 ## [1.3.1] - 2026-08-28
 
 ### Fixed

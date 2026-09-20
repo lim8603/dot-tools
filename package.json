@@ -2,7 +2,7 @@
   "name": "devswitcher-tools",
   "displayName": "DevSwitcher Tools",
   "description": "Multi-language unified status-bar UX for VSCode (Rust / C++ CMake / Visual Studio / C# / Python / Go / Node.js / TypeScript)",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "publisher": "lim8603",
   "icon": "images/icon-256.png",
   "private": true,
@@ -265,7 +265,7 @@
         "devSwitcher.confirmDeleteBuildTree": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Ask for confirmation before **Delete Build Tree\u2026** removes a build directory.\n\nThe confirmation lists every directory that will go, and what each one is - a CMake sub-project's tree belongs to its root and takes its siblings with it, which a bare path does not tell you.\n\nTurn it off to delete straight away.\n\nBuild trees are deleted outright rather than moved to the trash: they are regenerable output, and trashing a multi-gigabyte one would not give the disk space back. DevSwitcher still refuses any path outside the workspace folder or the project's own source directory."
+          "markdownDescription": "Ask for confirmation before **Delete Build Tree…** removes a build directory.\n\nThe confirmation lists every directory that will go, and what each one is - a CMake sub-project's tree belongs to its root and takes its siblings with it, which a bare path does not tell you.\n\nTurn it off to delete straight away.\n\nBuild trees are deleted outright rather than moved to the trash: they are regenerable output, and trashing a multi-gigabyte one would not give the disk space back. DevSwitcher still refuses any path outside the workspace folder or the project's own source directory."
         },
         "devSwitcher.cmake.debugger": {
           "type": "string",
