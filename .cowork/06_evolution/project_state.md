@@ -16,10 +16,10 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Evolve** — v1.3.2 GitHub Release 완료, Marketplace 인증 갱신 대기(2026-09-20, #022) |
+| 현재 Phase | **Evolve** — v1.3.2 Marketplace·GitHub Release 게시 완료(2026-09-20, #022) |
 | 활성 Intent | **없음** — 유지보수(MS-023까지 완료). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
 | 활성 Milestone | **없음** — MS-023(v1.3.0) Done. v1.3.1은 실사용 제보발 패치로 Milestone 미배정. 다음 Milestone은 Human 결정 대기 |
-| 활성 Task | **TASK-066 Review** — 수정·검증·GitHub 배포 완료. Marketplace 게시 PAT 인증 실패(TF400813), Human 재로그인 대기 |
+| 활성 Task | **없음** — TASK-066 Done, v1.3.2 배포 완료 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -27,7 +27,7 @@
 | 마지막 갱신일 | 2026-09-20 |
 | 마지막 갱신자 | AI |
 | 참조 세션 로그 | session_2026-09-20_022.md |
-| 최신 배포 | **v1.3.2 GitHub Release·VSIX 완료**(2026-09-20). Marketplace 최신은 v1.3.1: 1.3.2 게시 시 PAT 인증 실패. 재로그인 후 검증된 VSIX 재게시만 필요 |
+| 최신 배포 | **v1.3.2 Marketplace·GitHub Release 완료**(2026-09-20). Windows Cargo 경로의 D:/d: 혼재로 발생하던 중복 프로젝트 수정. VSIX 255.59 KB |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -42,7 +42,7 @@
 
 ### 한 줄 상태
 
-- **세션 #022 (2026-09-20): TASK-066, v1.3.2 GitHub 배포 완료·Marketplace 인증 대기.** Windows Cargo metadata의 D:/d: 혼재로 같은 프로젝트가 중복 표시되는 결함 재현·수정. Uri.fsPath로 비교 키만 통일, 원본 실행 경로·프로젝트 ID 유지. unit 384·통합 9 Pass(POSIX 전용 1 skip), lint·check-types Pass. Human이 v1.3.2 배포 승인. VSIX 격리 설치 성공·main/태그 push·GitHub Release 게시 완료. Marketplace 게시만 TF400813으로 실패, PAT 재로그인 요청.
+- **세션 #022 (2026-09-20): TASK-066 Done, v1.3.2 게시 완료.** Windows Cargo metadata의 D:/d: 혼재로 같은 프로젝트가 중복 표시되는 결함 재현·수정. Uri.fsPath로 비교 키만 통일, 원본 실행 경로·프로젝트 ID 유지. unit 384·통합 9 Pass(POSIX 전용 1 skip), lint·check-types·VSIX 격리 설치 Pass. main/태그 push·GitHub Release·Marketplace 게시 완료. 최초 PAT 실패는 Human의 기존 자격 증명 저장소→새 저장소 복사 후 재시도 성공으로 해소.
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
 - **🐛 v1.3.1 게시(2026-08-28, 세션 #021).** Human의 실사용 질문("특정 폴더 제외 어떻게 써?")에서 v1.3.0 기능의 **침묵 결함**이 드러났다 — `devSwitcher.scan.exclude`를 **폴더의 `.vscode/settings.json`에 쓰면 아무 일도 일어나지 않는다**. 원인은 `package.json`에 `scope` 미선언 → VS Code 기본값 `window` → 워크스페이스 폴더 레벨 설정 불가. 오류도 로그도 없고 **호버 툴팁 한 줄**이 전부였다. **D-27**: `scope: "resource"` 선언 + `excludeGlob()`이 **폴더 uri를 리소스 스코프로** 각 폴더 값을 읽어 합집합(선언만으론 부족 — `inspect()`를 리소스 없이 부르면 `workspaceFolderValue`가 계속 undefined). 폴더가 선언한 패턴도 스캔 전역 적용(**D-27a**, 스캔이 전역 `findFiles` 1회이므로). unit **384**·통합 6. **실사용 검증 PASS**(vsix 설치 후 Reload Window 필요). 부수적으로 **CLAUDE.md 컨텍스트 블록이 MS-004 시점에 멈춰 있던 것**을 Human 질문("MS-005는 뭐야?")으로 발견·정정. ▸ 남은 위험: 멀티루트 폴더 스코프는 **자동 테스트가 못 덮는다**(통합 테스트가 싱글루트 호스트).
@@ -71,7 +71,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-066 | Cargo 중복 프로젝트 수정·v1.3.2 배포 | AI | Review | 2026-09-20 | GitHub 완료, Marketplace PAT 재로그인 후 게시 |
+| (없음) | TASK-066 Done — v1.3.2 게시 완료 | — | — | 2026-09-20 | 다음 작업은 Human 결정 |
 
 > **TASK-001~050 Done(039 제외)·MS-017 키보드 단축키 완료·v0.7.0 배포**(세션 #013, unit **235**, 통합 16커맨드). **v1.0.0 로드맵(D-21)**: MS-015 Go(✅) → MS-016 Node/TS(✅) → MS-017 단축키(✅ v0.7.0) → **MS-018 준비감지(TASK-039, 다음)** → MS-014 최종점검+게시. **원격디버그(019)·크로스(020)는 INT-002**(D-22). MS-017 상세(단축키·stop·Stop버튼)는 session #013. C-3 폐기(D-15). TC-11(WSL) Deferred. 백로그 B-2·B-3.
 
@@ -82,9 +82,8 @@
 
 ## 다음 시작점
 
-1. **TASK-066 Marketplace 게시:** Human이 `npx @vscode/vsce login lim8603`으로 게시 PAT 갱신 후, `npx @vscode/vsce publish --packagePath release/devswitcher-tools-1.3.2.vsix` 재시도. GitHub Release는 이미 게시 완료.
-2. **게시 후 상태 동기화:** TASK-066 Done, 활성 Task 없음으로 전환하고 최신 배포 기록 갱신.
-3. **다음 사이클(Human 결정):** INT-002(원격·크로스, Draft), TC-11(WSL), 실사용 피드백·성능/품질 리뷰 후보.
+1. **v1.3.2 사용 확인:** VS Code 확장 업데이트 후 Reload Window. Cargo 프로젝트 중복 표시가 해소되는지 실사용 확인.
+2. **다음 사이클(Human 결정):** INT-002(원격·크로스, Draft), TC-11(WSL), 실사용 피드백·성능/품질 리뷰 후보. 활성 Task 없음.
 
 ---
 
