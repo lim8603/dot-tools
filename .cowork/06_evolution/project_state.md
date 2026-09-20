@@ -19,14 +19,14 @@
 | 현재 Phase | **Evolve** (**v1.3.1 게시 완료**, 2026-08-28 세션 #021. 다음 사이클 미정) |
 | 활성 Intent | **없음** — 유지보수(MS-023까지 완료). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
 | 활성 Milestone | **없음** — MS-023(v1.3.0) Done. v1.3.1은 실사용 제보발 패치로 Milestone 미배정. 다음 Milestone은 Human 결정 대기 |
-| 활성 Task | **없음** — 다음 작업은 Human 결정(INT-002 · TC-11 · 실사용 피드백) 후 등록 |
+| 활성 Task | **TASK-066** — Cargo 중복 프로젝트 수정·v1.3.2 배포 준비 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-08-28 |
+| 마지막 갱신일 | 2026-09-20 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-08-28_021.md |
+| 참조 세션 로그 | session_2026-09-20_022.md |
 | 최신 배포 | **v1.3.1 — Marketplace 게시 완료**(2026-08-28, `vsce publish` DONE) + **GitHub Release v1.3.1**(vsix 255.32 KB 첨부). `scan.exclude`가 워크스페이스 폴더 레벨에서 무시되던 결함 수정(D-27) |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
@@ -41,6 +41,8 @@
 - `참조 세션 로그`: 최신 `session_YYYY-MM-DD_NNN.md`
 
 ### 한 줄 상태
+
+- **세션 #022 (2026-09-20): TASK-066, v1.3.2 배포 준비.** Windows Cargo metadata의 D:/d: 혼재로 같은 프로젝트가 중복 표시되는 결함 재현·수정. Uri.fsPath로 비교 키만 통일, 원본 실행 경로·프로젝트 ID 유지. unit 384·통합 9 Pass(POSIX 전용 1 skip), lint·check-types Pass. Human이 v1.3.2 배포 승인.
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
 - **🐛 v1.3.1 게시(2026-08-28, 세션 #021).** Human의 실사용 질문("특정 폴더 제외 어떻게 써?")에서 v1.3.0 기능의 **침묵 결함**이 드러났다 — `devSwitcher.scan.exclude`를 **폴더의 `.vscode/settings.json`에 쓰면 아무 일도 일어나지 않는다**. 원인은 `package.json`에 `scope` 미선언 → VS Code 기본값 `window` → 워크스페이스 폴더 레벨 설정 불가. 오류도 로그도 없고 **호버 툴팁 한 줄**이 전부였다. **D-27**: `scope: "resource"` 선언 + `excludeGlob()`이 **폴더 uri를 리소스 스코프로** 각 폴더 값을 읽어 합집합(선언만으론 부족 — `inspect()`를 리소스 없이 부르면 `workspaceFolderValue`가 계속 undefined). 폴더가 선언한 패턴도 스캔 전역 적용(**D-27a**, 스캔이 전역 `findFiles` 1회이므로). unit **384**·통합 6. **실사용 검증 PASS**(vsix 설치 후 Reload Window 필요). 부수적으로 **CLAUDE.md 컨텍스트 블록이 MS-004 시점에 멈춰 있던 것**을 Human 질문("MS-005는 뭐야?")으로 발견·정정. ▸ 남은 위험: 멀티루트 폴더 스코프는 **자동 테스트가 못 덮는다**(통합 테스트가 싱글루트 호스트).

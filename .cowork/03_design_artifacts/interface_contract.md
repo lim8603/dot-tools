@@ -298,3 +298,7 @@ VS2026식 속성을 각 어댑터가 "파일 무편집 주입"으로 어디까�
 | SRC-001 | LanguageAdapter/ChipDescriptor 타입 | 상세설계서 §4 | 원문 |
 | SRC-002 | F20 프로젝트 생성 계약 | ADR-010 | 세션 #001 |
 | SRC-003 | 호출 구성 오버레이·옵션 카탈로그·언어별 능력 | ADR-011, ADR-012 | 세션 #002 |
+
+## Cargo 프로젝트 경로 식별 보정 (v1.3.2)
+
+`listProjects`의 멤버 커버리지와 중복 판별은 `vscode.Uri.file(manifestPath).fsPath`로 통일한다. Windows Cargo metadata의 `D:`/`d:` 혼재는 동일 경로로 취급한다. 전체 경로 소문자화는 하지 않으며 `ProjectInfo.id`, 원본 `manifestPath`, 저장 스키마는 변경하지 않는다.

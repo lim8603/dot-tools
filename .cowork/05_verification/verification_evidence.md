@@ -99,3 +99,12 @@
 | ~~GAP-002~~ | **해소(2026-08-16, 세션 #006)** — TC-09 Pass(features-demo 재시작 복원). features 칩 버그 수정 e7b462b | (해소) | 재시작 복원 확인 |
 | ~~GAP-003~~ | **해소(2026-08-16, 세션 #006)** — TC-02(cargo-workspace 3멤버)·TC-03(멀티루트) Pass. untrusted 무한스피너 수정 eb8983a | (해소) | verify 픽스처로 확인 |
 | GAP-004 | 성능 NFR 측정 | 측정치 없음 | v0.1은 규모 작아 정성 판단, 필요 시 측정 | Deferred |
+
+## v1.3.2 패치 검증 (EV-025, 2026-09-20)
+
+- 대상: TASK-066, Cargo 프로젝트 중복 식별.
+- 재현: 실 dot-probe metadata에서 D:/d: 혼재 확인. VS Code 1.138.0 통합 2건 수정 전 2 !== 1 실패→수정 후 통과.
+- 검증: unit 384 Pass, 통합 9 Pass + POSIX 전용 1 skip(Windows), check-types·lint Pass. 기존 활성화·설정 페이지·실 glob 테스트 포함.
+- 리뷰: URI 정규화는 비교 키에만 적용. 기존 ID·manifestPath·선택·Run Group 저장 계약 무변경. 전체 경로 소문자화 없음.
+- 소비자: 어댑터 목록·계층 정렬·설정 페이지 활성화 통합 테스트 통과. 사용자 dot-probe 화면 자체의 수동 재검증은 미실행.
+- VSIX 15 files, 255.59 KB 생성. 설치 스모크·게시 진행 중. TC-11(WSL) 기존 Known Issue 유지.
