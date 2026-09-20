@@ -9,8 +9,8 @@
 | 항목 | 내용 |
 | --- | --- |
 | 프로젝트 | DevSwitcher Tools (`devswitcher-tools`) |
-| 버전 | v1.3.2 (릴리즈 준비) |
-| 릴리즈 일자 | 2026-09-20 (예정) |
+| 버전 | v1.3.2 (GitHub 배포 완료, Marketplace 인증 대기) |
+| 릴리즈 일자 | 2026-09-20 (GitHub) |
 | 기준 문서 | `CHANGELOG.md`(영문 원본) · `.cowork/04_implementation/milestone_registry.md` |
 
 ---

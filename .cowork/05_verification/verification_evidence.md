@@ -107,4 +107,4 @@
 - 검증: unit 384 Pass, 통합 9 Pass + POSIX 전용 1 skip(Windows), check-types·lint Pass. 기존 활성화·설정 페이지·실 glob 테스트 포함.
 - 리뷰: URI 정규화는 비교 키에만 적용. 기존 ID·manifestPath·선택·Run Group 저장 계약 무변경. 전체 경로 소문자화 없음.
 - 소비자: 어댑터 목록·계층 정렬·설정 페이지 활성화 통합 테스트 통과. 사용자 dot-probe 화면 자체의 수동 재검증은 미실행.
-- VSIX 15 files, 255.59 KB 생성. 격리 user-data/extensions 경로 설치 성공, `lim8603.devswitcher-tools@1.3.2` 확인. Gate 5(v1.3.2) Pass: 패치 범위 검증·리뷰·릴리즈 문서·설치 스모크 완료. 게시 대기. TC-11(WSL) 기존 Known Issue 유지.
+- VSIX 15 files, 255.59 KB 생성. 격리 user-data/extensions 경로 설치 성공, `lim8603.devswitcher-tools@1.3.2` 확인. Gate 5(v1.3.2) Pass: 패치 범위 검증·리뷰·릴리즈 문서·설치 스모크 완료. GitHub Release v1.3.2 게시·VSIX 첨부 완료. Marketplace는 PAT 인증 실패(TF400813); 미게시이며 재로그인 후 재시도 필요. TC-11(WSL) 기존 Known Issue 유지.

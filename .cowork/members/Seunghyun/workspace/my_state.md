@@ -11,8 +11,8 @@
 | 이름 | Seunghyun |
 | 역할 (Role ID) | 프로젝트 오너 |
 | 활성 Milestone | **없음** — MS-023(v1.3.0) **Done·게시 완료**. 다음 Milestone은 Human 결정 대기 |
-| 마지막 갱신일 | 2026-08-28 |
-| 참조 세션 로그 | session_2026-08-28_021.md |
+| 마지막 갱신일 | 2026-09-20 |
+| 참조 세션 로그 | session_2026-09-20_022.md |
 
 ---
 
@@ -20,7 +20,7 @@
 
 | Task ID | 제목 | 관련 Milestone | 상태 | 진행률 | 블로커 |
 |---------|------|----------------|------|--------|--------|
-| (없음) | **v1.3.1 게시 완료** — 다음 작업은 Human 결정 후 등록 | (미배정) | Done | 100% | 없음 |
+| TASK-066 | Cargo 중복 수정·v1.3.2 배포 | 없음(패치) | Review | GitHub 완료 | Marketplace PAT 재로그인 필요(TF400813) |
 
 > **🐛 v1.3.1 게시(세션 #021).** Human 실사용 질문에서 v1.3.0 기능의 침묵 결함이 드러났다 — `scan.exclude`를 **폴더의 `.vscode/settings.json`에 쓰면 아무 일도 안 일어남**(`scope` 미선언 → 기본 `window`). **D-27**: `scope: "resource"` + 폴더 uri를 리소스 스코프로 각 폴더 값 읽기(선언만으론 부족). 실사용 검증 PASS. Marketplace·GitHub Release 완료. KB 인사이트 #7·안티패턴 #20. 곁가지로 CLAUDE.md 컨텍스트 블록이 MS-004 시점에 멈춰 있던 것 정정.
 > (직전) **🚀 v1.3.0 게시 완주(세션 #020, MS-023 Done).** 세션 #019의 5항목에 더해, Human 지적("이 메시지박스 쿨하지 않다")으로 **Delete Build Tree UI를 재설계**했다(ADR-022/D-26): 모달 → **QuickPick(`canPickMany`, 전 항목 기본 체크)** + **휴지통 폐기·즉시 삭제** + `confirmDeleteBuildTree` 설정. **배포 번들에 `modal:!0` 0건** — 확장에서 화면을 막는 대화상자가 사라졌다. F5 6종 완주 PASS, 도중 결함 2건(오보고 경로 / 설명 잘림) 발견·수정. KB 인사이트 #6·안티패턴 #18·#19.
@@ -58,6 +58,8 @@
 ---
 
 ## 다음 시작점
+
+0. **2026-09-20 / TASK-066:** Cargo 중복 프로젝트 수정(v1.3.2), unit 384·통합 9·설치 스모크 통과. main/태그·GitHub Release 완료. Marketplace는 PAT 인증 오류(TF400813)로 대기. Human 재로그인 후 준비된 VSIX publish만 재시도. 세션 `session_2026-09-20_022.md`.
 
 1. **Human 결정 대기** — 활성 Intent·Milestone 없음. 후보 셋: ① **INT-002**(원격·크로스, Draft) 승인·착수 ② **TC-11**(WSL) 검증으로 Known Issue 해소 ③ 실사용 피드백 수집 후 다음 MINOR.
 2. **정리(선택)** — 병합된 `feature/ms-023-v1.3.0` 브랜치 삭제. main과 동일 커밋이라 언제 지워도 무방.
