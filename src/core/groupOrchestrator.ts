@@ -465,7 +465,11 @@ export class GroupOrchestrator {
         continue;
       }
       try {
-        const value = await chip.defaultValue(project);
+        // Chip context (ADR-024): a CMake member lists the tree its own build will use.
+        const value = await chip.defaultValue(project, {
+          selection: this.store.getSelection(project.id),
+          config: this.activeConfig(project),
+        });
         if (value !== undefined) {
           await this.store.setValue(project.id, chip.id, value);
         }

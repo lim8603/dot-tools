@@ -194,20 +194,22 @@ async function configuredTargets(
   const preset = presets.find((p) => p.name === activePresetName(sel, presets));
   if (preset) {
     const binaryDir = resolvePresetBinaryDir(preset, srcDir);
-    // A preset that declares no binaryDir is configured with -B (see configurePreset).
-    const targets = await bridge.targetsForPreset(srcDir, preset.name, binaryDir, preset.binaryDir === undefined);
+    // A preset that declares no binaryDir is configured with -B (see configurePreset); the
+    // compiler/linker overlay and env apply on top of the preset as on the plain path (R-2).
+    const targets = await bridge.targetsForPreset(srcDir, preset.name, binaryDir, {
+      setBinaryDir: preset.binaryDir === undefined,
+      defines: overlayDefines(config.compiler ?? {}, config.linker ?? {}),
+      env: taskEnv(config),
+    });
     return { buildDir: binaryDir, targets };
   }
-  const buildDir = buildDirFor(srcDir, config);
+  const buildDir = buildDirFor(srcDir, config, sel);
   const targets = await bridge.targetsFor(srcDir, buildDir, configureOptsFor(sel, config), activeCfg(sel));
   return { buildDir, targets };
 }
 
 /**
- * Targets for the Target chip: the tree's targets (preset projects enumerate via the first
- * preset — target names are the same across presets, so any configured preset yields the
- * list; the selected preset drives the real paths in configuredTargets; non-preset projects
- * use the plain default build dir), scoped to a sub-project's own dir (ADR-019) and, when
+ * Targets for the Target chip, scoped to a sub-project's own dir (ADR-019) and, when
  * the show-libraries preference is off, narrowed to executables. A configure failure (no
  * compiler yet, a broken CMakeLists, …) degrades to [] so the chip shows empty rather than
  * throwing — Doctor surfaces the cause.
@@ -220,17 +222,33 @@ async function configuredTargets(
  */
 async function listSwitcherTargetsFor(
   project: ProjectInfo,
-  { configure = true }: { configure?: boolean } = {},
+  {
+    configure = true,
+    selection,
+    config,
+  }: { configure?: boolean; selection?: Selection; config?: InvocationConfig } = {},
 ): Promise<CMakeTarget[]> {
   const srcDir = rootSrcDirOf(project);
   let targets: CMakeTarget[];
   try {
+    if (selection) {
+      // The caller passed the chip context (ADR-024): list the very tree the build will use —
+      // the selected preset, the platform's build dir, the overlay — so the picker and the
+      // build never configure one tree two ways (`-A` mismatch, measured in review B2).
+      const overlay = config ?? {};
+      targets = configure
+        ? (await configuredTargets(project, selection, overlay)).targets
+        : await bridge.targetsIfConfigured(await buildTreeFor(project, selection, overlay));
+      return narrowTargets(project, targets);
+    }
+    // No context (an older caller): any preset's tree lists the same target names, and the
+    // plain path uses the default tree.
     const presets = await readPresetsFor(project);
     if (presets.length > 0) {
       const preset = presets[0];
       const binaryDir = resolvePresetBinaryDir(preset, srcDir);
       targets = configure
-        ? await bridge.targetsForPreset(srcDir, preset.name, binaryDir, preset.binaryDir === undefined)
+        ? await bridge.targetsForPreset(srcDir, preset.name, binaryDir, { setBinaryDir: preset.binaryDir === undefined })
         : await bridge.targetsIfConfigured(binaryDir);
     } else {
       const buildDir = defaultBuildDir(srcDir);
@@ -241,6 +259,12 @@ async function listSwitcherTargetsFor(
   } catch {
     return [];
   }
+  return narrowTargets(project, targets);
+}
+
+/** A project's share of its tree's targets: scoped to its dir, executables only when the
+ *  show-libraries preference is off (a library-only project keeps its libraries). */
+function narrowTargets(project: ProjectInfo, targets: CMakeTarget[]): CMakeTarget[] {
   const scoped = targetsInScope(project, targets);
   // A library-only project keeps its (library) targets even with the preference off —
   // filtering them away would leave the chip empty and the project unbuildable.
@@ -268,9 +292,18 @@ function activePlatform(sel: Selection): string | undefined {
   return typeof value === 'string' && value !== HOST_DEFAULT_PLATFORM ? value : undefined;
 }
 
-/** The build tree: the `build-dir` output overlay (resolved against the source), else build/. */
-function buildDirFor(srcDir: string, config: InvocationConfig): string {
-  return config.outputDir ? resolve(srcDir, config.outputDir) : defaultBuildDir(srcDir);
+/**
+ * The build tree: the `build-dir` output overlay (resolved against the source), else
+ * `build/` — or `build/<platform>` when a generator platform is chosen. cmake refuses to
+ * change `-A` in an existing tree ("Does not match the platform used previously", review
+ * B8), so each platform gets its own tree; Host default keeps the original `build/`.
+ */
+function buildDirFor(srcDir: string, config: InvocationConfig, sel: Selection): string {
+  if (config.outputDir) {
+    return resolve(srcDir, config.outputDir);
+  }
+  const platform = activePlatform(sel);
+  return platform ? join(defaultBuildDir(srcDir), platform) : defaultBuildDir(srcDir);
 }
 
 /**
@@ -291,7 +324,7 @@ async function buildTreeFor(
   const presets = await readPresetsFor(project);
   const name = activePresetName(sel, presets);
   const preset = presets.find((p) => p.name === name);
-  return preset ? resolvePresetBinaryDir(preset, rootDir) : buildDirFor(rootDir, config);
+  return preset ? resolvePresetBinaryDir(preset, rootDir) : buildDirFor(rootDir, config, sel);
 }
 
 /** Configure options from the selection + overlay (§8): build type, platform, and -D flags. */
@@ -300,6 +333,7 @@ function configureOptsFor(sel: Selection, config: InvocationConfig): ConfigureOp
     config: activeCfg(sel),
     platform: activePlatform(sel),
     defines: overlayDefines(config.compiler ?? {}, config.linker ?? {}),
+    env: taskEnv(config), // CC/CXX/… are read at configure, not only at build (R-2)
   };
 }
 
@@ -315,7 +349,7 @@ function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
 function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
   const srcDir = rootSrcDirOf(project); // sub-projects build through the root's tree (ADR-019)
   const preset = peekActivePreset(project, sel);
-  const buildDir = preset ? preset.binaryDir : buildDirFor(srcDir, config);
+  const buildDir = preset ? preset.binaryDir : buildDirFor(srcDir, config, sel);
   const buildConfig = preset ? undefined : activeCfg(sel);
   // 'All targets' (and an unset chip, which the required prompt normally prevents) drops
   // --target: the generator's default target builds everything (MS-021).
@@ -349,7 +383,7 @@ function makeCmakeBuildTask(project: ProjectInfo, sel: Selection, config: Invoca
 function makeCmakeRunTask(project: ProjectInfo, sel: Selection, config: InvocationConfig): vscode.Task {
   const rootDir = rootSrcDirOf(project);
   const preset = peekActivePreset(project, sel);
-  const buildDir = preset ? preset.binaryDir : buildDirFor(rootDir, config);
+  const buildDir = preset ? preset.binaryDir : buildDirFor(rootDir, config, sel);
   const cfg = preset ? undefined : activeCfg(sel);
   const target = activeTarget(sel) ?? '';
   if (target === ALL_TARGETS) {
@@ -518,6 +552,8 @@ export const cmakeAdapter: LanguageAdapter = {
       listItems: async (project, opts) => {
         const targets = await listSwitcherTargetsFor(project, {
           configure: opts?.probe !== false || configureOnSelect(),
+          selection: opts?.selection,
+          config: opts?.config,
         });
         const items: ChipItem[] = targets.map((t) => ({
           id: t.name,
@@ -536,6 +572,8 @@ export const cmakeAdapter: LanguageAdapter = {
       defaultValue: async (project, opts) => {
         const targets = await listSwitcherTargetsFor(project, {
           configure: opts?.probe !== false || configureOnSelect(),
+          selection: opts?.selection,
+          config: opts?.config,
         });
         return targets.length === 1 ? targets[0].name : undefined;
       },

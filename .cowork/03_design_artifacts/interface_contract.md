@@ -45,9 +45,9 @@ export interface ChipDescriptor {
   label: string;                                       // QuickPick placeholder / 설정 탭 이름
   multiSelect?: boolean;                               // true면 값은 string[] (features)
   required?: boolean;                                  // 미선택 시 액션 차단 (target)
-  listItems(project: ProjectInfo): Promise<ChipItem[]>;  // 어댑터가 캐노니컬 소스에서 읽음
+  listItems(project: ProjectInfo, opts?: ChipQueryOptions): Promise<ChipItem[]>;  // 어댑터가 캐노니컬 소스에서 읽음. opts = { probe?, selection?, config? } (ADR-024)
   format?(value: ChipValue): string;                   // 상태바 축약 표시
-  defaultValue?(project: ProjectInfo): Promise<ChipValue | undefined>;
+  defaultValue?(project: ProjectInfo, opts?: ChipQueryOptions): Promise<ChipValue | undefined>;  // probe:false = 부작용 없이 아는 것만 · selection/config = 현재 칩 값·오버레이(코어·UI가 전달, 해석은 어댑터)
   appliesTo?(project: ProjectInfo): Promise<boolean>;  // 【신규 TASK-041】 프로젝트별 적용 여부. false면 칩 숨김 + 필수/기본 시딩 생략. UI는 이 predicate만 참조(언어 무지 유지). 미구현=항상 적용
 }
 ```
@@ -96,6 +96,7 @@ export interface LanguageAdapter {
   readonly chips: ChipDescriptor[];       // 상태바 요구 칩(순서 = 표시 순서, ADR-003)
   readonly manifestGlobs: string[];       // 감지·감시 글롭. 예: ['**/Cargo.toml'] (F1·F17)
   readonly watchGlobs?: string[];         // 감시 전용 글롭(프로젝트를 만들지 않음). 바뀌면 캐시 무효화. CMake: CMakePresets.json·CMakeUserPresets.json (TASK-068)
+  readonly structureGlobs?: string[];     // 생성·삭제만 감시(편집 무시). Go: **/*.go — 새 main 패키지 (TASK-071)
   readonly requiredExtensions: string[];  // 필요 확장 ID (F14). 예: ['vadimcn.vscode-lldb']
 
   listProjects(manifests: vscode.Uri[]): Promise<ProjectInfo[]>;              // 글롭 결과 기반(ADR-006)

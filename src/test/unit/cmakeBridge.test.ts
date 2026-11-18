@@ -15,6 +15,7 @@ import {
   debuggerFor,
   describeTargetType,
   detectCompilerId,
+  droppedDefines,
   executableArtifact,
   hasExecutableCommand,
   hasLibraryCommand,
@@ -30,6 +31,7 @@ import {
   readReplyDir,
   resolveConfigurePresets,
   resolvePresetBinaryDir,
+  stderrTail,
 } from '../../adapters/cmake/cmakeBridge';
 
 describe('cmakeProjectName', () => {
@@ -732,6 +734,79 @@ describe('CMakeBridge configure gating (TASK-067 review)', () => {
       assert.deepEqual(calls, [['--preset', 'nobin', '-B', join(dir, 'a')], ['--preset', 'withbin']]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('CMake configure consistency (R-2, ADR-024)', () => {
+  function recording(exitCode = 0, stderr = ''): { calls: { args: string[]; env?: Record<string, string> }[]; exec: CMakeExec } {
+    const calls: { args: string[]; env?: Record<string, string> }[] = [];
+    return {
+      calls,
+      exec: (_command, args, options) => {
+        calls.push({ args, env: options.env });
+        return Promise.resolve({ stdout: '', stderr, exitCode });
+      },
+    };
+  }
+
+  it('droppedDefines lists the overlay keys a previous configure applied and the next one does not', () => {
+    const previous = JSON.stringify(['/src', 'Debug', '', { CMAKE_CXX_FLAGS: '-O2', CMAKE_EXE_LINKER_FLAGS: '/X' }]);
+    assert.deepEqual(droppedDefines(previous, { CMAKE_CXX_FLAGS: '-O3' }), ['CMAKE_EXE_LINKER_FLAGS']);
+    assert.deepEqual(droppedDefines(undefined, {}), []);
+    assert.deepEqual(droppedDefines('not json', {}), []);
+  });
+
+  it('removes a cleared overlay define from the cache with -U on the next configure', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-undef-'));
+    try {
+      const { calls, exec } = recording();
+      const bridge = new CMakeBridge(exec);
+      await bridge.configure('/src', buildDir, { defines: { CMAKE_CXX_FLAGS: '-O2' } });
+      await bridge.configure('/src', buildDir, { defines: {} });
+      assert.deepEqual(calls[1].args.slice(-2), ['-U', 'CMAKE_CXX_FLAGS']);
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes the overlay env to the configure process', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-env-'));
+    try {
+      const { calls, exec } = recording();
+      await new CMakeBridge(exec).configure('/src', buildDir, { env: { CXX: 'clang++' } });
+      assert.deepEqual(calls[0].env, { CXX: 'clang++' });
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
+  });
+
+  it('applies the -D overlay on top of a preset and reconfigures when it changes', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ds-preset-d-'));
+    try {
+      const { calls, exec } = recording();
+      const bridge = new CMakeBridge(exec);
+      await bridge.configurePreset('/src', 'msvc', join(dir, 'b'), false, { defines: { CMAKE_CXX_FLAGS: '/W4' } });
+      await bridge.configurePreset('/src', 'msvc', join(dir, 'b'), false, { defines: { CMAKE_CXX_FLAGS: '/W4' } });
+      await bridge.configurePreset('/src', 'msvc', join(dir, 'b'), false, {});
+      assert.deepEqual(calls.map((c) => c.args), [
+        ['--preset', 'msvc', '-D', 'CMAKE_CXX_FLAGS=/W4'],
+        ['--preset', 'msvc', '-U', 'CMAKE_CXX_FLAGS'],
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('puts the tail of cmake stderr in the configure error', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-err-'));
+    try {
+      const stderr = 'CMake Error at CMakeLists.txt:3 (add_executable):\n  Cannot find source file:\n\n    mian.cpp\n';
+      const { exec } = recording(1, stderr);
+      await assert.rejects(new CMakeBridge(exec).configure('/src', buildDir), (e: Error) => /mian\.cpp/.test(e.message));
+      assert.equal(stderrTail('a\n\nb\nc\nd'), 'b | c | d');
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
     }
   });
 });

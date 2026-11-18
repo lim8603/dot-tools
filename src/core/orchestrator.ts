@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type { AdapterRegistry } from './adapterRegistry';
 import type { StateStore } from './stateStore';
 import type { TaskRunner } from './taskRunner';
-import type { BuildTreeDir, ChipValue, CleanScope, DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo } from './types';
+import type { BuildTreeDir, ChipValue, CleanScope, DiagnosticItem, DiagnosticResolution, InvocationConfig, LanguageAdapter, NewProjectTarget, ProjectFile, ProjectInfo, Selection } from './types';
 import type { StatusBarController } from '../ui/statusBar';
 import { orderByHierarchy, visibleInSwitcher } from './projectTree';
 import { pickChipValue } from '../ui/picks';
@@ -231,7 +231,13 @@ export class Orchestrator {
             .then(() => this.renderBar(adapter, project));
         }
       : undefined;
-    const value = await pickChipValue(chip, project, this.store.getValue(project.id, chipId), onLiveChange);
+    const value = await pickChipValue(
+      chip,
+      project,
+      this.store.getValue(project.id, chipId),
+      onLiveChange,
+      this.chipContext(project),
+    );
     if (value === undefined) {
       return; // cancelled (single-select Escape; multi-select always returns a set)
     }
@@ -1011,7 +1017,7 @@ export class Orchestrator {
       // default seeding is an invariant of "about to run", not of "became active").
       if (chip.defaultValue) {
         try {
-          const seeded = await chip.defaultValue(project);
+          const seeded = await chip.defaultValue(project, this.chipContext(project));
           if (seeded !== undefined) {
             await this.store.setValue(project.id, chip.id, seeded);
             this.renderBar(adapter, project);
@@ -1021,7 +1027,7 @@ export class Orchestrator {
           // default unavailable — fall through to the prompt
         }
       }
-      const value = await pickChipValue(chip, project, undefined);
+      const value = await pickChipValue(chip, project, undefined, undefined, this.chipContext(project));
       if (value === undefined) {
         return false;
       }
@@ -1029,6 +1035,11 @@ export class Orchestrator {
       this.renderBar(adapter, project);
     }
     return true;
+  }
+
+  /** What a chip query knows about a project (ADR-024): its chip values + overlay. */
+  private chipContext(project: ProjectInfo): { selection: Selection; config: InvocationConfig } {
+    return { selection: this.store.getSelection(project.id), config: this.activeConfig(project) };
   }
 
   /** The invocation overlay for the active (project × profile) (ADR-011). */
@@ -1129,7 +1140,7 @@ export class Orchestrator {
         continue;
       }
       try {
-        const value = await chip.defaultValue(project, { probe: false });
+        const value = await chip.defaultValue(project, { probe: false, ...this.chipContext(project) });
         if (value !== undefined) {
           await this.store.setValue(project.id, chip.id, value);
         }
@@ -1172,7 +1183,7 @@ export class Orchestrator {
           // probe:false — this runs on every activation and rescan, for every project with
           // stored state. Probing here would configure each of them (CMake), writing a build
           // tree into source directories the user never asked us to touch.
-          const items = await chip.listItems(project, { probe: false });
+          const items = await chip.listItems(project, { probe: false, ...this.chipContext(project) });
           if (items.length === 0) {
             continue; // no answer (e.g. an unconfigured tree) — see below
           }

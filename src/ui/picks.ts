@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { ChipDescriptor, ChipItem, ChipValue, ProjectInfo } from '../core/types';
+import type { ChipDescriptor, ChipItem, ChipQueryOptions, ChipValue, ProjectInfo } from '../core/types';
 
 interface ChipQuickPickItem extends vscode.QuickPickItem {
   id: string;
@@ -15,8 +15,10 @@ export async function pickChipValue(
   project: ProjectInfo,
   current: ChipValue | undefined,
   onLiveChange?: (value: ChipValue) => void,
+  query: ChipQueryOptions = {},
 ): Promise<ChipValue | undefined> {
-  const items = await chip.listItems(project);
+  // The picker is an explicit request: probing stays on, with the project's chip context.
+  const items = await chip.listItems(project, query);
   if (items.length === 0) {
     void vscode.window.showInformationMessage(`No ${chip.label} options available.`);
     return undefined;

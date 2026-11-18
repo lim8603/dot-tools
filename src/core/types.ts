@@ -30,6 +30,20 @@ export interface ChipItem {
 }
 
 /**
+ * What a chip query knows about the request (ADR-024). `probe: false` asks for what is
+ * known without side effects (see listItems). `selection` / `config` are the project's
+ * current chip values and invocation overlay: an adapter whose list depends on them — a
+ * CMake Target list read from the tree the build will actually use (selected preset,
+ * platform, overlay) — uses them; others ignore them. Callers pass what they have; both
+ * are optional, so an adapter must still answer without them.
+ */
+export interface ChipQueryOptions {
+  probe?: boolean;
+  selection?: Selection;
+  config?: InvocationConfig;
+}
+
+/**
  * One status-bar chip declared by an adapter. The status bar, QuickPick, and
  * settings page operate purely on this descriptor.
  */
@@ -56,7 +70,7 @@ export interface ChipDescriptor {
    * chip editor). Adapters with no such cost ignore it; returning fewer items — or none —
    * is a valid answer to `probe: false`.
    */
-  listItems(project: ProjectInfo, opts?: { probe?: boolean }): Promise<ChipItem[]>;
+  listItems(project: ProjectInfo, opts?: ChipQueryOptions): Promise<ChipItem[]>;
   /** Abbreviated rendering for the status bar. */
   format?(value: ChipValue): string;
   /**
@@ -83,7 +97,7 @@ export interface ChipDescriptor {
    * request to configure it), while seeding just before an action leaves it on, so a
    * sole target/script is still auto-picked instead of prompting.
    */
-  defaultValue?(project: ProjectInfo, opts?: { probe?: boolean }): Promise<ChipValue | undefined>;
+  defaultValue?(project: ProjectInfo, opts?: ChipQueryOptions): Promise<ChipValue | undefined>;
   /**
    * Optional post-pick hook (F19 §13.4). Runs after the user picks a value, before it
    * is stored; return false to abort the selection. The Architecture chip uses it to

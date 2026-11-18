@@ -298,6 +298,38 @@ export interface ConfigureOptions {
   config?: string; // CMAKE_BUILD_TYPE (single-config generators use it; multi-config ignores it)
   platform?: string; // generator platform (-A) for the VS generators
   defines?: Record<string, string>; // extra -D overlay (CMAKE_CXX_FLAGS, CMAKE_EXE_LINKER_FLAGS, …)
+  /** Cache entries to remove (`-U`): overlay defines dropped since the last configure (R-2). */
+  undefine?: string[];
+  /** Overlay env for the configure process — CC/CXX and friends are read at configure (R-2). */
+  env?: Record<string, string>;
+}
+
+/** Keys of the -D overlay a previous configure signature applied but `next` no longer does. */
+export function droppedDefines(previousSignature: string | undefined, next: Record<string, string>): string[] {
+  if (!previousSignature) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(previousSignature);
+    const previous = Array.isArray(parsed) ? parsed[parsed.length - 1] : undefined;
+    if (typeof previous !== 'object' || previous === null) {
+      return [];
+    }
+    return Object.keys(previous).filter((key) => !(key in next));
+  } catch {
+    return [];
+  }
+}
+
+/** The last few non-empty lines of a failed cmake run's stderr, for the error toast (R-2). */
+export function stderrTail(stderr: string, lines = 3, maxLength = 400): string {
+  const tail = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .slice(-lines)
+    .join(' | ');
+  return tail.length > maxLength ? `…${tail.slice(tail.length - maxLength)}` : tail;
 }
 
 /**
@@ -316,6 +348,9 @@ export function configureArgs(srcDir: string, buildDir: string, opts: ConfigureO
   }
   for (const [key, value] of Object.entries(opts.defines ?? {})) {
     args.push('-D', `${key}=${value}`);
+  }
+  for (const key of opts.undefine ?? []) {
+    args.push('-U', key);
   }
   return args;
 }
@@ -1091,15 +1126,21 @@ export class CMakeBridge {
    */
   async configure(srcDir: string, buildDir: string, opts: ConfigureOptions = {}): Promise<void> {
     const signature = JSON.stringify([srcDir, opts.config ?? '', opts.platform ?? '', opts.defines ?? {}]);
-    if (this.configuredSig.get(buildDir) === signature) {
+    const previous = this.configuredSig.get(buildDir);
+    if (previous === signature) {
       return; // already configured with these options
     }
     await this.writeApiQueries(buildDir);
-    const result = await execCapture('cmake', configureArgs(srcDir, buildDir, opts), undefined, this.exec);
+    // An overlay flag the user cleared must leave the cache too: -D only ever adds, so the
+    // old value would keep compiling in (R-2). Known only for trees configured this session.
+    const undefine = droppedDefines(previous, opts.defines ?? {});
+    const args = configureArgs(srcDir, buildDir, { ...opts, undefine });
+    const result = await execCapture('cmake', args, undefined, this.exec, opts.env);
     if (result.exitCode !== 0) {
+      const tail = stderrTail(result.stderr);
       throw new DevSwitcherError(
         'CMAKE_CONFIGURE_FAILED',
-        `cmake configure failed for ${srcDir} (exit ${result.exitCode}).`,
+        `cmake configure failed for ${srcDir} (exit ${result.exitCode})${tail ? `: ${tail}` : '.'}`,
         result.stderr,
       );
     }
@@ -1119,18 +1160,35 @@ export class CMakeBridge {
    * version 3): bare `cmake --preset` would then configure IN the source dir, while every
    * other step (File API reply, build, clean) uses `binaryDir`. `-B` makes cmake agree.
    */
-  async configurePreset(srcDir: string, presetName: string, binaryDir: string, setBinaryDir = false): Promise<void> {
-    const signature = JSON.stringify(['preset', presetName, setBinaryDir]);
-    if (this.configuredSig.get(binaryDir) === signature) {
+  async configurePreset(
+    srcDir: string,
+    presetName: string,
+    binaryDir: string,
+    setBinaryDir = false,
+    extra: { defines?: Record<string, string>; env?: Record<string, string> } = {},
+  ): Promise<void> {
+    const defines = extra.defines ?? {};
+    const signature = JSON.stringify(['preset', presetName, setBinaryDir, defines]);
+    const previous = this.configuredSig.get(binaryDir);
+    if (previous === signature) {
       return;
     }
     await this.writeApiQueries(binaryDir);
-    const args = ['--preset', presetName, ...(setBinaryDir ? ['-B', binaryDir] : [])];
-    const result = await execCapture('cmake', args, srcDir, this.exec);
+    // The compiler/linker overlay applies on top of the preset (`-D` after --preset wins),
+    // as on the plain path — it used to be dropped silently for preset projects (R-2).
+    const args = [
+      '--preset',
+      presetName,
+      ...(setBinaryDir ? ['-B', binaryDir] : []),
+      ...Object.entries(defines).flatMap(([key, value]) => ['-D', `${key}=${value}`]),
+      ...droppedDefines(previous, defines).flatMap((key) => ['-U', key]),
+    ];
+    const result = await execCapture('cmake', args, srcDir, this.exec, extra.env);
     if (result.exitCode !== 0) {
+      const tail = stderrTail(result.stderr);
       throw new DevSwitcherError(
         'CMAKE_CONFIGURE_FAILED',
-        `cmake --preset ${presetName} failed for ${srcDir} (exit ${result.exitCode}).`,
+        `cmake --preset ${presetName} failed for ${srcDir} (exit ${result.exitCode})${tail ? `: ${tail}` : '.'}`,
         result.stderr,
       );
     }
@@ -1206,11 +1264,10 @@ export class CMakeBridge {
     srcDir: string,
     presetName: string,
     binaryDir: string,
-    setBinaryDir = false,
-    config?: string,
+    opts: { setBinaryDir?: boolean; defines?: Record<string, string>; env?: Record<string, string> } = {},
   ): Promise<CMakeTarget[]> {
-    await this.configurePreset(srcDir, presetName, binaryDir, setBinaryDir);
-    return this.cachedTargets(binaryDir, config);
+    await this.configurePreset(srcDir, presetName, binaryDir, opts.setBinaryDir ?? false, opts);
+    return this.cachedTargets(binaryDir);
   }
 
   /**

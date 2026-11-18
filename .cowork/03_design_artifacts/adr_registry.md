@@ -48,6 +48,7 @@
 | ADR-021 | Visual Studio(.sln/.vcxproj) 어댑터: MSBuild 직접 구동 | Accepted | 2026-08-19 | 없음(유지보수) | MS-022 | `adrs/ADR-021_Visual_Studio_어댑터_MSBuild.md` | 세션 #017 신규(Human 요구·D-25). 7번째 어댑터 `vs` — 감지=`.vcxproj`만(A안: 솔루션 내 `.csproj`=dotnet 소유 유지), `.sln`/`.slnx`=계층 루트(ADR-019 재사용). **CMake 생성물은 `CMakeCache.txt` 마커로 제외**(공존 충돌 차단). vswhere→MSBuild 발견·`-getProperty:TargetPath` 실행경로·cppvsdbg 디버그·Windows 전용(비-Windows=Doctor ❌) |
 | ADR-022 | Delete Build Tree: 확인은 QuickPick, 삭제는 휴지통 없이 즉시 | Accepted | 2026-08-26 | 없음(유지보수) | MS-023 | `adrs/ADR-022_빌드트리_삭제_확인은_피커_삭제는_즉시.md` | 세션 #020 신규(D-26). 레지스트리 누락분 #023에 등재 |
 | ADR-023 | Node 스크립트 실행: 셸 고정 + 명령줄 자체 이스케이프 | Accepted | 2026-11-18 | 없음(유지보수) | 없음 | `adrs/ADR-023_Node_스크립트_셸_고정_자체_이스케이프.md` | 세션 #023 신규(R-1). ADR-016의 인용 방식 대체 — 배열형 인용이 `a\|b` 파이프·`%PATH%`/`$HOME` 확장을 허용함을 3셸 실측 |
+| ADR-024 | 칩 조회 문맥(selection·config)과 CMake 구성 일관성 | Accepted | 2026-11-18 | 없음(유지보수) | 없음 | `adrs/ADR-024_칩_조회_문맥과_CMake_구성_일관성.md` | 세션 #023 신규(R-2). ChipQueryOptions 확장 · CMake Target 목록=빌드 트리 · 플랫폼별 build/<platform> · 지운 -D는 -U · configure에 env·preset -D · stderr 노출 |
 
 > ADR-001~009 = 상세설계서 §2 DD-01~09 승격(제목에 DD 번호 병기). ADR-010 = 세션 #001 신규. ADR-011·012 = 세션 #002 신규(호출 구성 오버레이·설정 페이지). ADR-013 = 세션 #007 신규(C-3 폐기·파일 무편집 불변식).
 

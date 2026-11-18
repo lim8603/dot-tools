@@ -7,7 +7,7 @@ import { formatArgsLine } from '../../core/argsLine';
 import { enabledAdapterIds } from '../../core/languageFilter';
 import { orderByHierarchy } from '../../core/projectTree';
 import { memberStages, validateGroup, withMember, withMemberLaunch, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
-import type { ChipDescriptor, ChipItem, ChipValue, DiagnosticProbe, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, ReadinessProbe, RunGroup } from '../../core/types';
+import type { ChipDescriptor, ChipItem, ChipValue, DiagnosticProbe, InvocationConfig, LanguageAdapter, OptionSpec, OptionValue, ProjectInfo, ReadinessProbe, RunGroup, Selection } from '../../core/types';
 import { deriveToolchain, formatChipValue, ToolchainStatus } from './projectCard';
 import { getSettingsHtml } from './html';
 import { RawCommand, RawKeybinding, ShortcutRow, buildShortcutList } from './shortcuts';
@@ -380,6 +380,14 @@ export class SettingsPanel {
     return adapter?.optionCatalog.find((option) => option.id === optionId);
   }
 
+  /** A project's chip values + overlay for chip queries (ADR-024). */
+  private chipContext(project: ProjectInfo): { selection: Selection; config: InvocationConfig } {
+    return {
+      selection: this.store.getSelection(project.id),
+      config: this.store.getInvocation(project.id, this.activeProfile(project)),
+    };
+  }
+
   private activeProfile(project: ProjectInfo): string {
     const value = this.store.getValue(project.id, 'profile');
     return typeof value === 'string' ? value : 'dev';
@@ -488,7 +496,7 @@ export class SettingsPanel {
           // project to look at it must not configure it (the whole point of this release),
           // so the editor offers what is already known; a tree that was never built lists
           // nothing until the status-bar picker or a build fills it in.
-          items = await chip.listItems(project, { probe: false });
+          items = await chip.listItems(project, { probe: false, ...this.chipContext(project) });
         } catch {
           // metadata/toolchain unavailable — render the chip with its stored value only
         }
@@ -557,7 +565,7 @@ export class SettingsPanel {
               // otherwise inflate the architecture count into the hundreds.
               // probe:false — a card count is decoration, and this loop runs for every
               // scanned project: letting it configure would build a CMake tree in each.
-              const items = await chip.listItems(project, { probe: false });
+              const items = await chip.listItems(project, { probe: false, ...this.chipContext(project) });
               count = items.filter((it) => !it.secondary).length;
             } catch {
               // metadata/toolchain unavailable — leave the count at 0
@@ -598,7 +606,7 @@ export class SettingsPanel {
   private async chipDefault(chip: ChipDescriptor, project: ProjectInfo): Promise<ChipValue | undefined> {
     try {
       // probe:false — drawn for every project card, so it must stay side-effect free.
-      return chip.defaultValue ? await chip.defaultValue(project, { probe: false }) : undefined;
+      return chip.defaultValue ? await chip.defaultValue(project, { probe: false, ...this.chipContext(project) }) : undefined;
     } catch {
       return undefined;
     }
