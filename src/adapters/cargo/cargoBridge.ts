@@ -113,6 +113,7 @@ export function assembleCargoArgs(
   config: InvocationConfig,
   hasDefaultFeature: boolean,
   overlayArgs: string[] = [],
+  targetKind: CargoTargetKind = 'bin',
 ): string[] {
   const profile = asString(sel.values.profile) ?? 'dev';
   const architecture = asString(sel.values.architecture);
@@ -131,7 +132,7 @@ export function assembleCargoArgs(
     projectName,
     '--profile',
     profile,
-    ...(bin ? ['--bin', bin] : []),
+    ...(bin ? [targetKind === 'example' ? '--example' : '--bin', bin] : []),
     ...targetArgs,
     ...features,
     ...overlayArgs, // cargo flags stay before `--`; program args follow
@@ -233,10 +234,9 @@ export function pickExecutable(jsonLines: string[], targetName: string | undefin
   }
 
   if (targetName) {
-    const match = artifacts.find((a) => a.target?.name === targetName);
-    if (match?.executable) {
-      return match.executable;
-    }
+    // A named target either is in the build or is not: falling back to another binary
+    // would debug a different program without a word (E6 is the honest answer).
+    return artifacts.find((a) => a.target?.name === targetName)?.executable ?? undefined;
   }
   const bin = artifacts.find((a) => a.target?.kind?.includes('bin'));
   return bin?.executable ?? artifacts[0]?.executable ?? undefined;
@@ -391,6 +391,28 @@ export function parseBinTargets(metadata: CargoMetadata, packageName?: string): 
       label: t.name,
       description: t.kind.includes('example') ? 'example' : undefined,
     }));
+}
+
+/** The kind of runnable target a Target-chip value names. */
+export type CargoTargetKind = 'bin' | 'example';
+
+/**
+ * Whether the selected target is a `bin` or an `example` — they take different cargo
+ * flags (`--bin` / `--example`), and `cargo build` without `--example` never builds an
+ * example. undefined when the package or target is unknown.
+ */
+export function cargoTargetKind(
+  metadata: CargoMetadata,
+  packageName: string | undefined,
+  targetName: string,
+): CargoTargetKind | undefined {
+  const target = findPackage(metadata, packageName)?.targets.find(
+    (t) => t.name === targetName && (t.kind.includes('bin') || t.kind.includes('example')),
+  );
+  if (!target) {
+    return undefined;
+  }
+  return target.kind.includes('example') ? 'example' : 'bin';
 }
 
 /** If the package has exactly one bin target, return its name for auto-selection. */
@@ -591,6 +613,18 @@ export class CargoBridge {
    */
   peekMetadata(manifestPath: string): CargoMetadata | undefined {
     return this.metadataCache.get(manifestPath);
+  }
+
+  /**
+   * Seed the cache for a workspace member from its workspace's metadata. `cargo metadata
+   * --no-deps` answers the same for every member, and the synchronous task assembly
+   * peeks by the member's own manifest path (cargo's spelling) — without this a member
+   * reads a miss and silently drops `--no-default-features`.
+   */
+  rememberMetadata(manifestPath: string, metadata: CargoMetadata): void {
+    if (!this.metadataCache.has(manifestPath)) {
+      this.metadataCache.set(manifestPath, metadata);
+    }
   }
 
   /** Installed target triples from `rustup target list --installed` (아키텍처 칩). */

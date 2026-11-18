@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import {
@@ -20,6 +20,8 @@ import {
   buildProfileList,
   buildRustflags,
   cargoCleanArgs,
+  cargoTargetKind,
+  CargoTargetKind,
   describeCargoClean,
   CargoBridge,
   CargoMetadata,
@@ -73,6 +75,13 @@ function hasDefaultFeature(project: ProjectInfo): boolean {
   return metadata ? parseFeatures(metadata, project.name).hasDefault : false;
 }
 
+/** Whether the selected Target is a bin or an example (warm cache; bin on a miss). */
+function targetKindOf(project: ProjectInfo, sel: Selection): CargoTargetKind {
+  const target = typeof sel.values.target === 'string' ? sel.values.target : undefined;
+  const metadata = bridge.peekMetadata(project.manifestPath);
+  return (target && metadata && cargoTargetKind(metadata, project.name, target)) || 'bin';
+}
+
 /** The active profile name for the overlay (chip value, default dev). */
 function activeProfile(sel: Selection): string {
   return typeof sel.values.profile === 'string' ? sel.values.profile : 'dev';
@@ -99,7 +108,15 @@ function makeCargoTask(
   config: InvocationConfig,
 ): vscode.Task {
   const overlayArgs = buildConfigArgs(config.compiler ?? {}, activeProfile(sel));
-  const args = assembleCargoArgs(action, project.name, sel, config, hasDefaultFeature(project), overlayArgs);
+  const args = assembleCargoArgs(
+    action,
+    project.name,
+    sel,
+    config,
+    hasDefaultFeature(project),
+    overlayArgs,
+    targetKindOf(project, sel),
+  );
   const execution = new vscode.ProcessExecution('cargo', args, {
     cwd: cwdOf(project),
     env: taskEnv(config),
@@ -308,6 +325,7 @@ export const cargoAdapter: LanguageAdapter = {
         continue; // E2/E3: unreadable manifest — watcher retries on save
       }
       for (const pkg of parseWorkspacePackages(metadata)) {
+        bridge.rememberMetadata(pkg.manifestPath, metadata);
         const manifestUri = vscode.Uri.file(pkg.manifestPath);
         // Cargo can mix D:\ and d:\ within one workspace's metadata. Match the
         // scanner's Uri.fsPath identity (drive letter normalized), not the raw
@@ -373,7 +391,7 @@ export const cargoAdapter: LanguageAdapter = {
   },
 
   /** `cargo clean`, scoped per cleanScopes (B-4). */
-  async createCleanTask(project, sel, _config, scopeId) {
+  async createCleanTask(project, sel, config, scopeId) {
     const arch = typeof sel.values.architecture === 'string' ? sel.values.architecture : undefined;
     const definition: vscode.TaskDefinition = {
       type: CARGO_TASK_TYPE,
@@ -387,6 +405,7 @@ export const cargoAdapter: LanguageAdapter = {
       'cargo',
       new vscode.ProcessExecution('cargo', cargoCleanArgs(scopeId, project.name, arch), {
         cwd: cwdOf(project),
+        env: taskEnv(config), // CARGO_TARGET_DIR: clean the tree the build actually wrote
       }),
     );
     task.presentationOptions = {
@@ -399,7 +418,11 @@ export const cargoAdapter: LanguageAdapter = {
 
   /** The cargo build tree. `cargo clean` empties it; this removes it, which also works
    *  when cargo itself is missing or the tree was left in a state cargo will not touch. */
-  async buildTreeDirs(project) {
+  async buildTreeDirs(project, _sel, config) {
+    // The output overlay moves the tree (CARGO_TARGET_DIR, relative to the package dir).
+    if (config.outputDir) {
+      return [{ path: resolve(cwdOf(project), config.outputDir), description: 'Cargo build tree (output overlay)' }];
+    }
     // cargo reports where it writes; we do not assemble the path. A workspace member's
     // output goes to the shared <workspace_root>/target, not <package>/target, and
     // CARGO_TARGET_DIR or build.target-dir moves it again. Assembling it meant finding
@@ -429,8 +452,12 @@ export const cargoAdapter: LanguageAdapter = {
     // Build with JSON messages and read the artifact path cargo reports (DD-05) —
     // no path guessing. §7.4 leaves the cache warm, so this is fast.
     const overlayArgs = buildConfigArgs(config.compiler ?? {}, activeProfile(sel));
+    const target = typeof sel.values.target === 'string' ? sel.values.target : undefined;
+    // `cargo build` skips examples unless asked; build the selected one so it has an artifact.
+    const exampleArgs = target && targetKindOf(project, sel) === 'example' ? ['--example', target] : [];
     const args = [
       ...assembleCargoArgs('build', project.name, sel, config, hasDefaultFeature(project), overlayArgs),
+      ...exampleArgs,
       '--message-format=json',
     ];
     // Same env as the build task so a custom target dir / RUSTFLAGS resolves the same artifact.
@@ -442,7 +469,6 @@ export const cargoAdapter: LanguageAdapter = {
         result.stderr,
       );
     }
-    const target = typeof sel.values.target === 'string' ? sel.values.target : undefined;
     const executable = pickExecutable(result.stdout.split(/\r?\n/), target);
     if (!executable) {
       throw new DevSwitcherError('EXECUTABLE_NOT_FOUND', 'No runnable binary target found.'); // E6

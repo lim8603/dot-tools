@@ -3,6 +3,7 @@ import type { InvocationConfig, Selection } from '../../core/types';
 import {
   abbreviateTriple,
   assembleCargoArgs,
+  cargoTargetKind,
   buildConfigArgs,
   buildLldbConfig,
   buildProfileList,
@@ -259,6 +260,13 @@ describe('pickExecutable', () => {
   it('returns undefined when no executable is present', () => {
     assert.equal(pickExecutable(['{"reason":"build-finished"}', ''], 'app'), undefined);
   });
+
+  it('never substitutes another binary for a named target that was not built', () => {
+    // An example the build skipped must not silently become the first bin (E6 instead).
+    assert.equal(pickExecutable(lines, 'demo'), undefined);
+    const example = '{"reason":"compiler-artifact","executable":"/w/target/debug/examples/demo","target":{"name":"demo","kind":["example"]}}';
+    assert.equal(pickExecutable([...lines, example], 'demo'), '/w/target/debug/examples/demo');
+  });
 });
 
 // ── formatting ───────────────────────────────────────────────────────────────
@@ -397,5 +405,18 @@ describe('cargoCleanArgs', () => {
   it('treats an unknown scope as the narrow one', () => {
     // Erring toward deleting less is the right default for a destructive-ish command.
     assert.deepEqual(cargoCleanArgs('something-else', 'hello'), ['clean', '-p', 'hello']);
+  });
+});
+
+describe('example targets (TASK-067 review)', () => {
+  it('cargoTargetKind tells a bin from an example', () => {
+    assert.equal(cargoTargetKind(metadata, 'app', 'helper'), 'bin');
+    assert.equal(cargoTargetKind(metadata, 'app', 'demo'), 'example');
+    assert.equal(cargoTargetKind(metadata, 'app', 'nope'), undefined);
+  });
+
+  it('runs an example with --example instead of --bin', () => {
+    const args = assembleCargoArgs('run', 'app', sel({ target: 'demo' }), {} as InvocationConfig, false, [], 'example');
+    assert.deepEqual(args, ['run', '-p', 'app', '--profile', 'dev', '--example', 'demo']);
   });
 });
