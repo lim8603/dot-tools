@@ -117,3 +117,10 @@
 - 패키지: `npm run package:vsix`(@vscode/vsce) 15 files, 258.88 KB. 격리 user-data/extensions 설치 성공, `lim8603.devswitcher-tools@1.3.3` 확인, 설치 번들에 수정 문자열(`--example`·`CMakeUserPresets.json`·`hostSystemName`·`::1`·`-e`) 존재 확인.
 - 배포: main FF(`ba50892`)·`v1.3.3` 태그 push, GitHub Release v1.3.3 게시·VSIX 첨부, Marketplace 게시(`vsce publish` DONE). Gate 5(v1.3.3) Pass.
 - 미확인: 사용자 실제 레포에서의 F5 수동 확인(Preset 칩·빌드), Stop/디버그 흐름의 수동 확인. 이월 리뷰 항목은 project_state R-1~R-5. TC-11(WSL) Known Issue 유지.
+
+## 리뷰 이월 R-1~R-5 처리 검증 (EV-027, 2026-11-18, 미배포)
+
+- 대상: TASK-069~073(브랜치 `fix/review-backlog`, main 미병합). ADR-023 · 024 · 025.
+- 실측: Node 인자 3셸(cmd · Windows PowerShell 5.1 · Git Bash)×13인자 — 기존 배열형 `a|b` 파이프·변수 확장 확인 → 수정 후 전부 통과. POSIX 이스케이프는 Git `sh`로 13개 확인. pnpm 9/10 · yarn 1/4 `--` 전달 정상. cargo 1.99.1 rustflags 출처 병합 규칙 · `target.'cfg(all())'.linker` 동작 · 실제 rustc 인자(링커 한 인자 · 프로젝트+오버레이 cfg 공존). cmake `-U` 캐시 제거 · `--preset -D` 적용.
+- 검증: tsc · eslint Pass, unit 428 Pass(404→428), 통합 단일 루트 15 Pass + 1 pending(POSIX 전용), 멀티루트 호스트 3 Pass. R-2 B2 시나리오(x64 · Target 미설정 · 첫 Build) 통합 재현 통과.
+- 미확인: 설정 패널 웹뷰 입력 보존(수동), 가져오기 확인 QuickPick(수동), Node 디버그 경로(js-debug) 인자, VS 솔루션 Clean MSB4126(MSBuild 미실행), R-2 수정 전 실패의 이번 세션 재측정, 패키지·설치 스모크(릴리즈 전).

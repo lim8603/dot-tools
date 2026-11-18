@@ -3,6 +3,51 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Security
+
+- **Node.js run args could run commands.** A run arg such as `a|b` was piped into a
+  command by cmd, PowerShell and bash alike, `%PATH%` / `$HOME` were expanded, and quotes
+  or empty arguments were mangled. Node tasks now run in a shell the extension picks
+  (`cmd.exe` on Windows, `/bin/sh` elsewhere) with every argument escaped by the
+  extension; your terminal's shell setting no longer applies to them.
+
+### Changed
+
+- **CMake build folders per platform.** Choosing an Architecture (`-A`) builds in
+  `build/<platform>`; Host default keeps `build/`. cmake cannot switch the platform of an
+  existing tree, so switching used to fail. A project already built for x64 configures
+  once more in `build/x64`.
+- **Multi-root workspaces: project ids include the folder name** (`node:api/package.json`),
+  so two folders with a root manifest of the same kind are two projects. Saved
+  selections, invocation settings and run groups move to the new ids automatically.
+  Single-folder workspaces are unchanged.
+- **Pre/post-build commands run for Debug and run-group members too** — pre-build before
+  anything builds or runs; post-build after the build succeeded (Run: after the program
+  exits successfully).
+- **Optimization options that depend on the profile** (Rust `opt-level`, `codegen-units`;
+  .NET `Optimize`) offer "default" instead of a fixed value, so picking `0` in release
+  (or `false` in Release) is no longer dropped as "the default".
+
+### Fixed
+
+- CMake: the Target list now comes from the tree the build uses (selected preset,
+  platform, invocation settings), so the first build with an Architecture chosen no
+  longer configures twice and fails; a cleared compiler/linker flag leaves the CMake cache;
+  invocation env reaches the configure step; preset projects apply the compiler/linker
+  settings; configure errors show cmake's message.
+- Rust: the linker setting keeps paths with spaces and no longer replaces the project's
+  own rustflags (`.cargo/config.toml`).
+- Node: pnpm/yarn workspace members pick up the package manager from the workspace root
+  (lockfile or `packageManager` field).
+- Visual Studio: cleaning the whole solution from a Win32 project passes the solution's
+  `x86` platform.
+- Importing a profile that carries pre/post-build commands lists them and asks first.
+- The settings page no longer loses what you are typing when a background update arrives.
+- Adding a folder to the workspace rescans it; a new Go `main` package appears without a
+  manual Rescan.
+
 ## [1.3.3] - 2026-11-18
 
 ### Fixed

@@ -19,7 +19,7 @@
 | 현재 Phase | **Evolve** — v1.3.3 Marketplace·GitHub Release 게시 완료(2026-11-18, #023) |
 | 활성 Intent | **없음** — 유지보수(MS-023까지 완료). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
 | 활성 Milestone | **없음** — MS-023(v1.3.0) Done. v1.3.1은 실사용 제보발 패치로 Milestone 미배정. 다음 Milestone은 Human 결정 대기 |
-| 활성 Task | **없음** — TASK-067·068 Done, v1.3.3 배포 완료 |
+| 활성 Task | **TASK-069~073 Review** — 리뷰 이월 R-1~R-5 처리 완료, 브랜치 `fix/review-backlog`(미병합·미배포) Human 일괄 리뷰 대기 |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
@@ -42,18 +42,17 @@
 
 ### 한 줄 상태
 
-- **세션 #023 (2026-11-18): v1.3.3 게시 완료.** 실사용 제보(공유 프리셋 파일만 include하는 모듈이 프리셋 0개 → `cmake -S . -B build`로 추락)를 cmake 규약대로 해석하도록 수정(TASK-067, 실제 cmake 4.4와 목록·순서·binaryDir 대조 일치). 이어 독립 리뷰 3영역 36건 중 18건 반영(TASK-068) — 매니페스트 저장 시 캐시 무효화, 소스 포함 폴더 삭제 거부, 그룹 형제 정리, Clean 무구성, CMake 재구성·`-B`, Cargo example·멤버 캐시, Go `-e`, Python venv, Run args, 프로필 검증, ::1 준비 감지, Stop. unit 404·통합 11. 이월 R-1~R-5.
+- **세션 #023 (2026-11-18): v1.3.3 게시 + 리뷰 이월 R-1~R-5 처리(미배포).** 후반: Node 인자 `a|b` 명령 주입을 3셸 실측으로 확인해 셸 고정+자체 이스케이프(ADR-023), CMake 칩 조회 문맥·플랫폼별 빌드 폴더(ADR-024), 멀티루트 폴더 접두 id·상태 자동 이전(ADR-025), 어댑터·core·UI 소결함 11건. unit 428·통합 단일 15+멀티루트 3(신설). 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md`. 전반: v1.3.3 게시 완료. 실사용 제보(공유 프리셋 파일만 include하는 모듈이 프리셋 0개 → `cmake -S . -B build`로 추락)를 cmake 규약대로 해석하도록 수정(TASK-067, 실제 cmake 4.4와 목록·순서·binaryDir 대조 일치). 이어 독립 리뷰 3영역 36건 중 18건 반영(TASK-068) — 매니페스트 저장 시 캐시 무효화, 소스 포함 폴더 삭제 거부, 그룹 형제 정리, Clean 무구성, CMake 재구성·`-B`, Cargo example·멤버 캐시, Go `-e`, Python venv, Run args, 프로필 검증, ::1 준비 감지, Stop. unit 404·통합 11. 이월 R-1~R-5.
 - **세션 #022 (2026-09-20): TASK-066 Done, v1.3.2 게시 완료.** Windows Cargo metadata의 D:/d: 혼재로 같은 프로젝트가 중복 표시되는 결함 재현·수정. Uri.fsPath로 비교 키만 통일, 원본 실행 경로·프로젝트 ID 유지. unit 384·통합 9 Pass(POSIX 전용 1 skip), lint·check-types·VSIX 격리 설치 Pass. main/태그 push·GitHub Release·Marketplace 게시 완료. 최초 PAT 실패는 Human의 기존 자격 증명 저장소→새 저장소 복사 후 재시도 성공으로 해소.
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
 
 - **🐛 v1.3.1 게시(2026-08-28, 세션 #021).** Human의 실사용 질문("특정 폴더 제외 어떻게 써?")에서 v1.3.0 기능의 **침묵 결함**이 드러났다 — `devSwitcher.scan.exclude`를 **폴더의 `.vscode/settings.json`에 쓰면 아무 일도 일어나지 않는다**. 원인은 `package.json`에 `scope` 미선언 → VS Code 기본값 `window` → 워크스페이스 폴더 레벨 설정 불가. 오류도 로그도 없고 **호버 툴팁 한 줄**이 전부였다. **D-27**: `scope: "resource"` 선언 + `excludeGlob()`이 **폴더 uri를 리소스 스코프로** 각 폴더 값을 읽어 합집합(선언만으론 부족 — `inspect()`를 리소스 없이 부르면 `workspaceFolderValue`가 계속 undefined). 폴더가 선언한 패턴도 스캔 전역 적용(**D-27a**, 스캔이 전역 `findFiles` 1회이므로). unit **384**·통합 6. **실사용 검증 PASS**(vsix 설치 후 Reload Window 필요). 부수적으로 **CLAUDE.md 컨텍스트 블록이 MS-004 시점에 멈춰 있던 것**을 Human 질문("MS-005는 뭐야?")으로 발견·정정. ▸ 남은 위험: 멀티루트 폴더 스코프는 **자동 테스트가 못 덮는다**(통합 테스트가 싱글루트 호스트).
-- **🚀 v1.3.0 게시 완주(2026-08-26, 세션 #020, MS-023 Done).** Human 지적 "이 메시지박스 쿨하지 않다"에서 출발해 **Delete Build Tree UI를 재설계**했다(**ADR-022 / D-26**). ① 조사 결과 `modal: true`는 전체 **2곳뿐**이었고 진짜 문제는 **Delete만 혼자 모달**이라는 일관성(나머지 선택 11곳은 전부 QuickPick) ② 어댑터별 반환 개수를 전수 확인하니 **dotnet만 `bin`·`obj` 2개** → 단일 선택 불가 → **`canPickMany` + 전 항목 기본 체크**로 가면서 **모달이 못 하던 부분 삭제**가 생김 ③ F5에서 튀어나온 Windows 셸 대화상자를 프로세스 증거(MSBuild PID·C# Dev Kit buildhost)로 규명하니 진범은 **`useTrash`** — 우리 모달을 없앴더니 OS가 자기 것을 올린 것 ④ Human 근거(*"다시 빌드하려고 지우는 것"*)로 **휴지통 폐기·즉시 삭제**, 그 결정이 **오보고 결함까지 제거**(결함이 fallback 분기 안에 살았으므로) ⑤ `confirmDeleteBuildTree`(기본 true) 옵트인 해제. **F5 6종 완주 PASS**, 도중 결함 2건(오보고 / 설명 잘림) 발견·수정. **배포 번들에 `modal:!0` 0건.** unit **382**. KB 인사이트 #6 · 안티패턴 #18·#19. ▸ **다음=Human 결정(INT-002 · TC-11 · 실사용 피드백).**
 
 ### 현재 작업 스트림
 
-- TASK-067·068 완료: 프리셋 include·condition + 코드리뷰 18건 반영, v1.3.3 Marketplace/GitHub 게시.
-- 검증: unit 404·Windows 통합 11(POSIX 1 pending)·tsc·eslint·격리 설치·cmake 4.4 대조 통과.
-- 다음: 실사용 확인(제보 레포 Preset 칩), 이월 R-1(Node 인용 실측, 보안) 우선 권고.
+- TASK-069~073 Review: 리뷰 이월 R-1~R-5 처리, 브랜치 `fix/review-backlog` 커밋 6개(main 미병합·원격 미푸시·미배포).
+- 검증: unit 428 · 통합 단일 15(+1 pending) · 멀티루트 3 · tsc · eslint. 수동 미확인 항목은 처리 리포트에.
+- 다음: Human 일괄 리뷰 → 결정 3건(버전 v1.4.0 권고 · Node 셸 고정 수용 · 빌드 이벤트 정책 수용) → 병합·패키징·배포.
 
 ---
 
@@ -62,7 +61,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| (없음) | TASK-067·068 Done — v1.3.3 게시 완료 | — | — | 2026-11-18 | 다음 작업은 Human 결정 (권고: R-1) |
+| TASK-069~073 | 리뷰 이월 R-1~R-5 처리 (ADR-023·024·025) | AI | Review | 2026-11-18 | Human 일괄 리뷰 — 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md` |
 
 > 과거 완료 Task 상세는 task_registry 및 state_archive.md의 #022 하베스트 참조.
 
@@ -73,8 +72,9 @@
 
 ## 다음 시작점
 
-1. **v1.3.3 사용 확인:** 확장 업데이트 → Reload Window → 제보 레포(`modules/lockfree`)에서 Preset 칩이 `win-msvc`로 뜨고 `cmake --preset`으로 구성되는지.
-2. **다음 사이클(Human 결정):** 이월 R-1(Node 인자 인용 실측·보안) 권고. 그 외 R-2~R-5, INT-002, TC-11. 활성 Task 없음.
+1. **처리 리포트 리뷰(Human):** `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md` → 결정 요청 3건 → 브랜치 `fix/review-backlog` 병합·버전(권고 v1.4.0)·패키징·격리 설치·배포.
+2. **v1.3.3 사용 확인:** 제보 레포(`modules/lockfree`)에서 Preset 칩이 `win-msvc`로 뜨고 `cmake --preset`으로 구성되는지.
+3. 그 뒤 후보(Human 결정): INT-002, TC-11(WSL).
 
 ---
 
@@ -84,12 +84,14 @@
 |---|---|---|
 | v1.3.2 실사용 확인 | 업데이트·Reload Window 후 사용자 프로젝트 목록 확인. 자동 회귀 검증·게시 완료 | #022 |
 | ~~성능·품질 코드리뷰~~ | **해소(#023, TASK-068)** — 36건 중 18건 v1.3.3 반영. 이월분은 아래 R-* | #018~021 → #023 |
-| **R-1 Node 인자 인용 실측(보안)** | 배열형 ShellExecution이 공백 없는 `&`·`|`·`%VAR%`를 인용하지 않는다는 지적(ADR-016 전제). runArg `x&echo PWNED`로 셸별 실측 → 필요 시 `ShellQuoting.Strong`. pnpm/yarn `--` 전달도 함께 | #023 리뷰 C6 |
-| **R-2 CMake 구성 일관성(설계)** | Target 칩 listItems가 선택 preset·오버레이를 모름(첫 빌드 `-A` 불일치 실측) · 지운 `-D`/`-A`가 캐시에 남음(플랫폼별 빌드 폴더) · configure에 env 오버레이 미반영 · configure stderr 미노출 | #023 리뷰 B2·B7·B8·B9 |
-| **R-3 멀티루트 프로젝트 id 충돌** | `asRelativePath(uri,false)`라 폴더마다 루트 매니페스트가 같은 id. 저장 id 마이그레이션 → ADR 필요. 멀티루트 통합 테스트와 함께 | #023 리뷰 C4·B10 |
-| R-4 어댑터 소결함 | Node 모노레포 lockfile·`packageManager` 감지 · RUSTFLAGS 공백 경로/config 덮어쓰기 · dotnet Optimize 기본값(값 형태 결정) · VS 솔루션 clean 플랫폼명 | #023 리뷰 C7·C10·C11·B11 |
-| R-5 core·UI | refresh/renderActive 경쟁(세대 카운터) · 설정 패널 이중 postState·입력 유실 · 그룹 멤버 경로 빌드 이벤트 누락(정책) · 가져온 pre/post-build 명령 확인 UI · 폴더 추가 시 재스캔 · 스캔 직렬/File API 반복 파싱 | #023 리뷰 A6·A9·A10·A11·A12·B12 |
-| 멀티루트 통합 테스트 | 폴더 스코프 회귀 검증 보강 | #021 |
+| ~~**R-1 Node 인자 인용 실측(보안)**~~ — **처리(#023, TASK-069, ADR-023, 미배포)** | 배열형 ShellExecution이 공백 없는 `&`·`|`·`%VAR%`를 인용하지 않는다는 지적(ADR-016 전제). runArg `x&echo PWNED`로 셸별 실측 → 필요 시 `ShellQuoting.Strong`. pnpm/yarn `--` 전달도 함께 | #023 리뷰 C6 |
+| ~~**R-2 CMake 구성 일관성(설계)**~~ — **처리(#023, TASK-072, ADR-024, 미배포)** | Target 칩 listItems가 선택 preset·오버레이를 모름(첫 빌드 `-A` 불일치 실측) · 지운 `-D`/`-A`가 캐시에 남음(플랫폼별 빌드 폴더) · configure에 env 오버레이 미반영 · configure stderr 미노출 | #023 리뷰 B2·B7·B8·B9 |
+| ~~**R-3 멀티루트 프로젝트 id 충돌**~~ — **처리(#023, TASK-073, ADR-025, 미배포)** | `asRelativePath(uri,false)`라 폴더마다 루트 매니페스트가 같은 id. 저장 id 마이그레이션 → ADR 필요. 멀티루트 통합 테스트와 함께 | #023 리뷰 C4·B10 |
+| ~~R-4 어댑터 소결함~~ — **처리(#023, TASK-070, 미배포)** | Node 모노레포 lockfile·`packageManager` 감지 · RUSTFLAGS 공백 경로/config 덮어쓰기 · dotnet Optimize 기본값(값 형태 결정) · VS 솔루션 clean 플랫폼명 | #023 리뷰 C7·C10·C11·B11 |
+| ~~R-5 core·UI~~ — **처리(#023, TASK-071, 미배포)** | refresh/renderActive 경쟁(세대 카운터) · 설정 패널 이중 postState·입력 유실 · 그룹 멤버 경로 빌드 이벤트 누락(정책) · 가져온 pre/post-build 명령 확인 UI · 폴더 추가 시 재스캔 · 스캔 직렬/File API 반복 파싱 | #023 리뷰 A6·A9·A10·A11·A12·B12 |
+| ~~멀티루트 통합 테스트~~ | **해소(#023)** — 멀티루트 호스트 신설, 폴더 단위 scan.exclude 자동 확인 | #021 → #023 |
+| **리뷰 백로그 처리분 리뷰·릴리즈 결정** | 브랜치 `fix/review-backlog`(커밋 6개) Human 일괄 리뷰 → 병합·버전(권고 v1.4.0: 빌드 폴더·멀티루트 id 동작 변화)·배포. 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md` | #023 |
+| 수동 확인 대기 | 설정 패널 입력 보존 · 가져오기 확인 QuickPick · Node 디버그 인자 · VS 솔루션 Clean(Win32) | #023 |
 | 폴더별 RelativePattern 스캔 | 폴더 제외 패턴을 해당 폴더에 한정하는 후속 개선 | #021, D-27a |
 | TC-11 WSL | 기존 Known Issue, 수동 검증 대기 | D-23 |
 
@@ -134,7 +136,8 @@
 - v1.3.2 배포 완료, TASK-066 Done. Windows Cargo metadata D:/d: 혼재를 Uri.fsPath 비교 키로 해소. ID·실행 경로·저장 스키마 유지.
 - PAT 오류는 `vsce login lim8603`의 이전 저장소→새 저장소 복사로 해소. 토큰 재발급 없이 재게시 성공.
 - 실제 사용자 화면 재확인은 다음 사용 시 수행. WSL·멀티루트 테스트·성능 리뷰 이월은 아래 백로그 기준.
-- 과거 완료 서사는 `state_archive.md`의 **#022 세션 마감 하베스트** 참조.
+- 리뷰 이월 처리분은 **브랜치 `fix/review-backlog`에만** 있다(main은 v1.3.3). 다음 세션은 이 브랜치가 체크아웃된 상태로 시작한다.
+- 과거 완료 서사는 `state_archive.md`의 **#022 세션 마감 하베스트** · **#023 이관분** 참조.
 
 ---
 
