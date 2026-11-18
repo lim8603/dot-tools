@@ -194,7 +194,9 @@ async function configuredTargets(
   const preset = presets.find((p) => p.name === activePresetName(sel, presets));
   if (preset) {
     const binaryDir = resolvePresetBinaryDir(preset, srcDir);
-    return { buildDir: binaryDir, targets: await bridge.targetsForPreset(srcDir, preset.name, binaryDir) };
+    // A preset that declares no binaryDir is configured with -B (see configurePreset).
+    const targets = await bridge.targetsForPreset(srcDir, preset.name, binaryDir, preset.binaryDir === undefined);
+    return { buildDir: binaryDir, targets };
   }
   const buildDir = buildDirFor(srcDir, config);
   const targets = await bridge.targetsFor(srcDir, buildDir, configureOptsFor(sel, config), activeCfg(sel));
@@ -228,7 +230,7 @@ async function listSwitcherTargetsFor(
       const preset = presets[0];
       const binaryDir = resolvePresetBinaryDir(preset, srcDir);
       targets = configure
-        ? await bridge.targetsForPreset(srcDir, preset.name, binaryDir)
+        ? await bridge.targetsForPreset(srcDir, preset.name, binaryDir, preset.binaryDir === undefined)
         : await bridge.targetsIfConfigured(binaryDir);
     } else {
       const buildDir = defaultBuildDir(srcDir);
@@ -402,6 +404,9 @@ export const cmakeAdapter: LanguageAdapter = {
   displayName: 'C++ (CMake)',
   actions: { build: true, runRequiresBuild: true, clean: true }, // run = build the target, then execute the artifact
   manifestGlobs: ['**/CMakeLists.txt'],
+  // Preset edits change the Preset chip and the build tree. A file reached only through
+  // `include` can have any name, so it is not watched — Rescan picks it up.
+  watchGlobs: ['**/CMakePresets.json', '**/CMakeUserPresets.json'],
   // Build/run are extension-free (ADR-014/ADR-009). The debugger extension (cpptools or
   // CodeLLDB) is added here once the debugger is finalized in TASK-035.
   requiredExtensions: [],

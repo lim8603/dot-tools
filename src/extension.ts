@@ -84,8 +84,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.debug.onDidTerminateDebugSession((session) => orchestrator.noteDebugSessionEnded(session)),
   );
 
-  const globs = [...new Set(ALL_ADAPTERS.flatMap((adapter) => adapter.manifestGlobs))];
-  const watcher = new ManifestWatcher(globs, () => void orchestrator.refresh());
+  const globs = [
+    ...new Set(ALL_ADAPTERS.flatMap((adapter) => [...adapter.manifestGlobs, ...(adapter.watchGlobs ?? [])])),
+  ];
+  const watcher = new ManifestWatcher(globs, () => void orchestrator.manifestChanged());
   watcher.start();
   context.subscriptions.push({ dispose: () => watcher.dispose() });
 

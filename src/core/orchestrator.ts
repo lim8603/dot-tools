@@ -149,7 +149,19 @@ export class Orchestrator {
     void vscode.window.showInformationMessage(`DevSwitcher: rescanned — ${count} project(s) found.`);
   }
 
-  /** Rescan and re-render — invoked on activation and on every debounced manifest change. */
+  /**
+   * A watched manifest (or watch-only input such as CMakePresets.json) changed on disk
+   * (F17, debounced by ManifestWatcher). The adapters' metadata caches are stale — a new
+   * `[[bin]]`, feature, target framework or preset would otherwise stay invisible until a
+   * manual Rescan — so drop them before re-scanning. The watcher does not say which file
+   * changed, so every adapter's cache goes; the debounce keeps that to one re-read per burst.
+   */
+  async manifestChanged(): Promise<void> {
+    this.registry.invalidateAll();
+    await this.refresh();
+  }
+
+  /** Rescan and re-render — invoked on activation and after a manifest change. */
   async refresh(): Promise<void> {
     const projects = await this.registry.scan();
     // Scope the DevSwitcher keybindings (ADR-017): they only fire when a project is present,
@@ -289,9 +301,10 @@ export class Orchestrator {
       void vscode.window.showInformationMessage(`DevSwitcher: a task is already running for ${project.name}.`);
       return;
     }
-    if (!(await this.ensureRequiredChips(project, adapter))) {
-      return; // user cancelled a required-chip pick (E4)
-    }
+    // No ensureRequiredChips here: the required chips are the *target* to build/run (and
+    // CMake's Preset, which falls back to the first preset by itself), none of which a clean
+    // needs — and seeding a CMake Target probes, i.e. configures, i.e. writes the build tree
+    // this flow promises not to create.
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
 

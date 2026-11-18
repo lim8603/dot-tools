@@ -456,12 +456,12 @@ function pathKey(path: string, platform: NodeJS.Platform): string {
 export async function loadPresetFiles(
   sourceDir: string,
   read: PresetFileReader,
-  platform: NodeJS.Platform = process.platform,
+  host: PresetHost = { platform: process.platform, env: process.env },
 ): Promise<PresetFile[]> {
   const files: PresetFile[] = [];
   const seen = new Set<string>();
   const visit = async (path: string): Promise<void> => {
-    const key = pathKey(path, platform);
+    const key = pathKey(path, host.platform);
     if (seen.has(key)) {
       return; // included again (allowed) or an include cycle (rejected by cmake) — read once
     }
@@ -472,7 +472,17 @@ export async function loadPresetFiles(
     }
     files.push(file);
     for (const include of file.include) {
-      await visit(resolve(dirname(path), include));
+      // Include paths take macros (preset v7: $penv{}, v9: ${sourceDir}, ${fileDir}, …).
+      const scope: MacroScope = {
+        sourceDir,
+        presetName: undefined, // not a preset context — ${presetName} is invalid here
+        generator: undefined,
+        presetFileDir: dirname(path),
+        environment: {},
+        host,
+      };
+      const expanded = expandMacros(include, scope, dirname(path)).text;
+      await visit(resolve(dirname(path), expanded));
     }
   };
   await visit(join(sourceDir, 'CMakeUserPresets.json'));
@@ -504,7 +514,7 @@ interface PresetEntry {
 /** What the macro expander needs for one preset being used. */
 interface MacroScope {
   sourceDir: string;
-  presetName: string;
+  presetName: string | undefined;
   generator: string | undefined;
   /** Directory of the file defining the preset being used (`${fileDir}` before version 12). */
   presetFileDir: string;
@@ -1092,14 +1102,19 @@ export class CMakeBridge {
    * on the preset name so repeated clicks don't reconfigure. The canonical CMakePresets.json
    * is never edited (ADR-013). On a reconfigure the cached target lists for this build tree
    * are dropped.
+   *
+   * `setBinaryDir` is for a preset whose chain declares no binaryDir (optional since preset
+   * version 3): bare `cmake --preset` would then configure IN the source dir, while every
+   * other step (File API reply, build, clean) uses `binaryDir`. `-B` makes cmake agree.
    */
-  async configurePreset(srcDir: string, presetName: string, binaryDir: string): Promise<void> {
-    const signature = JSON.stringify(['preset', presetName]);
+  async configurePreset(srcDir: string, presetName: string, binaryDir: string, setBinaryDir = false): Promise<void> {
+    const signature = JSON.stringify(['preset', presetName, setBinaryDir]);
     if (this.configuredSig.get(binaryDir) === signature) {
       return;
     }
     await this.writeApiQueries(binaryDir);
-    const result = await execCapture('cmake', ['--preset', presetName], srcDir, this.exec);
+    const args = ['--preset', presetName, ...(setBinaryDir ? ['-B', binaryDir] : [])];
+    const result = await execCapture('cmake', args, srcDir, this.exec);
     if (result.exitCode !== 0) {
       throw new DevSwitcherError(
         'CMAKE_CONFIGURE_FAILED',
@@ -1120,9 +1135,25 @@ export class CMakeBridge {
     }
   }
 
+  /** Targets for (buildDir, config) from the cache, else read from the reply and cached. */
+  private async cachedTargets(buildDir: string, config?: string): Promise<CMakeTarget[]> {
+    const key = `${buildDir}\0${config ?? ''}`;
+    const cached = this.targetCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const targets = await readReplyDir(join(buildDir, '.cmake', 'api', 'v1', 'reply'), config);
+    this.targetCache.set(key, targets);
+    return targets;
+  }
+
   /**
    * Configure (if needed) and list the executable targets for a build type. `config` selects
    * the codemodel configuration read back; results are cached per (buildDir, config).
+   *
+   * configure() runs FIRST — it is signature-gated, so an unchanged option set costs nothing,
+   * and a changed one (a new -D flag, another platform) must reconfigure before the build;
+   * checking the cache first would hand back the old tree's targets and skip it.
    */
   async targetsFor(
     srcDir: string,
@@ -1130,46 +1161,44 @@ export class CMakeBridge {
     opts: ConfigureOptions = {},
     config?: string,
   ): Promise<CMakeTarget[]> {
-    const key = `${buildDir}\0${config ?? ''}`;
-    const cached = this.targetCache.get(key);
-    if (cached) {
-      return cached;
-    }
     await this.configure(srcDir, buildDir, opts);
-    const targets = await readReplyDir(join(buildDir, '.cmake', 'api', 'v1', 'reply'), config);
-    this.targetCache.set(key, targets);
-    return targets;
+    return this.cachedTargets(buildDir, config);
   }
 
   /**
-   * List executable targets via a plain (overlay-free) configure — used by the Target chip,
-   * whose listItems has no invocation overlay. The build/debug flows inject the overlay via
-   * configure()/targetsFor() with real options (prepareInvocation, resolveExecutable).
+   * Targets for the Target chip, whose listItems knows no invocation overlay. A tree this
+   * session already configured (with whatever options the build used) is only read:
+   * configuring it again with no options would replace the build's (-A, -D) signature and
+   * make every picker/build pair reconfigure. Otherwise — first use this session, or after
+   * invalidateCache because a manifest changed — a plain configure refreshes the reply.
    */
-  listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeTarget[]> {
+  async listTargets(srcDir: string, buildDir: string, config?: string): Promise<CMakeTarget[]> {
+    if (this.configuredSig.has(buildDir)) {
+      const targets = await this.cachedTargets(buildDir, config);
+      if (targets.length > 0) {
+        return targets;
+      }
+      this.dropTargetCache(buildDir); // no reply yet — let the configure below produce one
+    }
     return this.targetsFor(srcDir, buildDir, {}, config);
   }
 
   /**
    * Configure via a preset (if needed) and list its executable targets (TASK-041). The
    * preset's binaryDir is the reply source; `config` is left undefined so readReplyDir reads
-   * the codemodel's default (only) configuration. Cached per (binaryDir, config).
+   * the codemodel's default (only) configuration. Cached per (binaryDir, config); the
+   * signature-gated configure runs first, as in targetsFor. `setBinaryDir`: see
+   * configurePreset.
    */
   async targetsForPreset(
     srcDir: string,
     presetName: string,
     binaryDir: string,
+    setBinaryDir = false,
     config?: string,
   ): Promise<CMakeTarget[]> {
-    const key = `${binaryDir}\0${config ?? ''}`;
-    const cached = this.targetCache.get(key);
-    if (cached) {
-      return cached;
-    }
-    await this.configurePreset(srcDir, presetName, binaryDir);
-    const targets = await readReplyDir(join(binaryDir, '.cmake', 'api', 'v1', 'reply'), config);
-    this.targetCache.set(key, targets);
-    return targets;
+    await this.configurePreset(srcDir, presetName, binaryDir, setBinaryDir);
+    return this.cachedTargets(binaryDir, config);
   }
 
   /**

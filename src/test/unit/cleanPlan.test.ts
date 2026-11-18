@@ -46,6 +46,17 @@ describe('classifyDeletions', () => {
     assert.equal(reasonFor(['C:/ws/app'], 'C:/ws/app'), 'this is the project source directory');
   });
 
+  it('refuses a folder that contains the project source directory', () => {
+    // A nested CMake sub-project (C:/ws/proj/lib) whose root preset builds in-source is
+    // offered the root folder C:/ws/proj as its build tree — deleting it deletes the code.
+    const guard = { workspaceRoot: 'C:/ws', sourceDir: 'C:/ws/proj/lib' };
+    const plan = classifyDeletions(dirs('C:/ws/proj', 'C:/ws/proj/build'), guard);
+    assert.deepEqual(plan.deletable.map((d) => d.path), ['C:/ws/proj/build']);
+    assert.deepEqual(plan.refused, [{ dir: 'C:/ws/proj', reason: 'it contains the project source directory' }]);
+    // A build tree that merely shares a name prefix with an ancestor is still allowed.
+    assert.deepEqual(deletablePaths(['C:/ws/ap']), ['C:/ws/ap']);
+  });
+
   it('refuses the workspace folder itself', () => {
     assert.equal(reasonFor(['C:/ws'], 'C:/ws'), 'this is the workspace folder itself');
   });

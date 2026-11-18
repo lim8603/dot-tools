@@ -375,6 +375,12 @@ export interface LanguageAdapter {
   readonly actions: ActionCapabilities;
   readonly chips: ChipDescriptor[]; // status-bar chips; order = display order (ADR-003)
   readonly manifestGlobs: string[]; // detect/watch globs, e.g. ['**/Cargo.toml'] (F1·F17)
+  /**
+   * Extra watch-only globs (F17): files that are not manifests — they never create a
+   * project — but whose edits make this adapter's cached metadata stale, e.g. CMake's
+   * CMakePresets.json. Omitted = the manifests are the only inputs.
+   */
+  readonly watchGlobs?: string[];
   readonly requiredExtensions: string[]; // required extension IDs (F14)
 
   /** F20 — whether this adapter can create a new project. v1: all four are true. */

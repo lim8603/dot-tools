@@ -383,7 +383,7 @@ const LINUX: PresetHost = { platform: 'linux', env: {} };
 
 /** Load + resolve the presets of `/proj` from an in-memory tree. */
 async function presetsOf(files: Record<string, unknown>, host: PresetHost = WIN): Promise<CMakeConfigurePreset[]> {
-  return resolveConfigurePresets(await loadPresetFiles('/proj', memReader(files), host.platform), resolve('/proj'), host);
+  return resolveConfigurePresets(await loadPresetFiles('/proj', memReader(files), host), resolve('/proj'), host);
 }
 
 describe('configure presets (TASK-041)', () => {
@@ -514,6 +514,23 @@ describe('configure presets — include + condition (TASK-067)', () => {
       LINUX,
     );
     assert.deepEqual(onLinux.map((p) => p.name), ['nullc', 'child']);
+  });
+
+  it('expands macros in include paths ($penv, ${sourceDir}, ${fileDir})', async () => {
+    const host: PresetHost = { platform: 'win32', env: { PRESET_INC: resolve('/env/extra.json') } };
+    const presets = await presetsOf(
+      {
+        '/proj/CMakePresets.json': {
+          version: 9,
+          include: ['${sourceDir}/cmake/base.json', '$penv{PRESET_INC}', '${fileDir}/local.json'],
+        },
+        '/proj/cmake/base.json': { version: 9, configurePresets: [{ name: 'from-source-dir' }] },
+        '/env/extra.json': { version: 9, configurePresets: [{ name: 'from-penv' }] },
+        '/proj/local.json': { version: 9, configurePresets: [{ name: 'from-file-dir' }] },
+      },
+      host,
+    );
+    assert.deepEqual(presets.map((p) => p.name), ['from-source-dir', 'from-penv', 'from-file-dir']);
   });
 
   it('reads a file included twice once and stops at an include cycle', async () => {
@@ -649,6 +666,48 @@ describe('CMakeBridge.targetsIfConfigured (no configure on project switch)', () 
       assert.equal(calls, 1, 'an empty peek must not suppress the real configure');
     } finally {
       rmSync(buildDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('CMakeBridge configure gating (TASK-067 review)', () => {
+  /** An exec that records each cmake invocation's args and always succeeds. */
+  function recording(): { calls: string[][]; exec: CMakeExec } {
+    const calls: string[][] = [];
+    return {
+      calls,
+      exec: (_command, args) => {
+        calls.push(args);
+        return Promise.resolve({ stdout: '', stderr: '', exitCode: 0 });
+      },
+    };
+  }
+
+  it('reconfigures when the options change even though the targets are cached', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-gate-'));
+    try {
+      const { calls, exec } = recording();
+      const bridge = new CMakeBridge(exec);
+      await bridge.targetsFor('/src', buildDir, { platform: 'x64' }, 'Debug');
+      await bridge.targetsFor('/src', buildDir, { platform: 'x64' }, 'Debug');
+      assert.equal(calls.length, 1, 'same options: no second configure');
+      await bridge.targetsFor('/src', buildDir, { platform: 'Win32' }, 'Debug');
+      assert.equal(calls.length, 2, 'a new platform must reconfigure before the build');
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes -B for a preset that declares no binaryDir, and only then', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ds-preset-'));
+    try {
+      const { calls, exec } = recording();
+      const bridge = new CMakeBridge(exec);
+      await bridge.configurePreset('/src', 'nobin', join(dir, 'a'), true);
+      await bridge.configurePreset('/src', 'withbin', join(dir, 'b'));
+      assert.deepEqual(calls, [['--preset', 'nobin', '-B', join(dir, 'a')], ['--preset', 'withbin']]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

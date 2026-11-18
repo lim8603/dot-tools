@@ -104,6 +104,12 @@ export function classifyDeletions(
       refused.push({ dir: trimmed, reason: 'this is the project source directory' });
       continue;
     }
+    // An in-source build tree (`binaryDir: "${sourceDir}"`) seen from a nested sub-project,
+    // or an output overlay of `..`, names a folder that CONTAINS the sources.
+    if (isInside(guard.sourceDir, trimmed)) {
+      refused.push({ dir: trimmed, reason: 'it contains the project source directory' });
+      continue;
+    }
     deletable.push({ path: trimmed, description: candidate.description });
   }
 

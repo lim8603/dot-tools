@@ -73,12 +73,17 @@ export async function sequenceGroup(
       }),
     );
 
-    for (const { projectId, handle } of startedLayer) {
-      if (!handle) {
-        teardown();
-        return { started, aborted: true, failed: projectId };
+    // Track every sibling that did start BEFORE judging failure: a member listed after the
+    // failed one is already running, and teardown can only stop what `handles` holds.
+    for (const { handle } of startedLayer) {
+      if (handle) {
+        handles.push(handle);
       }
-      handles.push(handle);
+    }
+    const failedStart = startedLayer.find((entry) => !entry.handle);
+    if (failedStart) {
+      teardown();
+      return { started, aborted: true, failed: failedStart.projectId };
     }
 
     // Advance only when the whole layer is ready.

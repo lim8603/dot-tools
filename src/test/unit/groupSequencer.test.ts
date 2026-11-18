@@ -100,6 +100,15 @@ describe('sequenceGroup', () => {
     assert.ok(h.events.includes('term:a')); // already-started member rolled back
   });
 
+  it('tears down a sibling that started after a member of the same layer threw', async () => {
+    const h = harness();
+    h.throwFor.add('api');
+    const outcome = await sequenceGroup([['api', 'worker']], h.startMember);
+    assert.equal(outcome.failed, 'api');
+    // worker sits after the failed member in the layer, yet it is running and must stop.
+    assert.ok(h.events.includes('term:worker'));
+  });
+
   // MS-018 / ADR-018: a cancel between layers stops before the next layer starts, and the
   // members started so far are torn down.
   it('does not start the next layer when the signal aborts, and tears down (MS-018)', async () => {
