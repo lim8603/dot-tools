@@ -12,8 +12,13 @@ import type { ReadinessProbe } from './types';
  * external dependency (ADR-009).
  */
 
-/** Loopback host for port probes — run groups target locally started services (ADR-018). */
-const PROBE_HOST = '127.0.0.1';
+/**
+ * Loopback hosts for port probes — run groups target locally started services (ADR-018).
+ * Both families: a dev server bound to `localhost` often listens on ::1 only (Node 17+
+ * resolves localhost to IPv6 first on Windows/macOS), so probing 127.0.0.1 alone would
+ * time a healthy member out.
+ */
+const PROBE_HOSTS = ['127.0.0.1', '::1'];
 /** Per-attempt socket/request timeout so a black-hole host doesn't stall an attempt. */
 const ATTEMPT_TIMEOUT_MS = 2000;
 
@@ -24,7 +29,14 @@ const ATTEMPT_TIMEOUT_MS = 2000;
  */
 export function waitForReadiness(probe: ReadinessProbe, signal?: AbortLike): Promise<{ ready: boolean }> {
   const attempt = probe.kind === 'port'
-    ? (): Promise<boolean> => probePort(PROBE_HOST, probe.port, signal)
+    ? async (): Promise<boolean> => {
+        for (const host of PROBE_HOSTS) {
+          if (await probePort(host, probe.port, signal)) {
+            return true; // a refused connect returns at once, so trying in turn is cheap
+          }
+        }
+        return false;
+      }
     : (): Promise<boolean> => probeHttp(probe.url, probe.expectStatus ?? 200, signal);
   return pollUntilReady(attempt, {
     timeoutMs: probe.timeoutMs,
@@ -40,18 +52,20 @@ export function probePort(host: string, port: number, signal?: AbortSignalLike):
   return new Promise((resolve) => {
     const socket = net.connect({ host, port });
     let settled = false;
+    let detach = (): void => undefined;
     const finish = (ok: boolean): void => {
       if (settled) {
         return;
       }
       settled = true;
+      detach();
       socket.destroy();
       resolve(ok);
     };
     socket.once('connect', () => finish(true));
     socket.once('error', () => finish(false));
     socket.setTimeout(ATTEMPT_TIMEOUT_MS, () => finish(false));
-    onAbort(signal, () => finish(false));
+    detach = onAbort(signal, () => finish(false));
   });
 }
 
@@ -59,10 +73,12 @@ export function probePort(host: string, port: number, signal?: AbortSignalLike):
 export function probeHttp(url: string, expectStatus: number, signal?: AbortSignalLike): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false;
+    let detach = (): void => undefined;
     const get = url.toLowerCase().startsWith('https:') ? https.get : http.get;
     const finish = (ok: boolean): void => {
       if (!settled) {
         settled = true;
+        detach();
         resolve(ok);
       }
     };
@@ -76,7 +92,7 @@ export function probeHttp(url: string, expectStatus: number, signal?: AbortSigna
       request.destroy();
       finish(false);
     });
-    onAbort(signal, () => {
+    detach = onAbort(signal, () => {
       request.destroy();
       finish(false);
     });
@@ -86,17 +102,21 @@ export function probeHttp(url: string, expectStatus: number, signal?: AbortSigna
 /** Abort surface used by the probes — a Node/DOM AbortSignal satisfies it. */
 interface AbortSignalLike extends AbortLike {
   addEventListener?(type: 'abort', listener: () => void, options?: { once?: boolean }): void;
+  removeEventListener?(type: 'abort', listener: () => void): void;
 }
 
-/** Run `handler` when the signal aborts (immediately if already aborted). Tolerates a plain
- *  AbortLike without addEventListener (used in unit tests). */
-function onAbort(signal: AbortSignalLike | undefined, handler: () => void): void {
+/** Run `handler` when the signal aborts (immediately if already aborted), returning a
+ *  detach function. Every attempt must detach when it settles: the group's one signal
+ *  lives for the whole wait, and a listener per attempt (every 500 ms) would pile up.
+ *  Tolerates a plain AbortLike without addEventListener (used in unit tests). */
+function onAbort(signal: AbortSignalLike | undefined, handler: () => void): () => void {
   if (!signal) {
-    return;
+    return () => undefined;
   }
   if (signal.aborted) {
     handler();
-    return;
+    return () => undefined;
   }
   signal.addEventListener?.('abort', handler, { once: true });
+  return () => signal.removeEventListener?.('abort', handler);
 }

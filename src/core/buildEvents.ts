@@ -12,6 +12,9 @@ import type { ProjectInfo } from './types';
  */
 export type BuildEventPhase = 'pre' | 'post';
 
+/** Task type of a pre/post-build command (declared in package.json taskDefinitions). */
+export const BUILD_EVENT_TASK_TYPE = 'devswitcher-buildevent';
+
 /** A ShellExecution task for one pre/post-build command, run in the project directory. */
 export function createBuildEventTask(
   project: ProjectInfo,
@@ -19,7 +22,8 @@ export function createBuildEventTask(
   phase: BuildEventPhase,
 ): vscode.Task {
   const task = new vscode.Task(
-    { type: 'devswitcher-buildevent', phase },
+    // projectId lets Stop find a long-running pre/post-build command (orchestrator.stop).
+    { type: BUILD_EVENT_TASK_TYPE, phase, projectId: project.id },
     project.workspaceFolder,
     `${phase}-build`,
     'DevSwitcher',

@@ -521,7 +521,7 @@ export interface LanguageAdapter {
  * runs in the pure orchestration layer (INV-2 / BR-003).
  */
 export type ReadinessProbe =
-  | { kind: 'port'; port: number; timeoutMs: number } // ready when a TCP connect to 127.0.0.1:port succeeds
+  | { kind: 'port'; port: number; timeoutMs: number } // ready when a TCP connect to 127.0.0.1 or [::1] on port succeeds
   | { kind: 'http'; url: string; expectStatus?: number; timeoutMs: number }; // ready when GET url returns expectStatus (default 200)
 
 /**

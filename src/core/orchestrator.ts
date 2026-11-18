@@ -12,7 +12,7 @@ import { runNewProjectWizard } from '../ui/newProjectWizard';
 import { ensureExtension } from './ensureExtension';
 import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
 import { buildDiagnostics, worstStatus } from './diagnostics';
-import { createBuildEventTask, type BuildEventPhase } from './buildEvents';
+import { BUILD_EVENT_TASK_TYPE, createBuildEventTask, type BuildEventPhase } from './buildEvents';
 import {
   buildDeletionItems,
   classifyDeletions,
@@ -356,6 +356,7 @@ export class Orchestrator {
       return;
     }
 
+    this.stopping.delete(project.id); // a flag left by an earlier stop must not mute this run
     this.statusBar.markActionBusy('build'); // clean reuses the build indicator
     this.statusBar.setStopVisible(true);
     try {
@@ -530,7 +531,8 @@ export class Orchestrator {
 
     const executions = vscode.tasks.taskExecutions.filter((execution) => {
       const def = execution.task.definition as { type?: string; projectId?: string };
-      return typeof def.type === 'string' && def.type.startsWith('devSwitcher.') && def.projectId === activeId;
+      const ours = typeof def.type === 'string' && (def.type.startsWith('devSwitcher.') || def.type === BUILD_EVENT_TASK_TYPE);
+      return ours && def.projectId === activeId;
     });
     if (executions.length > 0) {
       this.stopping.add(activeId); // suppress the run-failed toast for this user-initiated stop
@@ -624,6 +626,7 @@ export class Orchestrator {
 
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
+    this.stopping.delete(project.id); // a flag left by an earlier stop must not mute this run
     this.statusBar.markActionBusy('debug');
     this.statusBar.setStopVisible(true); // stoppable from the start; renderActive/debug events recompute
     try {
@@ -642,6 +645,9 @@ export class Orchestrator {
       if (adapter.actions.build && adapter.actions.debugRequiresBuild !== false) {
         const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
         if (!build.succeeded) {
+          if (this.stopping.has(project.id)) {
+            return; // the user pressed Stop during the build — not a failure to report
+          }
           const showProblems = 'Show Problems';
           const choice = await vscode.window.showErrorMessage(
             `DevSwitcher: build failed (exit ${build.exitCode ?? 'unknown'}); cannot start debugging.`,
@@ -659,6 +665,7 @@ export class Orchestrator {
       const message = error instanceof Error ? error.message : String(error);
       void vscode.window.showErrorMessage(`DevSwitcher: debug failed — ${message}`);
     } finally {
+      this.stopping.delete(project.id);
       await this.renderActive();
     }
   }
@@ -839,6 +846,7 @@ export class Orchestrator {
     const selection = this.store.getSelection(project.id);
     const config = this.activeConfig(project);
 
+    this.stopping.delete(project.id); // a flag left by an earlier stop must not mute this run
     this.statusBar.markActionBusy(action);
     this.statusBar.setStopVisible(true); // stoppable while the task runs; the finally recomputes
     try {

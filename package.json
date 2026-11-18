@@ -430,6 +430,10 @@
           "phase": {
             "type": "string",
             "description": "The build-event phase (pre or post)."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "The DevSwitcher project id the command runs for."
           }
         }
       },
