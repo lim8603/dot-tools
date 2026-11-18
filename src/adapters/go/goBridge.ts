@@ -286,7 +286,14 @@ export class GoBridge {
     if (cached) {
       return cached;
     }
-    const result = await execCapture('go', ['list', '-f', GO_LIST_MAIN_FORMAT, './...'], moduleDir, this.exec);
+    // `-e`: one package with an unresolvable import (or a missing go.sum entry) must not
+    // hide every main package — without it go list exits 1 and the module lists nothing.
+    let result: ExecResult;
+    try {
+      result = await execCapture('go', ['list', '-e', '-f', GO_LIST_MAIN_FORMAT, './...'], moduleDir, this.exec);
+    } catch {
+      return []; // go not installed (spawn ENOENT) — Doctor reports the toolchain
+    }
     if (result.exitCode !== 0) {
       return []; // degrade gracefully; do not cache the failure
     }

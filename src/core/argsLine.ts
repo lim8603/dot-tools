@@ -45,3 +45,31 @@ export function parseArgsLine(line: string): string[] {
   }
   return tokens;
 }
+
+/**
+ * The inverse of parseArgsLine: the line to show in the Run-args input so that editing
+ * and re-committing it yields the same argv. A bare join would drop the quotes around
+ * `my file.txt`, and appending ` -v` would then split it into two arguments.
+ */
+export function formatArgsLine(args: readonly string[]): string {
+  return args.map(quoteArg).join(' ');
+}
+
+function quoteArg(arg: string): string {
+  if (arg !== '' && !/[\s'"]/.test(arg)) {
+    return arg; // nothing parseArgsLine would split or strip (a lone backslash is literal)
+  }
+  let quoted = '"';
+  for (let i = 0; i < arg.length; i++) {
+    const ch = arg[i];
+    const next = arg[i + 1];
+    if (ch === '"') {
+      quoted += '\\"';
+    } else if (ch === '\\' && (next === undefined || next === '"' || next === '\\')) {
+      quoted += '\\\\'; // only where parseArgsLine would read it as an escape
+    } else {
+      quoted += ch;
+    }
+  }
+  return `${quoted}"`;
+}

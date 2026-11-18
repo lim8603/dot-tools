@@ -136,6 +136,16 @@ describe('PythonBridge.peekInterpreter', () => {
     assert.equal(bridge.peekInterpreter('other'), undefined);
   });
 
+  it('forgetAbsent re-opens only the interpreters that did not answer (Doctor re-check)', async () => {
+    const { exec } = fakePython((command) => (command === 'python3' ? { stdout: '3.12.1\n/usr/bin/python3\n' } : { exitCode: 1 }));
+    const bridge = new PythonBridge(exec);
+    await bridge.detectInterpreter('python3');
+    await bridge.detectInterpreter('python');
+    bridge.forgetAbsent();
+    assert.equal(bridge.peekInterpreter('python'), undefined, 'absent → probed again next time');
+    assert.ok(bridge.peekInterpreter('python3'), 'working interpreter stays cached');
+  });
+
   it('forgets everything after invalidateCache so a re-probe is possible', async () => {
     const { exec } = fakePython(() => ({ stdout: '3.12.1\n/usr/bin/python3\n' }));
     const bridge = new PythonBridge(exec);

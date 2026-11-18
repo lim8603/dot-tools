@@ -238,6 +238,18 @@ export class PythonBridge {
     return { ok: false };
   }
 
+  /**
+   * Forget the interpreters that did not answer, keeping the ones that did — so a re-run
+   * of Doctor after installing Python finds it, without re-probing everything that works.
+   */
+  forgetAbsent(): void {
+    for (const [interpreter, info] of [...this.infoCache]) {
+      if (info === null) {
+        this.infoCache.delete(interpreter);
+      }
+    }
+  }
+
   /** Drop cached interpreter probes (F17 invalidation / explicit refresh). */
   invalidateCache(): void {
     this.infoCache.clear();

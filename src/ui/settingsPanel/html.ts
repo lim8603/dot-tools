@@ -349,7 +349,7 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       html += '<h3 class="cat">' + esc(cat) + '</h3>';
       if (cat === 'runArgs') {
         const args = state.invocation.runArgs || [];
-        html += '<div class="row"><input type="text" id="runargs-input" aria-label="Run arguments" value="' + esc(args.join(' ')) + '" /></div>' +
+        html += '<div class="row"><input type="text" id="runargs-input" aria-label="Run arguments" value="' + esc(state.runArgsLine || '') + '" /></div>' +
           '<div class="muted">Arguments passed to your program, after <code>cargo run --</code> ' +
           '(shell-quoted). &nbsp;e.g. <code>--verbose --input data.txt</code></div>' +
           '<div class="muted meta">argv: [' + args.map((t) => '<code>' + esc(t) + '</code>').join(', ') + ']</div>';

@@ -206,7 +206,17 @@ export const pythonAdapter: LanguageAdapter = {
         }
         return items;
       },
-      defaultValue: async (_project, opts) => {
+      defaultValue: async (project, opts) => {
+        // A project venv wins, as in the picker's order: it is where the project's
+        // dependencies are installed, and running with the system interpreter instead ends
+        // in ModuleNotFoundError. A file check spawns nothing, so probe:false allows it.
+        const projectDir = dirname(project.manifestPath);
+        for (const venv of VENV_DIRS) {
+          const interpreter = venvInterpreter(join(projectDir, venv), process.platform);
+          if (await fileExists(interpreter)) {
+            return interpreter;
+          }
+        }
         if (opts?.probe === false) {
           // Answer only if a system interpreter is already known — checkToolchain probes.
           const known = SYSTEM_INTERPRETERS.find((c) => bridge.peekInterpreter(c));
@@ -297,6 +307,8 @@ export const pythonAdapter: LanguageAdapter = {
   // F19 (§13.5) — probe the interpreter (critical) and the Python extension (optional, for
   // debugpy). Doctor's pure core (core/diagnostics) turns these into ordered items.
   collectDiagnostics: async (): Promise<DiagnosticProbe[]> => {
+    // Doctor is where "I installed Python, check again" happens: re-probe what was absent.
+    bridge.forgetAbsent();
     const tc = await bridge.checkToolchain();
     const probes: DiagnosticProbe[] = [
       {

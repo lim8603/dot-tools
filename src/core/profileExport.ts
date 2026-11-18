@@ -52,6 +52,20 @@ export function parseProfileExport(text: string): ProfileExport {
   if (!isNestedRecord(raw.selections) || !isNestedRecord(raw.invocation)) {
     throw new DevSwitcherError('PROFILE_IMPORT_INVALID', 'The profile file is missing valid selections/invocation maps.');
   }
+  // Each (project × profile) overlay must have the shapes the build reads. A string where
+  // a list belongs is not harmless: `preBuild: "cargo fmt"` would be iterated character
+  // by character and run as nine one-letter shell commands.
+  for (const [projectId, profiles] of Object.entries(raw.invocation)) {
+    for (const [profile, config] of Object.entries(profiles)) {
+      const problem = invocationProblem(config);
+      if (problem) {
+        throw new DevSwitcherError(
+          'PROFILE_IMPORT_INVALID',
+          `The profile file has an invalid invocation for ${projectId} (${profile}): ${problem}.`,
+        );
+      }
+    }
+  }
 
   return {
     version: PROFILE_EXPORT_VERSION,
@@ -114,6 +128,41 @@ export function mergeImport(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isStringList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+/** An option value as InvocationConfig stores it (OptionValue). */
+function isOptionValue(value: unknown): boolean {
+  return ['string', 'number', 'boolean'].includes(typeof value) || isStringList(value);
+}
+
+/** Why `value` is not an InvocationConfig the build can consume, or undefined when it is. */
+function invocationProblem(value: unknown): string | undefined {
+  if (!isRecord(value)) {
+    return 'not an object';
+  }
+  for (const field of ['runArgs', 'preBuild', 'postBuild'] as const) {
+    if (value[field] !== undefined && !isStringList(value[field])) {
+      return `${field} must be a list of strings`;
+    }
+  }
+  if (value.outputDir !== undefined && typeof value.outputDir !== 'string') {
+    return 'outputDir must be a string';
+  }
+  for (const field of ['compiler', 'linker'] as const) {
+    const map = value[field];
+    if (map !== undefined && !(isRecord(map) && Object.values(map).every(isOptionValue))) {
+      return `${field} must map option ids to values`;
+    }
+  }
+  const env = value.env;
+  if (env !== undefined && !(isRecord(env) && Object.values(env).every((v) => typeof v === 'string'))) {
+    return 'env must map names to strings';
+  }
+  return undefined;
 }
 
 /** A string-keyed map whose values are themselves objects (selections/invocation). */

@@ -3,6 +3,7 @@ import type { AdapterRegistry } from '../../core/adapterRegistry';
 import type { StateStore } from '../../core/stateStore';
 import type { GroupOrchestrator } from '../../core/groupOrchestrator';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
+import { formatArgsLine } from '../../core/argsLine';
 import { enabledAdapterIds } from '../../core/languageFilter';
 import { orderByHierarchy } from '../../core/projectTree';
 import { memberStages, validateGroup, withMember, withMemberLaunch, withMemberReadiness, withMemberStage } from '../../core/runGroupPlan';
@@ -92,6 +93,8 @@ export interface SettingsState {
   configCategories: string[];
   optionCatalog: OptionSpec[];
   invocation: InvocationConfig;
+  /** invocation.runArgs as an input line that parses back to the same argv. */
+  runArgsLine: string;
   commandPreview: string;
   statusBar: { compact: boolean; selectedOnly: boolean };
   /** Other General-tab preferences (ADR-019 / B-3). */
@@ -398,6 +401,7 @@ export class SettingsPanel {
         configCategories: [],
         optionCatalog: [],
         invocation: {},
+        runArgsLine: '',
         commandPreview: '',
         statusBar: this.statusBarPrefs(),
         general: this.generalPrefs(),
@@ -448,6 +452,7 @@ export class SettingsPanel {
         configCategories: [],
         optionCatalog: [],
         invocation: {},
+        runArgsLine: '',
         commandPreview: '',
         statusBar: this.statusBarPrefs(),
         general: this.generalPrefs(),
@@ -503,6 +508,7 @@ export class SettingsPanel {
       configCategories: adapter.configCategories,
       optionCatalog: adapter.optionCatalog,
       invocation,
+      runArgsLine: formatArgsLine(invocation.runArgs ?? []),
       commandPreview: this.commandPreview(adapter, project, invocation),
       statusBar: this.statusBarPrefs(),
       general: this.generalPrefs(),

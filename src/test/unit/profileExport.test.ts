@@ -62,6 +62,27 @@ describe('parseProfileExport', () => {
     const badSelections = JSON.stringify({ version: 1, selections: { p: 'oops' }, invocation: {} });
     assert.throws(() => parseProfileExport(badSelections), DevSwitcherError);
   });
+
+  it('rejects an invocation whose fields have the wrong type (a string preBuild would run per character)', () => {
+    const withInvocation = (config: unknown): string =>
+      JSON.stringify({ version: 1, selections: {}, invocation: { 'cargo:Cargo.toml': { dev: config } } });
+    for (const bad of [
+      { preBuild: 'cargo fmt' },
+      { runArgs: [1, 2] },
+      { env: { RUST_LOG: 3 } },
+      { compiler: 'opt-level=3' },
+      { outputDir: ['out'] },
+      'oops',
+    ]) {
+      assert.throws(
+        () => parseProfileExport(withInvocation(bad)),
+        (e: unknown) => e instanceof DevSwitcherError && /cargo:Cargo\.toml \(dev\)/.test(e.message),
+        JSON.stringify(bad),
+      );
+    }
+    const good = { preBuild: ['cargo fmt'], runArgs: ['-v'], env: { A: 'b' }, compiler: { 'opt-level': 3, flags: ['-g'] }, outputDir: 'out' };
+    assert.doesNotThrow(() => parseProfileExport(withInvocation(good)));
+  });
 });
 
 describe('mergeImport', () => {
