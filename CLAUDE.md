@@ -129,7 +129,7 @@ TASK-003 이어서 하자.
 - **기술 스택:** TypeScript · esbuild(번들) · VSCode Extension API · Node 18+ · mocha(vscode 무의존 순수 로직 단위 테스트). 상태 저장은 `workspaceState`(무DB, ADR-001), 실행은 Task API(ADR-002).
 - **주 언어:** TypeScript (대화 한국어 / 코드·커밋 영문)
 - **핵심 문서:** `.cowork/06_evolution/project_state.md`(공유 상태 인덱스) · `.cowork/06_evolution/imported_context/DevSwitcher-Tools_Detailed-Design.md`(상세설계 SSOT) · `.cowork/03_design_artifacts/interface_contract.md` · `.cowork/04_implementation/coding_convention.md`
-- **현재 Phase:** Evolve (v1.3.0 게시 완료. 상세 상태는 `project_state.md`가 SSOT)
+- **현재 Phase:** Evolve (v1.3.3 게시 완료. 상세 상태는 `project_state.md`가 SSOT)
 - **마일스톤:** MS-001~017·MS-021~023 완료(v1.3.0까지 게시). 미완은 **MS-018**(Run Group 준비 감지)과 **MS-014**(v1.0.0 완주 점검), **MS-019/020**은 INT-002 소속으로 Deferred. 활성 Milestone 없음 — 다음 사이클은 Human 결정 대기.
 
 > 위 4줄은 요약이며 최신 상태의 기준은 `.cowork/06_evolution/project_state.md`다. 어긋나면 `project_state.md`를 따른다.

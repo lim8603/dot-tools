@@ -115,4 +115,5 @@
 - 재현·실측: 사용자 레이아웃(`modules/lockfree` → `../tools/presets/*.json` include) 재현 트리에서 수정 전 프리셋 0개 → 수정 후 `["win-msvc"]`. 실제 cmake 4.4와 대조 — 목록·순서 일치(혼합 트리 5개 포함), `cmake --preset` 실행 시 CMakeCache.txt가 계산한 binaryDir(`${fileDir}` 포함)에 생성. Go `go list -e` 유무 실측(풀 수 없는 import 시 exit 1 → 0). 준비 감지 ::1·리스너 테스트는 수정 전 코드에서 실패·수정 후 통과 확인.
 - 검증: tsc·eslint Pass, unit 404 Pass(384→404), 통합 11 Pass + POSIX 전용 1 pending(Windows, VS Code 1.147.0). 새 통합 2건은 워크스페이스 밖·다른 드라이브(C:) 임시 트리에서 Preset 칩 실측.
 - 패키지: `npm run package:vsix`(@vscode/vsce) 15 files, 258.88 KB. 격리 user-data/extensions 설치 성공, `lim8603.devswitcher-tools@1.3.3` 확인, 설치 번들에 수정 문자열(`--example`·`CMakeUserPresets.json`·`hostSystemName`·`::1`·`-e`) 존재 확인.
+- 배포: main FF(`ba50892`)·`v1.3.3` 태그 push, GitHub Release v1.3.3 게시·VSIX 첨부, Marketplace 게시(`vsce publish` DONE). Gate 5(v1.3.3) Pass.
 - 미확인: 사용자 실제 레포에서의 F5 수동 확인(Preset 칩·빌드), Stop/디버그 흐름의 수동 확인. 이월 리뷰 항목은 project_state R-1~R-5. TC-11(WSL) Known Issue 유지.
