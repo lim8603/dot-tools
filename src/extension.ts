@@ -79,6 +79,9 @@ export function activate(context: vscode.ExtensionContext): void {
         void orchestrator.refresh();
       }
     }),
+    // A folder added to (or removed from) a multi-root workspace brings or takes projects
+    // with it; the manifest watcher only sees file changes inside folders it already had.
+    vscode.workspace.onDidChangeWorkspaceFolders(() => void orchestrator.manifestChanged()),
     // Debug sessions aren't tasks, so track them for the Stop button as they start/end.
     vscode.debug.onDidStartDebugSession((session) => orchestrator.noteDebugSessionStarted(session)),
     vscode.debug.onDidTerminateDebugSession((session) => orchestrator.noteDebugSessionEnded(session)),
@@ -87,7 +90,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const globs = [
     ...new Set(ALL_ADAPTERS.flatMap((adapter) => [...adapter.manifestGlobs, ...(adapter.watchGlobs ?? [])])),
   ];
-  const watcher = new ManifestWatcher(globs, () => void orchestrator.manifestChanged());
+  const structureGlobs = [...new Set(ALL_ADAPTERS.flatMap((adapter) => adapter.structureGlobs ?? []))];
+  const watcher = new ManifestWatcher(globs, () => void orchestrator.manifestChanged(), 500, structureGlobs);
   watcher.start();
   context.subscriptions.push({ dispose: () => watcher.dispose() });
 

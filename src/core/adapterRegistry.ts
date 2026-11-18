@@ -1,57 +1,8 @@
 import * as vscode from 'vscode';
 import { ALL_ADAPTERS } from '../adapters';
 import { enabledAdapterIds } from './languageFilter';
-import { mergeExcludePatterns, toExcludeGlob } from './scanExclude';
+import { excludeGlob } from './workspaceExclude';
 import type { LanguageAdapter, ProjectInfo } from './types';
-
-/**
- * Build artifacts / VCS / tooling dirs never hold a source manifest we care about
- * (상세설계서 §8.2/§9). `.vscode-test` is the extension-test runner's downloaded VS Code —
- * a huge tree of bundled `package.json` files (built-in extensions, resources/app) that
- * would otherwise flood the Node switcher; it only exists in extension-dev workspaces but
- * is always non-project.
- */
-const BUILTIN_EXCLUDE_DIRS = ['target', 'node_modules', '.git', '.vscode-test'];
-
-/**
- * The exclude pattern for one scan pass: the built-in directories plus whatever
- * `devSwitcher.scan.exclude` adds (vendored trees, submodules, anything the user does not
- * want listed at all).
- *
- * `inspect()` rather than `get()` on purpose — exclusions are additive, so every level is
- * unioned. With `get()`, a workspace setting would override and silently discard the
- * user's personal rules (see core/scanExclude.ts).
- *
- * Folder levels are read **per workspace folder**, with the folder's uri as the resource
- * scope. `inspect()` without a resource leaves `workspaceFolderValue` undefined in a
- * multi-root workspace, so until 1.3.1 a folder's `.vscode/settings.json` did nothing at
- * all — VS Code only said so on hover. The setting also has to be declared
- * `scope: "resource"` in package.json, or VS Code refuses the folder level outright.
- *
- * The patterns are still unioned into one workspace-wide glob rather than confined to the
- * folder that declared them: the scan is a single `findFiles` across the workspace, so a
- * folder's exclusion applies everywhere. Stated in the setting description.
- *
- * Computed once per scan, not per glob: the setting cannot change mid-pass, and a scan
- * asks once per adapter manifest glob.
- */
-function excludeGlob(): string {
-  const inspected = vscode.workspace
-    .getConfiguration('devSwitcher')
-    .inspect<string[]>('scan.exclude');
-  const folderLevels = (vscode.workspace.workspaceFolders ?? []).map(
-    (folder) =>
-      vscode.workspace
-        .getConfiguration('devSwitcher', folder.uri)
-        .inspect<string[]>('scan.exclude')?.workspaceFolderValue,
-  );
-  const patterns = mergeExcludePatterns(
-    inspected?.globalValue,
-    inspected?.workspaceValue,
-    ...folderLevels,
-  );
-  return toExcludeGlob(BUILTIN_EXCLUDE_DIRS, patterns);
-}
 
 /**
  * AdapterRegistry — workspace scan and project→adapter matching (TASK-007, ADR-006 /
@@ -64,6 +15,10 @@ function excludeGlob(): string {
  */
 export class AdapterRegistry {
   private projects: ProjectInfo[] = [];
+  /** Increments per scan; a scan that finishes after a newer one started drops its result. */
+  private scanGeneration = 0;
+  /** Adapters whose manifest glob matched in the last scan (Doctor's set) — undefined before one. */
+  private presentAdapterIds: Set<string> | undefined;
   private readonly byId = new Map<string, LanguageAdapter>();
 
   constructor(private readonly adapters: LanguageAdapter[] = ALL_ADAPTERS) {
@@ -89,32 +44,47 @@ export class AdapterRegistry {
     return this.adapters;
   }
 
-  /** Rescan the workspace and refresh the project list. */
+  /**
+   * Rescan the workspace and refresh the project list.
+   *
+   * Adapters scan in parallel (their globs and `listProjects` processes are independent;
+   * the result keeps adapter order). Scans can overlap — a watcher burst, a settings
+   * change, a manual Rescan — and the one that STARTED last decides the list: an older
+   * scan finishing later must not put back what a newer one (say, after disabling a
+   * language) removed, so it returns the current list instead of writing its own.
+   */
   async scan(): Promise<ProjectInfo[]> {
-    const found: ProjectInfo[] = [];
+    const generation = ++this.scanGeneration;
     const exclude = excludeGlob();
-    for (const adapter of this.enabledAdapters()) {
-      const uris: vscode.Uri[] = [];
-      for (const glob of adapter.manifestGlobs) {
-        uris.push(...(await vscode.workspace.findFiles(glob, exclude)));
-      }
-      // findFiles makes no ordering promise and its order does vary between runs, so the
-      // project list would reshuffle on every rescan — entries jumping around the switcher
-      // and the settings page while the user is reading them. Sort by path for a stable
-      // list; orderByHierarchy preserves this order when it nests sub-projects.
-      uris.sort((a, b) => a.path.localeCompare(b.path));
-      if (uris.length === 0) {
-        continue;
-      }
-      try {
-        found.push(...(await adapter.listProjects(uris)));
-      } catch {
-        // Stub adapters (cmake/dotnet/python) throw NOT_IMPLEMENTED, and cargo can
-        // fail on a broken manifest (E2) — skip; the watcher retries on the next change.
-      }
+    const results = await Promise.all(
+      this.enabledAdapters().map(async (adapter) => {
+        const uris: vscode.Uri[] = [];
+        for (const glob of adapter.manifestGlobs) {
+          uris.push(...(await vscode.workspace.findFiles(glob, exclude)));
+        }
+        // findFiles makes no ordering promise and its order does vary between runs, so the
+        // project list would reshuffle on every rescan — entries jumping around the switcher
+        // and the settings page while the user is reading them. Sort by path for a stable
+        // list; orderByHierarchy preserves this order when it nests sub-projects.
+        uris.sort((a, b) => a.path.localeCompare(b.path));
+        if (uris.length === 0) {
+          return { adapter, present: false, projects: [] as ProjectInfo[] };
+        }
+        try {
+          return { adapter, present: true, projects: await adapter.listProjects(uris) };
+        } catch {
+          // cargo can fail on a broken manifest (E2) — skip; the watcher retries on the
+          // next change. The manifest is still present, which is what Doctor needs (E1).
+          return { adapter, present: true, projects: [] as ProjectInfo[] };
+        }
+      }),
+    );
+    if (generation !== this.scanGeneration) {
+      return this.projects; // superseded by a scan that started later
     }
-    this.projects = found;
-    return found;
+    this.projects = results.flatMap((r) => r.projects);
+    this.presentAdapterIds = new Set(results.filter((r) => r.present).map((r) => r.adapter.id));
+    return this.projects;
   }
 
   getProjects(): ProjectInfo[] {
@@ -161,6 +131,13 @@ export class AdapterRegistry {
    * `cargo metadata` failed and produced zero projects — that is exactly the E1 case.
    */
   async detectAdapters(): Promise<LanguageAdapter[]> {
+    // The last scan already searched every manifest glob; its answer is as fresh as the
+    // project list itself (the watcher re-scans on change), so reuse it instead of
+    // searching the workspace a second time.
+    if (this.presentAdapterIds) {
+      const ids = this.presentAdapterIds;
+      return this.enabledAdapters().filter((a) => ids.has(a.id));
+    }
     const present: LanguageAdapter[] = [];
     const exclude = excludeGlob();
     for (const adapter of this.enabledAdapters()) {

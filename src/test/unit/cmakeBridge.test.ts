@@ -651,6 +651,30 @@ describe('CMakeBridge.targetsIfConfigured (no configure on project switch)', () 
     }
   });
 
+  it('re-reads the reply only when a newer index appears (R-5)', async () => {
+    const buildDir = mkdtempSync(join(tmpdir(), 'ds-peek-'));
+    try {
+      const replyDir = join(buildDir, '.cmake', 'api', 'v1', 'reply');
+      mkdirSync(replyDir, { recursive: true });
+      for (const file of readdirSync(FIXTURE_REPLY)) {
+        copyFileSync(join(FIXTURE_REPLY, file), join(replyDir, file));
+      }
+      const bridge = new CMakeBridge(forbiddenExec);
+      assert.deepEqual((await bridge.targetsIfConfigured(buildDir, 'Debug')).map((t) => t.name), ['hello']);
+      // Remove the target files: an unchanged index means the cached answer stands.
+      for (const file of readdirSync(replyDir).filter((f) => f.startsWith('target-'))) {
+        rmSync(join(replyDir, file));
+      }
+      assert.deepEqual((await bridge.targetsIfConfigured(buildDir, 'Debug')).map((t) => t.name), ['hello']);
+      // A reconfigure writes a newer index: now the reply is read again.
+      const index = readdirSync(replyDir).filter((f) => f.startsWith('index-')).sort().pop()!;
+      copyFileSync(join(replyDir, index), join(replyDir, 'index-9999-99-99T99-99-99-9999.json'));
+      assert.deepEqual(await bridge.targetsIfConfigured(buildDir, 'Debug'), []);
+    } finally {
+      rmSync(buildDir, { recursive: true, force: true });
+    }
+  });
+
   it('never populates the target cache, so a later targetsFor still configures', async () => {
     const buildDir = mkdtempSync(join(tmpdir(), 'ds-peek-'));
     try {

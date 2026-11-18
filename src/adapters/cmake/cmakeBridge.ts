@@ -960,6 +960,16 @@ export function execCapture(
   return exec(command, args, { cwd, env });
 }
 
+/** The newest File API reply index file name in `replyDir`, or undefined when there is none. */
+export async function latestReplyIndex(replyDir: string): Promise<string | undefined> {
+  try {
+    const indexFiles = (await readdir(replyDir)).filter((f) => f.startsWith('index-') && f.endsWith('.json')).sort();
+    return indexFiles[indexFiles.length - 1]; // timestamped name → last = newest
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Read the switcher-relevant targets from a CMake File API reply directory
  * (`<buildDir>/.cmake/api/v1/reply`): newest index → codemodel → each target's json,
@@ -1053,6 +1063,8 @@ export class CMakeBridge {
   private cmakeVersion: string | null | undefined; // undefined = unprobed, null = absent
   private readonly configuredSig = new Map<string, string>(); // buildDir → last configure signature
   private readonly targetCache = new Map<string, CMakeTarget[]>(); // `${buildDir}\0${config}` → targets
+  /** targetsIfConfigured's results, valid while the reply's newest index file is unchanged. */
+  private readonly peekCache = new Map<string, { index: string; targets: CMakeTarget[] }>();
 
   constructor(exec: CMakeExec = defaultExec) {
     this.exec = exec;
@@ -1216,13 +1228,29 @@ export class CMakeBridge {
    *
    * The target cache is read but deliberately **not** populated: an empty peek must never
    * become a cache entry that later makes `targetsFor` skip a configure it actually needs.
+   * The peek keeps its own cache instead, keyed by the reply's newest index file: cmake
+   * names it with a timestamp, so a reconfigure (by us or anyone) changes the key, and
+   * every render of an unset Target chip costs one directory listing instead of re-reading
+   * every target-*.json (R-5).
    */
   async targetsIfConfigured(buildDir: string, config?: string): Promise<CMakeTarget[]> {
-    const cached = this.targetCache.get(`${buildDir}\0${config ?? ''}`);
+    const key = `${buildDir}\0${config ?? ''}`;
+    const cached = this.targetCache.get(key);
     if (cached) {
       return cached;
     }
-    return readReplyDir(join(buildDir, '.cmake', 'api', 'v1', 'reply'), config);
+    const replyDir = join(buildDir, '.cmake', 'api', 'v1', 'reply');
+    const index = await latestReplyIndex(replyDir);
+    if (!index) {
+      return []; // never configured — no reply yet
+    }
+    const peeked = this.peekCache.get(key);
+    if (peeked?.index === index) {
+      return peeked.targets;
+    }
+    const targets = await readReplyDir(replyDir, config);
+    this.peekCache.set(key, { index, targets });
+    return targets;
   }
 
   /**
@@ -1268,6 +1296,7 @@ export class CMakeBridge {
     this.cmakeVersion = undefined;
     this.configuredSig.clear();
     this.targetCache.clear();
+    this.peekCache.clear();
   }
 
   /** `cmake --version` → bare version string, or undefined when absent. */

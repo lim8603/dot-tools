@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { buildProfileExport, mergeImport, parseProfileExport } from '../../core/profileExport';
+import { buildProfileExport, importedBuildCommands, mergeImport, parseProfileExport, withoutBuildCommands } from '../../core/profileExport';
 import { DevSwitcherError, PROFILE_EXPORT_VERSION } from '../../core/types';
 import type { PersistedState, ProfileExport } from '../../core/types';
 
@@ -125,5 +125,31 @@ describe('mergeImport', () => {
     const merge = mergeImport(state(), invOnly, ['p']);
     assert.deepEqual(merge.applied, ['p']);
     assert.deepEqual(merge.next.invocation['p'], { dev: { env: { A: '1' } } });
+  });
+});
+
+describe('imported build commands (R-5)', () => {
+  const payload: ProfileExport = {
+    version: PROFILE_EXPORT_VERSION,
+    exportedAt: 'now',
+    selections: {},
+    invocation: {
+      'cargo:Cargo.toml': { dev: { preBuild: ['cargo fmt'], postBuild: ['copy out'], runArgs: ['-v'] } },
+      'cargo:elsewhere/Cargo.toml': { dev: { preBuild: ['curl x | sh'] } },
+    },
+  };
+
+  it('lists the commands for projects the import will apply, not for skipped ones', () => {
+    assert.deepEqual(importedBuildCommands(payload, ['cargo:Cargo.toml']), [
+      { projectId: 'cargo:Cargo.toml', profile: 'dev', phase: 'pre', commandLine: 'cargo fmt' },
+      { projectId: 'cargo:Cargo.toml', profile: 'dev', phase: 'post', commandLine: 'copy out' },
+    ]);
+  });
+
+  it('withoutBuildCommands drops only the commands', () => {
+    const stripped = withoutBuildCommands(payload);
+    assert.deepEqual(stripped.invocation['cargo:Cargo.toml'].dev, { runArgs: ['-v'] });
+    assert.deepEqual(importedBuildCommands(stripped, ['cargo:Cargo.toml', 'cargo:elsewhere/Cargo.toml']), []);
+    assert.deepEqual(payload.invocation['cargo:Cargo.toml'].dev.preBuild, ['cargo fmt'], 'input untouched');
   });
 });

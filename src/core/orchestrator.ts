@@ -10,9 +10,16 @@ import { pickChipValue } from '../ui/picks';
 import { pickDiagnostic } from '../ui/doctorPick';
 import { runNewProjectWizard } from '../ui/newProjectWizard';
 import { ensureExtension } from './ensureExtension';
-import { buildProfileExport, mergeImport, parseProfileExport } from './profileExport';
+import {
+  buildProfileExport,
+  importedBuildCommands,
+  mergeImport,
+  parseProfileExport,
+  withoutBuildCommands,
+  type ImportedBuildCommand,
+} from './profileExport';
 import { buildDiagnostics, worstStatus } from './diagnostics';
-import { BUILD_EVENT_TASK_TYPE, createBuildEventTask, type BuildEventPhase } from './buildEvents';
+import { BUILD_EVENT_TASK_TYPE, describeBuildEventFailure, runBuildEvents, type BuildEventPhase } from './buildEvents';
 import {
   buildDeletionItems,
   classifyDeletions,
@@ -54,6 +61,8 @@ export class Orchestrator {
   /** projectIds the user just stopped (devSwitcher.stop) — so runCargoTask reports the
    *  terminated task as a stop, not a failure (no error toast). Cleared after the run settles. */
   private readonly stopping = new Set<string>();
+  /** Increments per renderActive; a render overtaken by a newer one stops painting. */
+  private renderGeneration = 0;
 
   /** Our live debug sessions (session.id → the project it debugs). Tracked from the
    *  debug start/end events (wired in extension.ts) because `vscode.debug.activeDebugSession`
@@ -640,9 +649,14 @@ export class Orchestrator {
           return;
         }
       }
+      // Pre-build commands (F21/C-5) run before the debug build, as before Build/Run (R-5).
+      if (!(await this.runBuildEvents(project, config.preBuild, 'pre'))) {
+        return;
+      }
       // Compiled languages build a debuggable artifact first; Node opts out
       // (debugRequiresBuild:false) — it debugs the npm script directly (ADR-016).
-      if (adapter.actions.build && adapter.actions.debugRequiresBuild !== false) {
+      const debugBuilds = adapter.actions.build && adapter.actions.debugRequiresBuild !== false;
+      if (debugBuilds) {
         const build = await this.taskRunner.run(adapter.createBuildTask(project, selection, config), project.id);
         if (!build.succeeded) {
           if (this.stopping.has(project.id)) {
@@ -658,6 +672,10 @@ export class Orchestrator {
           }
           return;
         }
+      }
+      // Post-build commands follow the build they belong to — before the debugger starts.
+      if (debugBuilds && !(await this.runBuildEvents(project, config.postBuild, 'post'))) {
+        return;
       }
       const debugConfig = await adapter.createDebugConfig(project, selection, config);
       await vscode.debug.startDebugging(project.workspaceFolder, debugConfig);
@@ -717,8 +735,20 @@ export class Orchestrator {
     }
     try {
       const bytes = await vscode.workspace.fs.readFile(source);
-      const imported = parseProfileExport(Buffer.from(bytes).toString('utf8'));
+      let imported = parseProfileExport(Buffer.from(bytes).toString('utf8'));
       const knownIds = this.registry.getProjects().map((p) => p.id);
+      // Pre/post-build commands are shell commands that run on the next build without
+      // another prompt, so a shared profile shows them before they are installed (R-5).
+      const commands = importedBuildCommands(imported, knownIds);
+      if (commands.length > 0) {
+        const choice = await this.confirmImportedCommands(commands);
+        if (choice === undefined) {
+          return; // cancelled — nothing imported
+        }
+        if (choice === 'without') {
+          imported = withoutBuildCommands(imported);
+        }
+      }
       const merge = mergeImport(this.store.getState(), imported, knownIds);
       await this.store.importState(merge.next);
       await this.refresh(); // reconcile imported values + re-render + view-sync
@@ -731,6 +761,31 @@ export class Orchestrator {
       const message = error instanceof Error ? error.message : String(error);
       void vscode.window.showErrorMessage(`DevSwitcher: import failed — ${message}`);
     }
+  }
+
+  /**
+   * Ask whether an import may install the pre/post-build commands it carries — a QuickPick,
+   * like every other choice here (D-26), listing each command under the two answers.
+   * Picking a listed command (not an answer) counts as cancel.
+   */
+  private async confirmImportedCommands(commands: ImportedBuildCommand[]): Promise<'with' | 'without' | undefined> {
+    type Item = vscode.QuickPickItem & { choice?: 'with' | 'without' };
+    const nameOf = (id: string): string => this.registry.project(id)?.name ?? id;
+    const items: Item[] = [
+      { label: '$(check) Import with these commands', choice: 'with' },
+      { label: '$(circle-slash) Import without the build commands', choice: 'without' },
+      { label: 'Commands in this profile', kind: vscode.QuickPickItemKind.Separator },
+      ...commands.map((c) => ({
+        label: `$(terminal) ${c.commandLine}`,
+        description: `${nameOf(c.projectId)} · ${c.profile} · ${c.phase}-build`,
+      })),
+    ];
+    const picked = await vscode.window.showQuickPick(items, {
+      title: `This profile adds ${commands.length} pre/post-build command(s) — they run on your next build`,
+      placeHolder: 'Import the commands too?',
+      ignoreFocusOut: true,
+    });
+    return picked?.choice;
   }
 
   /**
@@ -927,14 +982,12 @@ export class Orchestrator {
     commands: string[] | undefined,
     phase: BuildEventPhase,
   ): Promise<boolean> {
-    for (const commandLine of commands ?? []) {
-      const result = await this.taskRunner.run(createBuildEventTask(project, commandLine, phase), project.id);
-      if (!result.succeeded) {
-        void vscode.window.showErrorMessage(
-          `DevSwitcher: ${phase}-build command failed (exit ${result.exitCode ?? 'unknown'}): ${commandLine}`,
-        );
-        return false;
+    const result = await runBuildEvents(this.taskRunner, project, commands, phase);
+    if (!result.ok) {
+      if (!this.stopping.has(project.id)) {
+        void vscode.window.showErrorMessage(`DevSwitcher: ${describeBuildEventFailure(phase, result)}`);
       }
+      return false;
     }
     return true;
   }
@@ -987,6 +1040,10 @@ export class Orchestrator {
   /** Re-render the status bar from current state — public so the settings page can
    *  push its changes (setChipValue/switchProject) back to the status bar. */
   async renderActive(): Promise<void> {
+    // Renders overlap (a refresh, a chip pick, a task ending). The one that started last
+    // owns the bar: an older render resuming after an await would otherwise paint the
+    // previous project's chips and hidden set over the current one.
+    const generation = ++this.renderGeneration;
     const context = this.activeContext();
     if (!context) {
       this.statusBar.hideAll();
@@ -994,8 +1051,15 @@ export class Orchestrator {
       return;
     }
     const { project, adapter } = context;
-    this.hiddenChips = await this.resolveHiddenChips(project, adapter);
+    const hidden = await this.resolveHiddenChips(project, adapter);
+    if (generation !== this.renderGeneration) {
+      return;
+    }
+    this.hiddenChips = hidden;
     await this.applyDefaults(project, adapter);
+    if (generation !== this.renderGeneration) {
+      return;
+    }
     this.renderBar(adapter, project);
     this.refreshStopButton();
     this.viewSync();

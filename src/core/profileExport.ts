@@ -169,3 +169,50 @@ function invocationProblem(value: unknown): string | undefined {
 function isNestedRecord(value: unknown): value is Record<string, Record<string, unknown>> {
   return isRecord(value) && Object.values(value).every(isRecord);
 }
+
+/** One pre/post-build command an import would install for a project in this workspace. */
+export interface ImportedBuildCommand {
+  projectId: string;
+  profile: string;
+  phase: 'pre' | 'post';
+  commandLine: string;
+}
+
+/**
+ * The shell commands an import would bring in for the projects it will actually apply
+ * (R-5): they run on the next Build without another prompt, so the import shows them
+ * first. Projects absent from the workspace are skipped by mergeImport and omitted here.
+ */
+export function importedBuildCommands(imported: ProfileExport, knownProjectIds: string[]): ImportedBuildCommand[] {
+  const known = new Set(knownProjectIds);
+  const commands: ImportedBuildCommand[] = [];
+  for (const [projectId, profiles] of Object.entries(imported.invocation)) {
+    if (!known.has(projectId)) {
+      continue;
+    }
+    for (const [profile, config] of Object.entries(profiles)) {
+      for (const commandLine of config.preBuild ?? []) {
+        commands.push({ projectId, profile, phase: 'pre', commandLine });
+      }
+      for (const commandLine of config.postBuild ?? []) {
+        commands.push({ projectId, profile, phase: 'post', commandLine });
+      }
+    }
+  }
+  return commands;
+}
+
+/** The same import with every pre/post-build command removed (the "without commands" choice). */
+export function withoutBuildCommands(imported: ProfileExport): ProfileExport {
+  const invocation: ProfileExport['invocation'] = {};
+  for (const [projectId, profiles] of Object.entries(imported.invocation)) {
+    invocation[projectId] = {};
+    for (const [profile, config] of Object.entries(profiles)) {
+      const rest = { ...config };
+      delete rest.preBuild;
+      delete rest.postBuild;
+      invocation[projectId][profile] = rest;
+    }
+  }
+  return { ...imported, invocation };
+}

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { describeBuildEventFailure, runBuildEvents } from './buildEvents';
 import { DevSwitcherError } from './errors';
 import { describeReadiness } from './readiness';
 import { waitForReadiness } from './readinessProbe';
@@ -299,6 +300,12 @@ export class GroupOrchestrator {
       if (blocked) {
         throw new DevSwitcherError('GROUP_MEMBER_BLOCKED', `${project.name}: ${blocked}`);
       }
+      // Pre-build commands run first, as for an individual Run/Debug (R-5) — a member
+      // whose code generation lives there would otherwise start stale.
+      const pre = await runBuildEvents(this.taskRunner, project, config.preBuild, 'pre');
+      if (!pre.ok) {
+        throw new DevSwitcherError('GROUP_MEMBER_BUILD_FAILED', `${project.name}: ${describeBuildEventFailure('pre', pre)}`);
+      }
       // Compiled members build a runnable/debuggable artifact first; a build failure
       // aborts this member (and therefore its dependents). Run members build when the
       // run executes a pre-built artifact (CMake); debug members follow the debug rule
@@ -316,10 +323,29 @@ export class GroupOrchestrator {
         }
       }
 
+      // A debug member's post-build follows its build, before the debugger starts.
+      if (launchDebug && needsBuild) {
+        const post = await runBuildEvents(this.taskRunner, project, config.postBuild, 'post');
+        if (!post.ok) {
+          throw new DevSwitcherError('GROUP_MEMBER_BUILD_FAILED', `${project.name}: ${describeBuildEventFailure('post', post)}`);
+        }
+      }
       const startedTask = launchDebug
         ? await this.startDebugMember(project, adapter, selection, config)
         : await this.taskRunner.start(adapter.createRunTask(project, selection, config), projectId);
       tracked.push(startedTask);
+      // A run member's post-build runs after it exits successfully, as an individual Run's.
+      if (!launchDebug && (config.postBuild ?? []).length > 0) {
+        void startedTask.done.then(async (result) => {
+          if (!result.succeeded) {
+            return;
+          }
+          const post = await runBuildEvents(this.taskRunner, project, config.postBuild, 'post');
+          if (!post.ok) {
+            void vscode.window.showErrorMessage(`DevSwitcher: ${project.name}: ${describeBuildEventFailure('post', post)}`);
+          }
+        });
+      }
       // Prune when the member exits on its own (crash / one-shot) so `running` reflects reality.
       void startedTask.done.then(() => this.prune(group.id, tracked, startedTask));
 

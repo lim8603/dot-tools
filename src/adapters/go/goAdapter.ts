@@ -91,6 +91,8 @@ export const goAdapter: LanguageAdapter = {
   displayName: 'Go',
   actions: { build: true, clean: true },
   manifestGlobs: ['**/go.mod'],
+  // A main package appears/disappears with its .go files, not with go.mod edits.
+  structureGlobs: ['**/*.go'],
   requiredExtensions: ['golang.go'],
   canCreateProject: true,
   configCategories: ['compiler', 'env', 'runArgs'], // no linker/output in idiomatic Go

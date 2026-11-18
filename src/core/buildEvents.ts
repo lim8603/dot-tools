@@ -1,5 +1,6 @@
 import { dirname } from 'node:path';
 import * as vscode from 'vscode';
+import type { TaskRunner } from './taskRunner';
 import type { ProjectInfo } from './types';
 
 /**
@@ -31,4 +32,33 @@ export function createBuildEventTask(
   );
   task.presentationOptions = { reveal: vscode.TaskRevealKind.Always, clear: false, panel: vscode.TaskPanelKind.Shared };
   return task;
+}
+
+/** Outcome of a build-event phase: ok, or the command that failed and how. */
+export type BuildEventsResult = { ok: true } | { ok: false; commandLine: string; exitCode: number | undefined };
+
+/**
+ * Run a phase's commands in order on the project's lock, stopping at the first failure.
+ * Shared by every flow that builds or runs (Build, Run, Debug, run-group members) so the
+ * policy is one place (R-5): pre-build before anything builds or runs; post-build after
+ * the flow's build step succeeded (Run: after the program exits successfully).
+ */
+export async function runBuildEvents(
+  taskRunner: TaskRunner,
+  project: ProjectInfo,
+  commands: string[] | undefined,
+  phase: BuildEventPhase,
+): Promise<BuildEventsResult> {
+  for (const commandLine of commands ?? []) {
+    const result = await taskRunner.run(createBuildEventTask(project, commandLine, phase), project.id);
+    if (!result.succeeded) {
+      return { ok: false, commandLine, exitCode: result.exitCode };
+    }
+  }
+  return { ok: true };
+}
+
+/** The user-facing message for a failed build-event phase. */
+export function describeBuildEventFailure(phase: BuildEventPhase, failure: { commandLine: string; exitCode: number | undefined }): string {
+  return `${phase}-build command failed (exit ${failure.exitCode ?? 'unknown'}): ${failure.commandLine}`;
 }

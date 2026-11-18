@@ -151,6 +151,8 @@ type InMessage =
  */
 export class SettingsPanel {
   private panel: vscode.WebviewPanel | undefined;
+  /** Increments per postState; a state built after a newer one started is not posted. */
+  private postSequence = 0;
   private disposables: vscode.Disposable[] = [];
   /**
    * Toolchain probe results cached per adapter for the panel's lifetime (B-2). buildState
@@ -223,8 +225,7 @@ export class SettingsPanel {
 
     // Run-group messages are workspace-level (no active project needed).
     if (await this.handleGroupMessage(message)) {
-      this.onChanged();
-      await this.postState();
+      this.onChanged(); // renderActive → viewSync re-posts the state once (no second post here)
       return;
     }
 
@@ -285,8 +286,10 @@ export class SettingsPanel {
       }
     }
 
-    this.onChanged(); // keep the status bar in sync
-    await this.postState();
+    // Keeps the status bar in sync, and its renderActive → viewSync re-posts this page's
+    // state. Posting here as well built the whole state twice per edit, in parallel, with
+    // no guarantee which arrived last.
+    this.onChanged();
   }
 
   /**
@@ -386,6 +389,8 @@ export class SettingsPanel {
     if (!this.panel) {
       return;
     }
+    // Builds overlap and take different times; only the newest may reach the page.
+    const sequence = ++this.postSequence;
     let state: SettingsState;
     try {
       state = await this.buildState(quick);
@@ -409,6 +414,9 @@ export class SettingsPanel {
         shortcuts: [],
         error: error instanceof Error ? error.message : String(error),
       };
+    }
+    if (sequence !== this.postSequence || !this.panel) {
+      return; // a newer state is on its way, or the page was closed while this one was built
     }
     await this.panel.webview.postMessage({ type: 'state', ...state });
   }

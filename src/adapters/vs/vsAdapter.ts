@@ -2,6 +2,7 @@ import { basename, dirname, join } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
 import { ensureExtension } from '../../core/ensureExtension';
+import { excludeGlob } from '../../core/workspaceExclude';
 import {
   CleanScope,
   DiagnosticProbe,
@@ -220,7 +221,10 @@ export const vsAdapter: LanguageAdapter = {
         candidates.set(rel, { uri, folder, kind });
       }
     }
-    const markers = await vscode.workspace.findFiles('**/CMakeCache.txt');
+    // Same exclusions as the scan: a marker can only matter below a folder the scan reads,
+    // and skipping node_modules / target / user-excluded trees keeps this per-refresh
+    // search from walking them (R-5).
+    const markers = await vscode.workspace.findFiles('**/CMakeCache.txt', excludeGlob());
     const markerDirs = markers.map((uri) => {
       const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
       const idx = rel.lastIndexOf('/');

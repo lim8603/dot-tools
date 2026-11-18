@@ -381,6 +381,12 @@ export interface LanguageAdapter {
    * CMakePresets.json. Omitted = the manifests are the only inputs.
    */
   readonly watchGlobs?: string[];
+  /**
+   * Watch-only globs for files whose creation or deletion — not their edits — changes the
+   * adapter's targets, e.g. Go's `.go` files (a new `cmd/x/main.go` is a new main package).
+   * Change events are ignored, so ordinary saves never trigger a rescan.
+   */
+  readonly structureGlobs?: string[];
   readonly requiredExtensions: string[]; // required extension IDs (F14)
 
   /** F20 — whether this adapter can create a new project. v1: all four are true. */

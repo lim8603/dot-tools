@@ -12,10 +12,17 @@ export class ManifestWatcher {
   private readonly watchers: vscode.FileSystemWatcher[] = [];
   private timer: ReturnType<typeof setTimeout> | undefined;
 
+  /**
+   * @param globs files whose creation, edit or deletion matters (manifests, watchGlobs)
+   * @param structureGlobs files whose creation or deletion — never an edit — matters
+   *   (LanguageAdapter.structureGlobs): watched with change events ignored, so saving a
+   *   source file costs nothing.
+   */
   constructor(
     private readonly globs: string[],
     private readonly onChange: () => void,
     private readonly debounceMs = 500,
+    private readonly structureGlobs: string[] = [],
   ) {}
 
   start(): void {
@@ -23,6 +30,12 @@ export class ManifestWatcher {
       const watcher = vscode.workspace.createFileSystemWatcher(glob);
       watcher.onDidCreate(() => this.schedule());
       watcher.onDidChange(() => this.schedule());
+      watcher.onDidDelete(() => this.schedule());
+      this.watchers.push(watcher);
+    }
+    for (const glob of this.structureGlobs) {
+      const watcher = vscode.workspace.createFileSystemWatcher(glob, false, true, false);
+      watcher.onDidCreate(() => this.schedule());
       watcher.onDidDelete(() => this.schedule());
       this.watchers.push(watcher);
     }

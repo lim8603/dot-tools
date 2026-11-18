@@ -356,9 +356,9 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
       } else if (cat === 'buildEvent') {
         const pre = (state.invocation.preBuild || []).join('\\n');
         const post = (state.invocation.postBuild || []).join('\\n');
-        html += '<div class="opt-label"><b>Pre-build</b> <span class="muted">one command per line · runs before build/run</span></div>' +
+        html += '<div class="opt-label"><b>Pre-build</b> <span class="muted">one command per line · runs before build, run and debug (run-group members too)</span></div>' +
           '<div class="row"><textarea id="prebuild-input" aria-label="Pre-build commands" rows="2">' + esc(pre) + '</textarea></div>' +
-          '<div class="opt-label"><b>Post-build</b> <span class="muted">runs after a successful build/run</span></div>' +
+          '<div class="opt-label"><b>Post-build</b> <span class="muted">runs after a successful build (run: after the program exits successfully)</span></div>' +
           '<div class="row"><textarea id="postbuild-input" aria-label="Post-build commands" rows="2">' + esc(post) + '</textarea></div>' +
           '<div class="muted">Runs as your shell in the project directory (NFR-002a). ' +
           'e.g. <code>cargo fmt</code> · <code>npm run codegen</code> · <code>cp target/release/app dist/</code></div>';
@@ -631,8 +631,29 @@ export function getSettingsHtml(webview: vscode.Webview, nonce: string): string 
     }
   });
 
+  // A state that arrives while the user is typing in a text field (a group finishing, a
+  // watcher refresh, the echo of another field's commit) would rebuild the detail pane and
+  // take the focus and the uncommitted text with it. Hold the newest such state until the
+  // field loses focus — its change event commits first, then the held state paints.
+  let pendingState = null;
+  function editingText() {
+    const el = document.activeElement;
+    const detail = document.getElementById('detail');
+    if (!el || !detail || !detail.contains(el)) return false;
+    return el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number'));
+  }
   window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'state') { state = e.data; render(); }
+    if (e.data && e.data.type === 'state') {
+      if (editingText()) { pendingState = e.data; return; }
+      pendingState = null;
+      state = e.data;
+      render();
+    }
+  });
+  document.addEventListener('focusout', () => {
+    setTimeout(() => {
+      if (pendingState && !editingText()) { state = pendingState; pendingState = null; render(); }
+    }, 0);
   });
 
   post({ type: 'ready' });
