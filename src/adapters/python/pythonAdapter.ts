@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { projectRelPath } from '../../core/projectPath';
 import { dirname, join } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
 import {
@@ -250,7 +251,7 @@ export const pythonAdapter: LanguageAdapter = {
     // own pyproject files never masquerade as projects.
     const projects: ProjectInfo[] = [];
     for (const uri of manifests) {
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       if (/(^|\/)(\.venv|venv|env|node_modules|__pycache__|site-packages)\//.test(rel)) {
         continue;
       }

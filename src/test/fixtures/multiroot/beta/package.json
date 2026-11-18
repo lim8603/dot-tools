@@ -1,0 +1,1 @@
+{ "name": "beta", "scripts": { "start": "node -e 0" } }

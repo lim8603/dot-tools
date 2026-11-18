@@ -1,5 +1,6 @@
 import { dirname, join, relative, resolve } from 'node:path';
 import * as vscode from 'vscode';
+import { folderRelative, projectRelPath } from '../../core/projectPath';
 import { DevSwitcherError } from '../../core/errors';
 import { ensureExtension } from '../../core/ensureExtension';
 import { displayPath } from '../../core/cleanPlan';
@@ -59,7 +60,7 @@ function srcDirOf(project: ProjectInfo): string {
  */
 function rootSrcDirOf(project: ProjectInfo): string {
   if (project.parentId?.startsWith('cmake:')) {
-    const rel = project.parentId.slice('cmake:'.length);
+    const rel = folderRelative(project.parentId.slice('cmake:'.length), project.workspaceFolder);
     return dirname(join(project.workspaceFolder.uri.fsPath, rel));
   }
   return srcDirOf(project);
@@ -591,7 +592,7 @@ export const cmakeAdapter: LanguageAdapter = {
     const entries: CMakeManifestEntry[] = [];
     const meta = new Map<string, { uri: vscode.Uri; folder: vscode.WorkspaceFolder }>();
     for (const uri of manifests) {
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       if (/(^|\/)(build|out|cmake-build[^/]*)\//.test(rel)) {
         continue;
       }

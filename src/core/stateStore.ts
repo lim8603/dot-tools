@@ -2,6 +2,7 @@ import type { Memento } from 'vscode';
 import { PERSISTED_STATE_KEY } from './types';
 import type { ChipValue, InvocationConfig, PersistedState, RunGroup, Selection } from './types';
 import { reconcileValues, resolveActiveProject } from './stateReconcile';
+import { applyIdMigrations, idMigrations, storedProjectIds, type MigrationTarget } from './projectIdMigration';
 
 /**
  * StateStore — the workspaceState persistence wrapper (TASK-007, ADR-001 / 상세설계서 §6).
@@ -125,6 +126,21 @@ export class StateStore {
       groups: this.state.groups, // run groups are not part of the profile import (F12) — keep the current ones
     };
     await this.persist();
+  }
+
+  /**
+   * Rename project ids the scan no longer knows to the ids they now have (R-3, ADR-025):
+   * single ↔ multi-root naming moved them. Must run before reconcile, which would drop
+   * the active project it cannot find. Returns how many ids moved.
+   */
+  async migrateProjectIds(projects: readonly MigrationTarget[]): Promise<number> {
+    const migrations = idMigrations(storedProjectIds(this.state), projects);
+    if (migrations.size === 0) {
+      return 0;
+    }
+    this.state = applyIdMigrations(this.state, migrations);
+    await this.persist();
+    return migrations.size;
   }
 
   /**

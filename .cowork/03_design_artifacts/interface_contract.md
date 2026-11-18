@@ -58,7 +58,7 @@ export interface ChipDescriptor {
 
 ```ts
 export interface ProjectInfo {
-  id: string;                        // `${adapterId}:${manifestPath 상대경로}` (기계 독립, ADR-006)
+  id: string;                        // `${adapterId}:${manifestPath 상대경로}` (기계 독립, ADR-006). 폴더가 둘 이상이면 `<폴더 이름>/` 접두 — projectRelPath, 저장 상태 자동 이전 (ADR-025)
   name: string;                      // 표시 이름(패키지명 등)
   adapterId: string;
   manifestPath: string;              // 매니페스트 절대 경로

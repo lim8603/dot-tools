@@ -176,6 +176,11 @@ export class Orchestrator {
     // Scope the DevSwitcher keybindings (ADR-017): they only fire when a project is present,
     // so the Ctrl+Alt+* defaults stay inert (no conflict) in workspaces with no DevSwitcher project.
     void vscode.commands.executeCommand('setContext', 'devSwitcher.hasProjects', projects.length > 0);
+    // Ids follow single/multi-root naming (ADR-025): carry stored state over to the new id
+    // before reconcile, which would otherwise drop what it cannot find.
+    await this.store.migrateProjectIds(
+      projects.map((p) => ({ id: p.id, folderName: p.workspaceFolder.name, folderIndex: p.workspaceFolder.index })),
+    );
     const validItems = await this.gatherValidItems(projects);
     const removed = await this.store.reconcile(
       projects.map((p) => p.id),

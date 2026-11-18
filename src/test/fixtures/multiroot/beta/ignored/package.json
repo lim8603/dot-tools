@@ -1,0 +1,1 @@
+{ "name": "beta-ignored", "scripts": { "start": "node -e 0" } }

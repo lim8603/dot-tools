@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { projectRelPath } from '../../core/projectPath';
 import { dirname } from 'node:path';
 import {
   CleanScope,
@@ -202,7 +203,7 @@ export const goAdapter: LanguageAdapter = {
     // the module path's last segment (read from go.mod), else the folder name.
     const projects: ProjectInfo[] = [];
     for (const uri of manifests) {
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       if (/(^|\/)vendor\//.test(rel)) {
         continue;
       }

@@ -1,6 +1,7 @@
 import { dirname, resolve } from 'node:path';
 import * as vscode from 'vscode';
 import { DevSwitcherError } from '../../core/errors';
+import { projectRelPath } from '../../core/projectPath';
 import {
   ChipItem,
   CleanScope,
@@ -356,7 +357,7 @@ export const cargoAdapter: LanguageAdapter = {
           continue; // outside the workspace (registry path, etc.)
         }
         projects.push({
-          id: `cargo:${vscode.workspace.asRelativePath(manifestUri, false)}`,
+          id: `cargo:${projectRelPath(manifestUri)}`, // folder-prefixed in multi-root (ADR-025)
           name: pkg.name,
           adapterId: 'cargo',
           manifestPath: pkg.manifestPath,

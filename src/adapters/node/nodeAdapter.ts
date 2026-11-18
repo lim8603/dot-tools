@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { projectRelPath } from '../../core/projectPath';
 import { dirname, join } from 'node:path';
 import {
   ChipItem,
@@ -239,7 +240,7 @@ export const nodeAdapter: LanguageAdapter = {
     // dependency's or a bundled tool's package.json can never masquerade as a project.
     const projects: ProjectInfo[] = [];
     for (const uri of manifests) {
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       if (/(^|\/)(node_modules|\.vscode-test)\//.test(rel)) {
         continue;
       }

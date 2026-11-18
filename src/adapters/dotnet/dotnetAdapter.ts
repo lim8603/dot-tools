@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { dirname, join } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
+import { projectRelPath } from '../../core/projectPath';
 import {
   ChipItem,
   DiagnosticProbe,
@@ -230,7 +231,7 @@ export const dotnetAdapter: LanguageAdapter = {
     // the filename (fast, no dotnet call); AssemblyName is read lazily for build output.
     const projects: ProjectInfo[] = [];
     for (const uri of manifests) {
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       if (/(^|\/)(bin|obj)\//.test(rel)) {
         continue; // generated project files under bin/obj are not real projects
       }

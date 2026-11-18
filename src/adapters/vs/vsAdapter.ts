@@ -1,5 +1,6 @@
 import { basename, dirname, join } from 'node:path';
 import * as vscode from 'vscode';
+import { folderRelative, projectRelPath } from '../../core/projectPath';
 import { DevSwitcherError } from '../../core/errors';
 import { ensureExtension } from '../../core/ensureExtension';
 import { excludeGlob } from '../../core/workspaceExclude';
@@ -58,7 +59,7 @@ function isSolution(project: ProjectInfo): boolean {
  */
 function solutionDirOf(project: ProjectInfo): string | undefined {
   if (project.parentId?.startsWith('vs:')) {
-    const rel = project.parentId.slice('vs:'.length);
+    const rel = folderRelative(project.parentId.slice('vs:'.length), project.workspaceFolder);
     return dirname(join(project.workspaceFolder.uri.fsPath, rel));
   }
   return undefined;
@@ -67,7 +68,7 @@ function solutionDirOf(project: ProjectInfo): string | undefined {
 /** The owning solution's path for a member .vcxproj (parentId is `vs:<rel to sln>`). */
 function solutionPathOf(project: ProjectInfo): string | undefined {
   if (project.parentId?.startsWith('vs:')) {
-    return join(project.workspaceFolder.uri.fsPath, project.parentId.slice('vs:'.length));
+    return join(project.workspaceFolder.uri.fsPath, folderRelative(project.parentId.slice('vs:'.length), project.workspaceFolder));
   }
   return undefined;
 }
@@ -216,7 +217,7 @@ export const vsAdapter: LanguageAdapter = {
       if (!kind || !folder) {
         continue;
       }
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       if (!candidates.has(rel)) {
         candidates.set(rel, { uri, folder, kind });
       }
@@ -226,7 +227,7 @@ export const vsAdapter: LanguageAdapter = {
     // search from walking them (R-5).
     const markers = await vscode.workspace.findFiles('**/CMakeCache.txt', excludeGlob());
     const markerDirs = markers.map((uri) => {
-      const rel = vscode.workspace.asRelativePath(uri, false).replace(/\\/g, '/');
+      const rel = projectRelPath(uri); // folder-prefixed in multi-root (ADR-025)
       const idx = rel.lastIndexOf('/');
       return idx === -1 ? '' : rel.slice(0, idx);
     });
