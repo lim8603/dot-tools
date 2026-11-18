@@ -2,6 +2,9 @@ import { strict as assert } from 'node:assert';
 import {
   assembleNodeArgs,
   buildNodeDebugConfig,
+  escapeCmdShimArg,
+  escapePosixArg,
+  nodeShellCommand,
   nodeProjectName,
   packageManagerFromLockfile,
   parseScripts,
@@ -98,5 +101,36 @@ describe('buildNodeDebugConfig', () => {
       skipFiles: ['<node_internals>/**'],
       sourceMaps: true,
     });
+  });
+});
+
+describe('nodeShellCommand (R-1, ADR-023)', () => {
+  it('pins cmd.exe on Windows and double-escapes for the .cmd shim', () => {
+    const { executable, shellArgs, commandLine } = nodeShellCommand('npm', ['run', 'start', '--', 'a|b'], 'win32', 'C:\\Windows\\system32\\cmd.exe');
+    assert.equal(executable, 'C:\\Windows\\system32\\cmd.exe');
+    assert.deepEqual(shellArgs, ['/d', '/s', '/c']);
+    assert.equal(commandLine, '"npm ^^^"run^^^" ^^^"start^^^" ^^^"--^^^" ^^^"a^^^|b^^^""');
+  });
+
+  it('falls back to cmd.exe when ComSpec is unset', () => {
+    assert.equal(nodeShellCommand('npm', [], 'win32').executable, 'cmd.exe');
+  });
+
+  it('pins /bin/sh elsewhere and single-quotes every token', () => {
+    const { executable, shellArgs, commandLine } = nodeShellCommand('pnpm', ['run', "it's", ''], 'linux');
+    assert.equal(executable, '/bin/sh');
+    assert.deepEqual(shellArgs, ['-c']);
+    assert.equal(commandLine, `'pnpm' 'run' 'it'\\''s' ''`);
+  });
+
+  it('escapeCmdShimArg applies MSVCRT quoting before the caret escapes', () => {
+    // backslashes before a quote double and the quote is escaped; a trailing backslash doubles
+    assert.equal(escapeCmdShimArg('a\\"b'), '^^^"a\\\\\\^^^"b^^^"'); // 1 backslash → 2, plus the quote's own escape
+    assert.equal(escapeCmdShimArg('dir\\'), '^^^"dir\\\\^^^"');
+    assert.equal(escapeCmdShimArg('%PATH%'), '^^^"^^^%PATH^^^%^^^"');
+  });
+
+  it('escapePosixArg survives embedded single quotes', () => {
+    assert.equal(escapePosixArg("a'b"), `'a'\\''b'`);
   });
 });

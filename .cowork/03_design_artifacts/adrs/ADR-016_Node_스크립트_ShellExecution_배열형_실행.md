@@ -7,7 +7,7 @@
 Node.js / TypeScript 어댑터(MS-016)의 build/run Task는 **배열형 `ShellExecution`**(`new vscode.ShellExecution(pm, args, options)`)으로 npm 스크립트를 실행한다. 기존 5개 언어가 쓰는 `ProcessExecution`(셸 無, NFR-002)이 아니라 **셸을 경유**하는데, npm/pnpm/yarn이 Windows에서 `.cmd` 심(shim)이라 셸 없이는 spawn 불가하기 때문이다(Node 24는 `.cmd`의 셸-less spawn을 `EINVAL`로 거부 — CVE-2024-27980 완화책). 배열형 ShellExecution은 **인자를 VSCode가 개별 인용**하므로 셸 인젝션 표면이 없어, NFR-002의 실질 보안 목표(인젝션 차단)를 인자 배열 인용으로 보존한다. 따라서 이 결정은 **NFR-002의 문서화된 예외**이며 NFR-002a(빌드 전/후 이벤트의 ShellExecution 허용)와 같은 성격이다.
 
 ## 상태
-`Accepted`
+`Accepted` — **인용 방식은 ADR-023으로 대체(2026-11-18)**. 배열형 인자 인용이 주입을 막는다는 아래 판단은 실측으로 틀린 것으로 확인됐다(`a|b` 파이프 · `%PATH%`/`$HOME` 확장). 셸 경유 이유(`.cmd` 심 · Node 24 EINVAL)는 유효.
 
 ## 날짜
 2026-08-17

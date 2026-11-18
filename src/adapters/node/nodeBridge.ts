@@ -270,3 +270,47 @@ export class NodeBridge {
     }
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shell command line for `<pm> run <script> -- <args>` (R-1, ADR-016 revised). The package
+// manager is a `.cmd` shim on Windows, so a shell is unavoidable; which shell VS Code would
+// pick depends on the user's terminal profile, and its per-argument quoting was measured to
+// let `a|b` pipe, `$HOME`/`%PATH%` expand and quotes break. So the extension pins the shell
+// (cmd.exe on Windows, /bin/sh elsewhere) and escapes the whole line itself.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** cmd.exe metacharacters, escaped with `^` (the cross-spawn rule npm tooling relies on). */
+const CMD_META = /([()\][%!^"`<>&|;, *?])/g;
+
+/**
+ * One argument for a command line that cmd.exe parses and then hands to a `.cmd` shim:
+ * MSVCRT quoting (backslashes before a quote doubled, the quote escaped, the whole wrapped
+ * in quotes), then every cmd metacharacter `^`-escaped — twice, because the shim's own cmd
+ * parses the line once more.
+ */
+export function escapeCmdShimArg(arg: string): string {
+  let quoted = arg.replace(/(\\*)"/g, '$1$1\\"'); // backslashes before a quote double, quote escaped
+  quoted = quoted.replace(/(\\*)$/, '$1$1'); // trailing backslashes double (a quote follows)
+  quoted = `"${quoted}"`;
+  return quoted.replace(CMD_META, '^$1').replace(CMD_META, '^$1');
+}
+
+/** One argument for /bin/sh: single-quoted, an embedded `'` closed, escaped and reopened. */
+export function escapePosixArg(arg: string): string {
+  return `'${arg.replace(/'/g, `'\\''`)}'`;
+}
+
+/** The pinned shell and the escaped command line for `command args…` on this platform. */
+export function nodeShellCommand(
+  command: string,
+  args: readonly string[],
+  platform: NodeJS.Platform,
+  comSpec?: string,
+): { executable: string; shellArgs: string[]; commandLine: string } {
+  if (platform === 'win32') {
+    const line = [command.replace(CMD_META, '^$1'), ...args.map(escapeCmdShimArg)].join(' ');
+    // /d: no AutoRun; /s /c "<line>": cmd strips exactly the outer quotes and runs the rest.
+    return { executable: comSpec || 'cmd.exe', shellArgs: ['/d', '/s', '/c'], commandLine: `"${line}"` };
+  }
+  return { executable: '/bin/sh', shellArgs: ['-c'], commandLine: [command, ...args].map(escapePosixArg).join(' ') };
+}

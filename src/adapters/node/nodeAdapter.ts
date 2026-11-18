@@ -16,6 +16,7 @@ import {
   PACKAGE_MANAGERS,
   PackageManager,
   assembleNodeArgs,
+  nodeShellCommand,
   buildNodeDebugConfig,
   nodeProjectName,
   parseScripts,
@@ -70,7 +71,12 @@ function makeNodeTask(action: 'build' | 'run', project: ProjectInfo, sel: Select
   const pm = resolvePackageManager(sel);
   const script = action === 'build' ? BUILD_SCRIPT : (scriptOf(sel) ?? 'start');
   const args = assembleNodeArgs(script, action === 'run' ? (config.runArgs ?? []) : []);
-  const execution = new vscode.ShellExecution(pm, args, {
+  // The shell is pinned and the line escaped here, not left to VS Code's per-argument
+  // quoting under whatever shell the user's profile picks (R-1, ADR-016 revised).
+  const { executable, shellArgs, commandLine } = nodeShellCommand(pm, args, process.platform, process.env.ComSpec);
+  const execution = new vscode.ShellExecution(commandLine, {
+    executable,
+    shellArgs,
     cwd: projectDirOf(project),
     env: taskEnv(config),
   });
