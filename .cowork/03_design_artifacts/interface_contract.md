@@ -95,6 +95,7 @@ export interface LanguageAdapter {
   readonly actions: ActionCapabilities;
   readonly chips: ChipDescriptor[];       // 상태바 요구 칩(순서 = 표시 순서, ADR-003)
   readonly manifestGlobs: string[];       // 감지·감시 글롭. 예: ['**/Cargo.toml'] (F1·F17)
+  readonly watchGlobs?: string[];         // 감시 전용 글롭(프로젝트를 만들지 않음). 바뀌면 캐시 무효화. CMake: CMakePresets.json·CMakeUserPresets.json (TASK-068)
   readonly requiredExtensions: string[];  // 필요 확장 ID (F14). 예: ['vadimcn.vscode-lldb']
 
   listProjects(manifests: vscode.Uri[]): Promise<ProjectInfo[]>;              // 글롭 결과 기반(ADR-006)
@@ -121,6 +122,7 @@ export interface LanguageAdapter {
 - **2단계 툴체인(CMake configure+build)**: 동기 `createBuildTask`는 configure를 await할 수 없고 NFR-002가 빌드 셸을 금지하므로, 오버레이 configure는 optional **`prepareInvocation`**(비동기)에서 수행하고 build Task는 `cmake --build` 단일 명령으로 둔다(ADR-014). 타깃·실행경로는 CMake File API(codemodel-v2)의 `artifacts`로 해석(경로 추측 금지, KB #8).
 - **run이 빌드를 요구하는 경우(`ActionCapabilities.runRequiresBuild`)**: cargo `run`처럼 단일 명령이 없는 어댑터(CMake)는 run이 산출물 실행이라 **오케스트레이터가 run 전에 build**를 돌린다(TASK-035). 동기 run Task는 `prepareInvocation`이 데운 캐시에서 실행 경로를 읽는다.
 - **프로젝트별 칩 대체(`ChipDescriptor.appliesTo`)**: 칩의 표시 여부를 프로젝트별로 결정한다. 오케스트레이터가 렌더 전 각 칩의 `appliesTo`를 해소해 숨김 집합을 만들고, 상태바 렌더·필수 칩 프롬프트(E4)·기본값 시딩에서 숨김 칩을 건너뛴다. CMake는 `CMakePresets.json` 유무로 **Preset 칩 ↔ profile/architecture 칩**을 상호 배타 노출한다(TASK-041). 프리셋 활성 시 `cmake --preset <name>`가 컴파일러+제너레이터+빌드타입을 인코딩(configure는 프리셋의 `binaryDir`로, `--config` 생략)하고, target 칩·디버거 자동판별(File API)은 그대로 재사용한다. 프리셋 파일은 읽기 전용(ADR-013). UI는 `appliesTo` 결과만 알 뿐 프리셋 존재를 모른다(BR-003).
+  - **프리셋 해석 = cmake가 보는 그대로(TASK-067, cmake-presets(7))**: `CMakeUserPresets.json`(→ `CMakePresets.json` 암묵 포함)과 `include`된 모든 파일을 재귀로 읽는다(포함 파일 기준 상대경로·매크로 확장, 중복은 1회, 순환은 중단). 목록 순서 = `cmake --list-presets`(User 먼저, 파일 자기 프리셋 → include 깊이우선). `condition`은 호스트 기준 평가(상속, `null`은 비상속) — **평가할 수 없는 조건은 보이게 둔다**(cmake가 거절 메시지를 내는 쪽이 조용히 숨기는 쪽보다 안전). `binaryDir`는 상속 해소 후 매크로(`${sourceDir}`·`${fileDir}` v12 규칙·`$env`·`$penv` 등)를 펼쳐 절대경로로 쓰고, 선언이 없으면 `<src>/build/<name>`에 `cmake --preset <name> -B`로 맞춘다(소스 트리 안 configure 방지).
 - **디버거 확장은 정적이 아니라 동적일 수 있다**: CMake 디버거는 컴파일러(File API `toolchains`)에서 자동판별되므로 `requiredExtensions`(정적)가 아니라 **`createDebugConfig` 안에서 판별된 확장을 `ensureExtension`** 한다. 자동판별+override(설정)로 cpptools/CodeLLDB를 고르며 빌드/실행은 확장 무의존(ADR-009/ADR-014).
 - Task는 `ProcessExecution`(배열 인자)로 만든다 — 셸 이스케이프 차단(NFR-002).
 - 경로·파일 접근은 `vscode.Uri` 기반, OS 경로 형식 가정 금지 — 원격 안전(ADR-008).

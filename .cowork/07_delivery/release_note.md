@@ -9,8 +9,8 @@
 | 항목 | 내용 |
 | --- | --- |
 | 프로젝트 | DevSwitcher Tools (`devswitcher-tools`) |
-| 버전 | v1.3.2 (Marketplace·GitHub 배포 완료) |
-| 릴리즈 일자 | 2026-09-20 |
+| 버전 | v1.3.3 (배포 준비) |
+| 릴리즈 일자 | 2026-11-18 |
 | 기준 문서 | `CHANGELOG.md`(영문 원본) · `.cowork/04_implementation/milestone_registry.md` |
 
 ---
@@ -29,6 +29,7 @@
 
 | 버전 | 일자 | 핵심 | 관련 Milestone |
 | --- | --- | --- | --- |
+| v1.3.3 | 2026-11-18 | CMake 프리셋 include·condition 지원 + 코드리뷰 결함 수정(자동 갱신·CMake 재구성·삭제 가드·Run Group·Rust/Go/Python·Run args·프로필 검증). Breaking Change 없음 | 유지보수 패치 |
 | v1.3.2 | 2026-09-20 | Windows Cargo metadata의 드라이브 문자 대소문자 혼재로 생기는 프로젝트 중복 제거. 기존 ID·저장 선택·실행 경로 유지. | 유지보수 패치 |
 | v1.3.1 | 2026-08-28 | scan.exclude 폴더 스코프 수정 | 유지보수 패치 |
 | v1.3.0 | 2026-08-26 | Clean·빌드 트리 삭제·스캔 제외·probe 개선 | MS-023 |

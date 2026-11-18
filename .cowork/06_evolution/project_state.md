@@ -82,7 +82,12 @@
 | 항목 | 상태 / 다음 액션 | 출처 |
 |---|---|---|
 | v1.3.2 실사용 확인 | 업데이트·Reload Window 후 사용자 프로젝트 목록 확인. 자동 회귀 검증·게시 완료 | #022 |
-| 성능·품질 코드리뷰 | 다음 범위 결정 시 검토 | #018~021 |
+| ~~성능·품질 코드리뷰~~ | **해소(#023, TASK-068)** — 36건 중 18건 v1.3.3 반영. 이월분은 아래 R-* | #018~021 → #023 |
+| **R-1 Node 인자 인용 실측(보안)** | 배열형 ShellExecution이 공백 없는 `&`·`|`·`%VAR%`를 인용하지 않는다는 지적(ADR-016 전제). runArg `x&echo PWNED`로 셸별 실측 → 필요 시 `ShellQuoting.Strong`. pnpm/yarn `--` 전달도 함께 | #023 리뷰 C6 |
+| **R-2 CMake 구성 일관성(설계)** | Target 칩 listItems가 선택 preset·오버레이를 모름(첫 빌드 `-A` 불일치 실측) · 지운 `-D`/`-A`가 캐시에 남음(플랫폼별 빌드 폴더) · configure에 env 오버레이 미반영 · configure stderr 미노출 | #023 리뷰 B2·B7·B8·B9 |
+| **R-3 멀티루트 프로젝트 id 충돌** | `asRelativePath(uri,false)`라 폴더마다 루트 매니페스트가 같은 id. 저장 id 마이그레이션 → ADR 필요. 멀티루트 통합 테스트와 함께 | #023 리뷰 C4·B10 |
+| R-4 어댑터 소결함 | Node 모노레포 lockfile·`packageManager` 감지 · RUSTFLAGS 공백 경로/config 덮어쓰기 · dotnet Optimize 기본값(값 형태 결정) · VS 솔루션 clean 플랫폼명 | #023 리뷰 C7·C10·C11·B11 |
+| R-5 core·UI | refresh/renderActive 경쟁(세대 카운터) · 설정 패널 이중 postState·입력 유실 · 그룹 멤버 경로 빌드 이벤트 누락(정책) · 가져온 pre/post-build 명령 확인 UI · 폴더 추가 시 재스캔 · 스캔 직렬/File API 반복 파싱 | #023 리뷰 A6·A9·A10·A11·A12·B12 |
 | 멀티루트 통합 테스트 | 폴더 스코프 회귀 검증 보강 | #021 |
 | 폴더별 RelativePattern 스캔 | 폴더 제외 패턴을 해당 폴더에 한정하는 후속 개선 | #021, D-27a |
 | TC-11 WSL | 기존 Known Issue, 수동 검증 대기 | D-23 |

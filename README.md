@@ -59,7 +59,9 @@ toolchain's own CLI and resolves paths from real build output, so **your `Cargo.
   `RUSTFLAGS`, env…) — the canonical build file is never modified.
 - **CMake presets, first-class.** When a project has `CMakePresets.json`, a **Preset** chip
   replaces the profile/architecture chips and `cmake --preset` drives configure — switch
-  compilers (MSVC ↔ Clang-CL ↔ GCC) by picking a preset.
+  compilers (MSVC ↔ Clang-CL ↔ GCC) by picking a preset. Presets are read the way cmake
+  reads them: `include`d files are followed, `condition`s hide presets that do not apply
+  to this OS, and the list matches `cmake --list-presets`.
 - **Nested CMake projects, Visual-Studio style.** A `project()` root shows its
   `add_subdirectory` directories that declare targets as indented **sub-projects** in the
   switcher and settings. A sub-project builds through the root's build tree, and its

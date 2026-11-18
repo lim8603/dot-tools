@@ -3,6 +3,45 @@
 All notable changes to DevSwitcher Tools are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.3] - 2026-11-18
+
+### Fixed
+
+- **CMake presets that live in an `include`d file were ignored.** A project whose
+  `CMakePresets.json` only includes a shared presets file was treated as having no
+  presets, so it was configured with `cmake -S . -B build` instead of `cmake --preset`.
+  Presets are now read the way cmake reads them: included files are followed (relative to
+  the including file, with macros expanded), `condition`s hide presets that do not apply
+  to this OS, `binaryDir` macros such as `${fileDir}` are expanded, and the Preset list is
+  in `cmake --list-presets` order — your `CMakeUserPresets.json` presets come first.
+- **A CMake preset without `binaryDir` configured inside the source folder.** It is now
+  configured with `-B <source>/build/<preset>`, the folder every other step already used.
+- **Changing a CMake option or platform did not reconfigure an already built tree.** The
+  next build kept the old flags/platform until a Rescan.
+- **Editing a manifest needed a manual Rescan.** A new `[[bin]]`, feature, target
+  framework or preset now shows up when the file is saved. `CMakePresets.json` and
+  `CMakeUserPresets.json` are watched too.
+- **Clean could create the CMake build tree it was asked to clean** (by configuring to
+  pick a default target). Clean no longer asks for a target.
+- **Delete Build Tree could offer a folder that contains the sources** — an in-source
+  preset seen from a nested sub-project, or an output folder of `..`. It is now refused.
+- **Run group: a member started in the same stage as a member that failed to start was
+  left running** and could no longer be stopped from the group.
+- **Run group port readiness ignored services listening on IPv6 `::1` only** (a dev
+  server bound to `localhost`); both loopback addresses are tried now.
+- **Stop did not stop a pre/post-build command**, and stopping during the build that
+  precedes debugging reported "build failed".
+- **Rust examples:** running an `example` target used `--bin` and failed, and debugging
+  one could attach to a different binary. Examples now use `--example`.
+- **Rust workspace members** could build with default features although they were turned
+  off, after a restart. Clean and Delete Build Tree now follow a custom output folder.
+- **Go:** one package with an unresolvable import hid every runnable package.
+- **Python:** the Environment chip now defaults to the project's virtual environment when
+  it has one, and Doctor notices a Python installed after start-up.
+- **Run args** with spaces kept their quotes when edited again on the settings page.
+- **Profile import** rejects an invocation whose fields have the wrong type — a text
+  `preBuild` value used to run as one shell command per character.
+
 ## [1.3.2] - 2026-09-20
 
 ### Fixed
