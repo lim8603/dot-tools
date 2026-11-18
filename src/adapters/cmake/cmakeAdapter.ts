@@ -26,8 +26,9 @@ import {
   cmakeProjectName,
   debuggerFor,
   describeTargetType,
+  loadPresetFiles,
   overlayDefines,
-  parseConfigurePresets,
+  resolveConfigurePresets,
   resolvePresetBinaryDir,
 } from './cmakeBridge';
 
@@ -126,25 +127,26 @@ async function readManifest(uri: vscode.Uri): Promise<string | undefined> {
 
 const presetCache = new Map<string, CMakeConfigurePreset[]>();
 
-/** The uri of a file inside the given absolute dir (remote-safe, ADR-008). */
-function fileUriIn(project: ProjectInfo, dir: string, filename: string): vscode.Uri {
-  const rel = relative(project.workspaceFolder.uri.fsPath, join(dir, filename));
-  return vscode.Uri.joinPath(project.workspaceFolder.uri, ...rel.split(/[\\/]/));
+/** The uri of an absolute path on the project's file system — keeps the workspace folder's
+ *  scheme/authority, so an include outside the folder (`../shared/presets.json`) still
+ *  reads through workspace.fs (remote-safe, ADR-008). */
+function uriOfPath(project: ProjectInfo, absPath: string): vscode.Uri {
+  return project.workspaceFolder.uri.with({ path: vscode.Uri.file(absPath).path });
 }
 
-/** Read + parse the project's configure presets (CMakePresets.json + CMakeUserPresets.json),
- *  cached per source dir. Presets live next to the ROOT CMakeLists — a nested sub-project
- *  configures through its root's tree, so it shares the root's presets (ADR-019). [] when
- *  neither file exists or every preset is hidden. */
+/** Read + resolve the project's configure presets the way cmake does — CMakeUserPresets.json,
+ *  CMakePresets.json and every file they `include`, with `condition` evaluated for this host
+ *  (TASK-067) — cached per source dir. Presets live next to the ROOT CMakeLists — a nested
+ *  sub-project configures through its root's tree, so it shares the root's presets
+ *  (ADR-019). [] when no presets file exists or no preset is visible and enabled. */
 async function readPresetsFor(project: ProjectInfo): Promise<CMakeConfigurePreset[]> {
   const srcDir = rootSrcDirOf(project);
   const cached = presetCache.get(srcDir);
   if (cached) {
     return cached;
   }
-  const main = await readManifest(fileUriIn(project, srcDir, 'CMakePresets.json'));
-  const user = await readManifest(fileUriIn(project, srcDir, 'CMakeUserPresets.json'));
-  const presets = parseConfigurePresets(main, user);
+  const files = await loadPresetFiles(srcDir, (path) => readManifest(uriOfPath(project, path)));
+  const presets = resolveConfigurePresets(files, srcDir);
   presetCache.set(srcDir, presets);
   return presets;
 }

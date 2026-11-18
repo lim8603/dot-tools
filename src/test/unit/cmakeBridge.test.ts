@@ -3,8 +3,11 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdir
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
+  type CMakeConfigurePreset,
   CMakeBridge,
   type CMakeExec,
+  type PresetFileReader,
+  type PresetHost,
   buildArgs,
   classifyManifests,
   cmakeProjectName,
@@ -16,15 +19,16 @@ import {
   hasExecutableCommand,
   hasLibraryCommand,
   hasProjectCommand,
+  loadPresetFiles,
   overlayDefines,
   parseCMakeVersion,
   parseCodemodelConfigs,
-  parseConfigurePresets,
   parseCxxCompilerId,
   parseProjectName,
   parseReplyIndexCodemodel,
   parseTargetInfo,
   readReplyDir,
+  resolveConfigurePresets,
   resolvePresetBinaryDir,
 } from '../../adapters/cmake/cmakeBridge';
 
@@ -366,63 +370,228 @@ describe('debuggerFor', () => {
   });
 });
 
-describe('parseConfigurePresets (TASK-041)', () => {
-  it('reads the visible presets from the real CMakePresets.json fixture', () => {
-    const json = readFileSync(
-      join(process.cwd(), 'src', 'test', 'fixtures', 'cmake', 'presets', 'CMakePresets.json'),
-      'utf8',
-    );
-    const presets = parseConfigurePresets(json);
+/** In-memory presets tree for loadPresetFiles: path → JSON document (or raw text). */
+function memReader(files: Record<string, unknown>): PresetFileReader {
+  const table = new Map(
+    Object.entries(files).map(([path, doc]) => [resolve(path), typeof doc === 'string' ? doc : JSON.stringify(doc)]),
+  );
+  return async (path) => table.get(resolve(path));
+}
+
+const WIN: PresetHost = { platform: 'win32', env: {} };
+const LINUX: PresetHost = { platform: 'linux', env: {} };
+
+/** Load + resolve the presets of `/proj` from an in-memory tree. */
+async function presetsOf(files: Record<string, unknown>, host: PresetHost = WIN): Promise<CMakeConfigurePreset[]> {
+  return resolveConfigurePresets(await loadPresetFiles('/proj', memReader(files), host.platform), resolve('/proj'), host);
+}
+
+describe('configure presets (TASK-041)', () => {
+  it('reads the visible presets from the real CMakePresets.json fixture', async () => {
+    const dir = join(process.cwd(), 'src', 'test', 'fixtures', 'cmake', 'presets');
+    const read: PresetFileReader = async (path) => (existsSync(path) ? readFileSync(path, 'utf8') : undefined);
+    const presets = resolveConfigurePresets(await loadPresetFiles(dir, read), dir, WIN);
     // The hidden `vs-base` template is excluded; the three concrete presets remain in order.
     assert.deepEqual(presets.map((p) => p.name), ['msvc-x64', 'msvc-x86', 'clangcl-x64']);
     assert.equal(presets[0].displayName, 'MSVC x64');
-    // binaryDir is inherited from vs-base with its macros still intact (expanded later).
-    assert.equal(presets[0].binaryDir, '${sourceDir}/out/build/${presetName}');
+    // binaryDir is inherited from vs-base and its macros expanded against the source dir.
+    assert.equal(presets[0].binaryDir, resolve(dir, 'out/build/msvc-x64'));
   });
 
-  it('resolves binaryDir through the inherits chain and excludes hidden bases', () => {
-    const main = JSON.stringify({
-      version: 3,
-      configurePresets: [
-        { name: 'base', hidden: true, binaryDir: '${sourceDir}/b/${presetName}' },
-        { name: 'debug', displayName: 'Debug', inherits: 'base' },
-      ],
+  it('resolves binaryDir through the inherits chain, excludes hidden bases, lists user presets first', async () => {
+    const presets = await presetsOf({
+      '/proj/CMakePresets.json': {
+        version: 3,
+        configurePresets: [
+          { name: 'base', hidden: true, binaryDir: '${sourceDir}/b/${presetName}' },
+          { name: 'debug', displayName: 'Debug', inherits: 'base' },
+        ],
+      },
+      '/proj/CMakeUserPresets.json': { version: 3, configurePresets: [{ name: 'local', inherits: 'debug' }] },
     });
-    const user = JSON.stringify({ version: 3, configurePresets: [{ name: 'local', inherits: 'debug' }] });
-    const presets = parseConfigurePresets(main, user);
-    // hidden `base` excluded; user preset appended after project presets.
-    assert.deepEqual(presets.map((p) => p.name), ['debug', 'local']);
-    assert.equal(presets.find((p) => p.name === 'debug')?.binaryDir, '${sourceDir}/b/${presetName}');
-    // transitive inherit: local → debug → base.
-    assert.equal(presets.find((p) => p.name === 'local')?.binaryDir, '${sourceDir}/b/${presetName}');
+    // cmake --list-presets order: the user file (which implicitly includes the project file) first.
+    assert.deepEqual(presets.map((p) => p.name), ['local', 'debug']);
+    assert.equal(presets.find((p) => p.name === 'debug')?.binaryDir, resolve('/proj', 'b/debug'));
+    // transitive inherit: local → debug → base, with ${presetName} = the preset being used.
+    assert.equal(presets.find((p) => p.name === 'local')?.binaryDir, resolve('/proj', 'b/local'));
   });
 
-  it('supports an inherits array (first parent that declares binaryDir wins)', () => {
-    const json = JSON.stringify({
-      configurePresets: [
-        { name: 'noBin', hidden: true },
-        { name: 'withBin', hidden: true, binaryDir: '${sourceDir}/x' },
-        { name: 'leaf', inherits: ['noBin', 'withBin'] },
-      ],
+  it('supports an inherits array (first parent that declares binaryDir wins)', async () => {
+    const presets = await presetsOf({
+      '/proj/CMakePresets.json': {
+        configurePresets: [
+          { name: 'noBin', hidden: true },
+          { name: 'withBin', hidden: true, binaryDir: '${sourceDir}/x' },
+          { name: 'leaf', inherits: ['noBin', 'withBin'] },
+        ],
+      },
     });
-    assert.equal(parseConfigurePresets(json).find((p) => p.name === 'leaf')?.binaryDir, '${sourceDir}/x');
+    assert.equal(presets.find((p) => p.name === 'leaf')?.binaryDir, resolve('/proj', 'x'));
   });
 
-  it('guards cyclic inherits and degrades to [] on missing/malformed input', () => {
-    const cyclic = JSON.stringify({ configurePresets: [{ name: 'a', inherits: 'b' }, { name: 'b', inherits: 'a' }] });
-    const presets = parseConfigurePresets(cyclic);
+  it('guards cyclic inherits and degrades to [] on missing/malformed input', async () => {
+    const presets = await presetsOf({
+      '/proj/CMakePresets.json': { configurePresets: [{ name: 'a', inherits: 'b' }, { name: 'b', inherits: 'a' }] },
+    });
     assert.deepEqual(presets.map((p) => p.name), ['a', 'b']);
     assert.equal(presets[0].binaryDir, undefined); // cycle → no binaryDir, no hang
-    assert.deepEqual(parseConfigurePresets(undefined), []);
-    assert.deepEqual(parseConfigurePresets('{ not json'), []);
-    assert.deepEqual(parseConfigurePresets(JSON.stringify({ version: 3 })), []); // no configurePresets key
+    assert.deepEqual(await presetsOf({}), []);
+    assert.deepEqual(await presetsOf({ '/proj/CMakePresets.json': '{ not json' }), []);
+    assert.deepEqual(await presetsOf({ '/proj/CMakePresets.json': { version: 3 } }), []); // no configurePresets key
+  });
+});
+
+describe('configure presets — include + condition (TASK-067)', () => {
+  // The reported layout: a module's CMakePresets.json holds only an include of a shared file.
+  const shared = {
+    '/proj/CMakePresets.json': { version: 6, include: ['../tools/presets/shared.json'] },
+    '/tools/presets/shared.json': {
+      version: 6,
+      configurePresets: [
+        { name: 'base', hidden: true, binaryDir: '${sourceDir}/out/${presetName}' },
+        {
+          name: 'win-msvc',
+          inherits: 'base',
+          condition: { type: 'equals', lhs: '${hostSystemName}', rhs: 'Windows' },
+        },
+        {
+          name: 'linux-gcc',
+          inherits: 'base',
+          condition: { type: 'equals', lhs: '${hostSystemName}', rhs: 'Linux' },
+        },
+      ],
+    },
+  };
+
+  it('follows include relative to the including file and keeps only presets enabled on this host', async () => {
+    const onWindows = await presetsOf(shared, WIN);
+    assert.deepEqual(onWindows.map((p) => p.name), ['win-msvc']);
+    // ${sourceDir} is the project, not the included file's dir.
+    assert.equal(onWindows[0].binaryDir, resolve('/proj', 'out/win-msvc'));
+    assert.deepEqual((await presetsOf(shared, LINUX)).map((p) => p.name), ['linux-gcc']);
+  });
+
+  it('matches `cmake --list-presets` order, null conditions and ${fileDir} (probed on cmake 4.4)', async () => {
+    const presets = await presetsOf({
+      '/proj/CMakePresets.json': {
+        version: 6,
+        include: ['../shared/inc.json'],
+        configurePresets: [{ name: 'own', binaryDir: '${sourceDir}/out/${presetName}' }],
+      },
+      '/shared/inc.json': {
+        version: 6,
+        include: ['inc2.json'],
+        configurePresets: [
+          {
+            name: 'base',
+            hidden: true,
+            binaryDir: '${sourceDir}/out/${presetName}',
+            condition: { type: 'equals', lhs: '${hostSystemName}', rhs: 'Windows' },
+          },
+          { name: 'win', inherits: 'base' },
+          { name: 'lin', binaryDir: 'x', condition: { type: 'equals', lhs: '${hostSystemName}', rhs: 'Linux' } },
+          { name: 'nullc', inherits: 'base', condition: null },
+        ],
+      },
+      '/shared/inc2.json': { version: 6, configurePresets: [{ name: 'deep', binaryDir: '${fileDir}/deepout' }] },
+      '/proj/CMakeUserPresets.json': { version: 6, configurePresets: [{ name: 'mine', inherits: 'win' }] },
+    });
+    assert.deepEqual(presets.map((p) => p.name), ['mine', 'own', 'win', 'nullc', 'deep']);
+    assert.equal(presets.find((p) => p.name === 'deep')?.binaryDir, resolve('/shared', 'deepout'));
+    // A null condition enables the preset and is not inherited: nullc stays on Linux too.
+    const onLinux = await presetsOf(
+      {
+        '/proj/CMakePresets.json': {
+          version: 6,
+          configurePresets: [
+            { name: 'base', hidden: true, condition: { type: 'const', value: false } },
+            { name: 'nullc', inherits: 'base', condition: null },
+            { name: 'child', inherits: 'nullc' },
+            { name: 'off', inherits: 'base' },
+          ],
+        },
+      },
+      LINUX,
+    );
+    assert.deepEqual(onLinux.map((p) => p.name), ['nullc', 'child']);
+  });
+
+  it('reads a file included twice once and stops at an include cycle', async () => {
+    const presets = await presetsOf({
+      '/proj/CMakePresets.json': { version: 6, include: ['a.json', 'b.json'] },
+      '/proj/a.json': { version: 6, include: ['b.json'], configurePresets: [{ name: 'a' }] },
+      '/proj/b.json': { version: 6, include: ['CMakePresets.json'], configurePresets: [{ name: 'b' }] },
+    });
+    assert.deepEqual(presets.map((p) => p.name), ['a', 'b']);
+  });
+
+  it('expands ${fileDir} per the version-12 rule', async () => {
+    const tree = (subVersion: number) => ({
+      '/proj/CMakePresets.json': { version: 6, include: ['sub/base.json'], configurePresets: [{ name: 'd', inherits: 'b' }] },
+      '/proj/sub/base.json': { version: subVersion, configurePresets: [{ name: 'b', hidden: true, binaryDir: '${fileDir}/out' }] },
+    });
+    // < 12: the directory of the file defining the preset being used.
+    assert.equal((await presetsOf(tree(6)))[0].binaryDir, resolve('/proj', 'out'));
+    // ≥ 12: the directory of the file holding the macro.
+    assert.equal((await presetsOf(tree(12)))[0].binaryDir, resolve('/proj/sub', 'out'));
+  });
+
+  it('evaluates every condition type', async () => {
+    const host: PresetHost = { platform: 'linux', env: { CI: 'true', HOME: '/home/u' } };
+    const presets = await presetsOf(
+      {
+        '/proj/CMakePresets.json': {
+          version: 6,
+          configurePresets: [
+            { name: 'bool-off', condition: false },
+            { name: 'in-list', condition: { type: 'inList', string: '${hostSystemName}', list: ['Darwin', 'Linux'] } },
+            { name: 'not-in-list', condition: { type: 'notInList', string: '${hostSystemName}', list: ['Linux'] } },
+            { name: 'matches', condition: { type: 'matches', string: '${sourceDirName}', regex: '^pr' } },
+            { name: 'not-matches', condition: { type: 'notMatches', string: '${presetName}', regex: 'not' } },
+            {
+              name: 'any',
+              condition: {
+                type: 'anyOf',
+                conditions: [{ type: 'const', value: false }, { type: 'equals', lhs: '$penv{CI}', rhs: 'true' }],
+              },
+            },
+            {
+              name: 'all-off',
+              condition: { type: 'allOf', conditions: [true, { type: 'notEquals', lhs: '$env{HOME}', rhs: '/home/u' }] },
+            },
+            { name: 'not', condition: { type: 'not', condition: { type: 'const', value: false } } },
+            {
+              name: 'env-field',
+              environment: { MODE: 'fast-${presetName}' },
+              condition: { type: 'equals', lhs: '$env{MODE}', rhs: 'fast-env-field' },
+            },
+          ],
+        },
+      },
+      host,
+    );
+    assert.deepEqual(presets.map((p) => p.name), ['in-list', 'matches', 'any', 'not', 'env-field']);
+  });
+
+  it('keeps a preset visible when its condition cannot be evaluated (cmake decides)', async () => {
+    const presets = await presetsOf({
+      '/proj/CMakePresets.json': {
+        version: 6,
+        configurePresets: [
+          { name: 'vendor-macro', condition: { type: 'equals', lhs: '$vendor{x}', rhs: 'y' } },
+          { name: 'bad-regex', condition: { type: 'matches', string: 'a', regex: '(' } },
+          { name: 'unknown-type', condition: { type: 'someday' } },
+        ],
+      },
+    });
+    assert.deepEqual(presets.map((p) => p.name), ['vendor-macro', 'bad-regex', 'unknown-type']);
   });
 });
 
 describe('resolvePresetBinaryDir (TASK-041)', () => {
-  it('expands ${sourceDir} and ${presetName} and resolves against the source dir', () => {
-    const preset = { name: 'msvc-x64', binaryDir: '${sourceDir}/out/build/${presetName}' };
-    assert.equal(resolvePresetBinaryDir(preset, '/proj'), resolve('/proj', 'out/build/msvc-x64'));
+  it('returns the resolved binaryDir as is', () => {
+    const binaryDir = resolve('/proj', 'out/build/msvc-x64');
+    assert.equal(resolvePresetBinaryDir({ name: 'msvc-x64', binaryDir }, '/proj'), binaryDir);
   });
 
   it('falls back to <srcDir>/build/<name> when the preset declares no binaryDir', () => {

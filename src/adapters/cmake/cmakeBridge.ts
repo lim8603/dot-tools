@@ -360,108 +360,490 @@ export function overlayDefines(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CMakePresets.json (TASK-041) — pure parsing. The extension reads CMakePresets.json
-// (+ CMakeUserPresets.json) read-only (ADR-013) and offers each visible configurePreset
-// as the Preset chip; `cmake --preset <name>` then drives configure. The preset encodes
-// compiler + generator + build type, so it replaces the profile/architecture chips.
-// `inherits` is resolved for binaryDir and ${sourceDir}/${presetName} macros are expanded
-// (resolvePresetBinaryDir); all other fields/macros are left to cmake itself.
+// CMakePresets.json (TASK-041, TASK-067) — the extension reads the presets files read-only
+// (ADR-013) and offers each visible, enabled configurePreset as the Preset chip;
+// `cmake --preset <name>` then drives configure. The preset encodes compiler + generator +
+// build type, so it replaces the profile/architecture chips.
+//
+// What cmake itself would see is the contract (cmake-presets(7)):
+// - `include` is followed recursively, relative to the including file. A file reached twice
+//   is read once; an include cycle (which cmake rejects) just stops.
+// - CMakeUserPresets.json implicitly includes CMakePresets.json.
+// - Order matches `cmake --list-presets`: each file's own presets, then its includes depth
+//   first, the user file first.
+// - `condition` is evaluated (inherited; a `null` condition enables and is not inherited).
+//   A condition we cannot evaluate (unknown macro, bad regex) leaves the preset VISIBLE:
+//   cmake then rejects it with its own message, while hiding a preset cmake would accept is
+//   silent breakage.
+// - binaryDir is resolved through `inherits` and its macros expanded to an absolute path.
+// The file I/O is injected (PresetFileReader) so this stays vscode-free and unit-testable.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** A configure preset offered as a Preset-chip item. */
 export interface CMakeConfigurePreset {
   name: string;
   displayName?: string;
-  /** inherits-resolved binaryDir, still holding ${sourceDir}/${presetName} macros (undefined = none). */
+  /** Absolute build tree with macros expanded (undefined = the preset chain declares none). */
   binaryDir?: string;
+}
+
+/** Reads one presets file by absolute path; undefined when absent or unreadable. */
+export type PresetFileReader = (path: string) => Promise<string | undefined>;
+
+/** Host facts the condition / macro evaluator needs — injected so tests can pin them. */
+export interface PresetHost {
+  platform: NodeJS.Platform;
+  env: Record<string, string | undefined>;
 }
 
 interface RawConfigurePreset {
-  name?: string;
-  displayName?: string;
-  binaryDir?: string;
-  hidden?: boolean;
-  inherits?: string | string[];
+  name?: unknown;
+  displayName?: unknown;
+  binaryDir?: unknown;
+  generator?: unknown;
+  hidden?: unknown;
+  inherits?: unknown;
+  condition?: unknown;
+  environment?: unknown;
 }
 
-/** The raw configurePresets array from one presets JSON file (tolerant of malformed input). */
-function rawConfigurePresets(json: string | undefined): RawConfigurePreset[] {
-  if (!json) {
-    return [];
+/** One parsed presets file. */
+export interface PresetFile {
+  /** Absolute path of the file (its dir is `${fileDir}`; includes resolve against it). */
+  path: string;
+  /** Format version (0 when absent) — `${fileDir}` changed meaning at version 12. */
+  version: number;
+  configurePresets: RawConfigurePreset[];
+  include: string[];
+}
+
+/** Parse one presets file's text; undefined when absent or malformed. */
+export function parsePresetFile(path: string, text: string | undefined): PresetFile | undefined {
+  if (!text) {
+    return undefined;
   }
+  let doc: unknown;
   try {
-    const doc = JSON.parse(json) as { configurePresets?: RawConfigurePreset[] };
-    return Array.isArray(doc.configurePresets) ? doc.configurePresets : [];
+    doc = JSON.parse(text);
   } catch {
-    return [];
+    return undefined;
   }
+  if (typeof doc !== 'object' || doc === null) {
+    return undefined;
+  }
+  const { version, configurePresets, include } = doc as Record<string, unknown>;
+  return {
+    path,
+    version: typeof version === 'number' ? version : 0,
+    configurePresets: Array.isArray(configurePresets)
+      ? configurePresets.filter((p): p is RawConfigurePreset => typeof p === 'object' && p !== null)
+      : [],
+    include: Array.isArray(include) ? include.filter((i): i is string => typeof i === 'string' && i !== '') : [],
+  };
+}
+
+/** Identity of a file path for de-duplication (Windows paths are case-insensitive). */
+function pathKey(path: string, platform: NodeJS.Platform): string {
+  const normalized = resolve(path);
+  return platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 /**
- * The visible configure presets from CMakePresets.json (+ CMakeUserPresets.json). `hidden`
- * presets are excluded from the result but still serve as inheritance parents (the common
- * "hidden base" pattern). Each preset's binaryDir is resolved through its `inherits` chain
- * (first parent that declares one wins; cycles are guarded); macro expansion is deferred to
- * resolvePresetBinaryDir. User presets are appended after project presets and may inherit
- * from them. Duplicate names keep the first definition.
+ * Read the project's presets files the way cmake does: CMakeUserPresets.json (which
+ * implicitly includes CMakePresets.json) and every file either one includes, recursively.
+ * Returned in cmake's listing order. [] when the project has no presets file.
  */
-export function parseConfigurePresets(mainJson: string | undefined, userJson?: string): CMakeConfigurePreset[] {
-  const raw = [...rawConfigurePresets(mainJson), ...rawConfigurePresets(userJson)];
-  const byName = new Map<string, RawConfigurePreset>();
-  for (const preset of raw) {
-    if (typeof preset.name === 'string' && !byName.has(preset.name)) {
-      byName.set(preset.name, preset);
+export async function loadPresetFiles(
+  sourceDir: string,
+  read: PresetFileReader,
+  platform: NodeJS.Platform = process.platform,
+): Promise<PresetFile[]> {
+  const files: PresetFile[] = [];
+  const seen = new Set<string>();
+  const visit = async (path: string): Promise<void> => {
+    const key = pathKey(path, platform);
+    if (seen.has(key)) {
+      return; // included again (allowed) or an include cycle (rejected by cmake) — read once
+    }
+    seen.add(key);
+    const file = parsePresetFile(path, await read(path));
+    if (!file) {
+      return;
+    }
+    files.push(file);
+    for (const include of file.include) {
+      await visit(resolve(dirname(path), include));
+    }
+  };
+  await visit(join(sourceDir, 'CMakeUserPresets.json'));
+  await visit(join(sourceDir, 'CMakePresets.json'));
+  return files;
+}
+
+/** CMAKE_HOST_SYSTEM_NAME for a Node platform (`${hostSystemName}`). */
+export function hostSystemName(platform: NodeJS.Platform): string {
+  const names: Partial<Record<NodeJS.Platform, string>> = {
+    win32: 'Windows',
+    linux: 'Linux',
+    darwin: 'Darwin',
+    freebsd: 'FreeBSD',
+    openbsd: 'OpenBSD',
+    netbsd: 'NetBSD',
+    sunos: 'SunOS',
+    aix: 'AIX',
+  };
+  return names[platform] ?? platform;
+}
+
+/** A preset together with the file that defines it. */
+interface PresetEntry {
+  raw: RawConfigurePreset;
+  file: PresetFile;
+}
+
+/** What the macro expander needs for one preset being used. */
+interface MacroScope {
+  sourceDir: string;
+  presetName: string;
+  generator: string | undefined;
+  /** Directory of the file defining the preset being used (`${fileDir}` before version 12). */
+  presetFileDir: string;
+  /** Merged `environment` of the preset chain (null = explicitly unset). */
+  environment: Record<string, string | null>;
+  host: PresetHost;
+}
+
+/** How deep `$env{}` may chase environment values that reference other macros. */
+const MAX_ENV_DEPTH = 8;
+
+/**
+ * Expand cmake preset macros in `text`. `fileDir` is the directory the macro is evaluated
+ * against (the caller applies the version-12 rule). Returns `ok: false` when a macro is
+ * unknown or unresolvable — the text then keeps that macro literally.
+ */
+function expandMacros(
+  text: string,
+  scope: MacroScope,
+  fileDir: string,
+  depth = 0,
+): { text: string; ok: boolean } {
+  let ok = true;
+  const out = text.replace(/\$([A-Za-z]*)\{([^}]*)\}/g, (whole, namespace: string, name: string) => {
+    const value = macroValue(namespace, name, scope, fileDir, depth);
+    if (value === undefined) {
+      ok = false;
+      return whole;
+    }
+    return value;
+  });
+  return { text: out, ok };
+}
+
+function macroValue(
+  namespace: string,
+  name: string,
+  scope: MacroScope,
+  fileDir: string,
+  depth: number,
+): string | undefined {
+  if (namespace === '') {
+    switch (name) {
+      case 'sourceDir':
+        return scope.sourceDir;
+      case 'sourceParentDir':
+        return dirname(scope.sourceDir);
+      case 'sourceDirName':
+        return basename(scope.sourceDir);
+      case 'presetName':
+        return scope.presetName;
+      case 'generator':
+        return scope.generator;
+      case 'hostSystemName':
+        return hostSystemName(scope.host.platform);
+      case 'fileDir':
+        return fileDir;
+      case 'dollar':
+        return '$';
+      case 'pathListSep':
+        return scope.host.platform === 'win32' ? ';' : ':';
+      default:
+        return undefined;
     }
   }
-  const inheritedBinaryDir = (name: string, seen: Set<string>): string | undefined => {
+  if (namespace === 'env' && name !== '') {
+    if (Object.prototype.hasOwnProperty.call(scope.environment, name)) {
+      const value = scope.environment[name];
+      if (value === null) {
+        return ''; // unset by the preset
+      }
+      if (depth >= MAX_ENV_DEPTH) {
+        return undefined; // self-referencing environment — let cmake report it
+      }
+      const expanded = expandMacros(value, scope, fileDir, depth + 1);
+      return expanded.ok ? expanded.text : undefined;
+    }
+    return scope.host.env[name] ?? '';
+  }
+  if (namespace === 'penv' && name !== '') {
+    return scope.host.env[name] ?? '';
+  }
+  return undefined; // $vendor{…} or an unknown namespace
+}
+
+/**
+ * Evaluate a preset `condition`. true/false when decided; undefined when it cannot be
+ * evaluated (the caller keeps such a preset visible — see the section header).
+ */
+function evaluateCondition(condition: unknown, expand: (s: unknown) => string | undefined): boolean | undefined {
+  if (condition === undefined || condition === null) {
+    return true;
+  }
+  if (typeof condition === 'boolean') {
+    return condition;
+  }
+  if (typeof condition !== 'object') {
+    return undefined;
+  }
+  const c = condition as Record<string, unknown>;
+  switch (c.type) {
+    case 'const':
+      return typeof c.value === 'boolean' ? c.value : undefined;
+    case 'equals':
+    case 'notEquals': {
+      const lhs = expand(c.lhs);
+      const rhs = expand(c.rhs);
+      if (lhs === undefined || rhs === undefined) {
+        return undefined;
+      }
+      return (lhs === rhs) === (c.type === 'equals');
+    }
+    case 'inList':
+    case 'notInList': {
+      const str = expand(c.string);
+      if (str === undefined || !Array.isArray(c.list)) {
+        return undefined;
+      }
+      let found = false;
+      for (const item of c.list) {
+        const value = expand(item);
+        if (value === undefined) {
+          return undefined;
+        }
+        if (value === str) {
+          found = true;
+          break; // short-circuit, like cmake
+        }
+      }
+      return found === (c.type === 'inList');
+    }
+    case 'matches':
+    case 'notMatches': {
+      const str = expand(c.string);
+      const regex = expand(c.regex);
+      if (str === undefined || regex === undefined) {
+        return undefined;
+      }
+      try {
+        return new RegExp(regex).test(str) === (c.type === 'matches');
+      } catch {
+        return undefined; // a cmake regex JS cannot compile
+      }
+    }
+    case 'anyOf':
+    case 'allOf': {
+      if (!Array.isArray(c.conditions)) {
+        return undefined;
+      }
+      const decisive = c.type === 'anyOf'; // anyOf stops at true, allOf at false
+      let unknown = false;
+      for (const sub of c.conditions) {
+        if (sub === null) {
+          return undefined; // sub-conditions may not be null
+        }
+        const result = evaluateCondition(sub, expand);
+        if (result === decisive) {
+          return decisive;
+        }
+        if (result === undefined) {
+          unknown = true;
+        }
+      }
+      return unknown ? undefined : !decisive;
+    }
+    case 'not': {
+      if (c.condition === null) {
+        return undefined;
+      }
+      const result = evaluateCondition(c.condition, expand);
+      return result === undefined ? undefined : !result;
+    }
+    default:
+      return undefined;
+  }
+}
+
+/** The parents named by a preset's `inherits` (string or array). */
+function parentsOf(raw: RawConfigurePreset): string[] {
+  if (typeof raw.inherits === 'string') {
+    return [raw.inherits];
+  }
+  return Array.isArray(raw.inherits) ? raw.inherits.filter((p): p is string => typeof p === 'string') : [];
+}
+
+/**
+ * The visible, enabled configure presets of `files` (from loadPresetFiles), in order.
+ * `hidden` presets are excluded but still serve as inheritance parents. Inherited fields
+ * follow cmake: the preset's own value, else the first parent (in `inherits` order) that
+ * has one; cyclic inherits are guarded. Duplicate names keep the first definition.
+ */
+export function resolveConfigurePresets(
+  files: PresetFile[],
+  sourceDir: string,
+  host: PresetHost = { platform: process.platform, env: process.env },
+): CMakeConfigurePreset[] {
+  const entries: PresetEntry[] = [];
+  const byName = new Map<string, PresetEntry>();
+  for (const file of files) {
+    for (const raw of file.configurePresets) {
+      if (typeof raw.name !== 'string' || byName.has(raw.name)) {
+        continue;
+      }
+      const entry = { raw, file };
+      entries.push(entry);
+      byName.set(raw.name, entry);
+    }
+  }
+
+  /** First entry in the inherits chain (self first) whose field passes `has`. */
+  const findInChain = (
+    name: string,
+    has: (raw: RawConfigurePreset) => boolean,
+    seen = new Set<string>(),
+  ): PresetEntry | undefined => {
     if (seen.has(name)) {
       return undefined; // cyclic inherits — stop
     }
     seen.add(name);
-    const preset = byName.get(name);
-    if (!preset) {
+    const entry = byName.get(name);
+    if (!entry) {
       return undefined;
     }
-    if (typeof preset.binaryDir === 'string' && preset.binaryDir) {
-      return preset.binaryDir;
+    if (has(entry.raw)) {
+      return entry;
     }
-    const parents =
-      preset.inherits === undefined ? [] : Array.isArray(preset.inherits) ? preset.inherits : [preset.inherits];
-    for (const parent of parents) {
-      const found = inheritedBinaryDir(parent, seen);
+    for (const parent of parentsOf(entry.raw)) {
+      const found = findInChain(parent, has, seen);
       if (found) {
         return found;
       }
     }
     return undefined;
   };
+
+  /** The effective condition: own (null included), else the first parent's non-null one. */
+  const conditionOf = (name: string, seen = new Set<string>()): { condition: unknown; entry: PresetEntry } | undefined => {
+    if (seen.has(name)) {
+      return undefined;
+    }
+    seen.add(name);
+    const entry = byName.get(name);
+    if (!entry) {
+      return undefined;
+    }
+    if (entry.raw.condition !== undefined) {
+      return { condition: entry.raw.condition, entry };
+    }
+    for (const parent of parentsOf(entry.raw)) {
+      const found = conditionOf(parent, seen);
+      if (found && found.condition !== null) {
+        return found; // a parent's null condition is not inherited
+      }
+    }
+    return undefined;
+  };
+
+  /** Merged environment: parents (earlier in `inherits` wins), then the preset's own. */
+  const environmentOf = (name: string, seen = new Set<string>()): Record<string, string | null> => {
+    if (seen.has(name)) {
+      return {};
+    }
+    seen.add(name);
+    const entry = byName.get(name);
+    if (!entry) {
+      return {};
+    }
+    const merged: Record<string, string | null> = {};
+    for (const parent of [...parentsOf(entry.raw)].reverse()) {
+      Object.assign(merged, environmentOf(parent, new Set(seen)));
+    }
+    const own = entry.raw.environment;
+    if (typeof own === 'object' && own !== null) {
+      for (const [key, value] of Object.entries(own as Record<string, unknown>)) {
+        if (typeof value === 'string' || value === null) {
+          merged[key] = value;
+        }
+      }
+    }
+    return merged;
+  };
+
+  /** `${fileDir}` for a macro defined in `definer` while `scope`'s preset is used. */
+  const fileDirFor = (definer: PresetEntry, scope: MacroScope): string =>
+    definer.file.version >= 12 ? dirname(definer.file.path) : scope.presetFileDir;
+
   const presets: CMakeConfigurePreset[] = [];
-  const emitted = new Set<string>();
-  for (const preset of raw) {
-    if (typeof preset.name !== 'string' || preset.hidden === true || emitted.has(preset.name)) {
+  for (const entry of entries) {
+    const name = entry.raw.name as string;
+    if (entry.raw.hidden === true) {
       continue;
     }
-    emitted.add(preset.name);
+    const generatorEntry = findInChain(name, (raw) => typeof raw.generator === 'string');
+    const scope: MacroScope = {
+      sourceDir,
+      presetName: name,
+      generator: generatorEntry?.raw.generator as string | undefined,
+      presetFileDir: dirname(entry.file.path),
+      environment: environmentOf(name),
+      host,
+    };
+
+    const condition = conditionOf(name);
+    if (condition) {
+      const fileDir = fileDirFor(condition.entry, scope);
+      const expand = (value: unknown): string | undefined => {
+        if (typeof value !== 'string') {
+          return undefined;
+        }
+        const expanded = expandMacros(value, scope, fileDir);
+        return expanded.ok ? expanded.text : undefined;
+      };
+      if (evaluateCondition(condition.condition, expand) === false) {
+        continue; // disabled on this host — `cmake --preset` would refuse it
+      }
+    }
+
+    const binaryDirEntry = findInChain(name, (raw) => typeof raw.binaryDir === 'string' && raw.binaryDir !== '');
+    let binaryDir: string | undefined;
+    if (binaryDirEntry) {
+      // An unknown macro stays literal (best effort), as cmake would reject it on configure.
+      const expanded = expandMacros(binaryDirEntry.raw.binaryDir as string, scope, fileDirFor(binaryDirEntry, scope));
+      binaryDir = resolve(sourceDir, expanded.text);
+    }
     presets.push({
-      name: preset.name,
-      displayName: typeof preset.displayName === 'string' ? preset.displayName : undefined,
-      binaryDir: inheritedBinaryDir(preset.name, new Set()),
+      name,
+      displayName: typeof entry.raw.displayName === 'string' ? entry.raw.displayName : undefined,
+      binaryDir,
     });
   }
   return presets;
 }
 
 /**
- * Absolute build directory for a preset: its binaryDir with ${sourceDir}/${presetName}
- * expanded, resolved against the source dir. Falls back to `<srcDir>/build/<name>` when the
- * preset (and its parents) declare no binaryDir — matching cmake's conventional layout.
+ * Absolute build directory for a preset: its resolved binaryDir, else `<srcDir>/build/<name>`
+ * when the preset chain declares none.
  */
 export function resolvePresetBinaryDir(preset: CMakeConfigurePreset, srcDir: string): string {
-  const template = preset.binaryDir ?? '${sourceDir}/build/${presetName}';
-  const expanded = template
-    .replace(/\$\{sourceDir\}/g, srcDir)
-    .replace(/\$\{presetName\}/g, preset.name);
-  return resolve(srcDir, expanded);
+  return preset.binaryDir ?? resolve(srcDir, 'build', preset.name);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
