@@ -1,7 +1,10 @@
 import { strict as assert } from 'node:assert';
+import { resolve } from 'node:path';
 import {
   assembleNodeArgs,
   buildNodeDebugConfig,
+  dirsUpTo,
+  packageManagerFromField,
   escapeCmdShimArg,
   escapePosixArg,
   nodeShellCommand,
@@ -132,5 +135,26 @@ describe('nodeShellCommand (R-1, ADR-023)', () => {
 
   it('escapePosixArg survives embedded single quotes', () => {
     assert.equal(escapePosixArg("a'b"), `'a'\\''b'`);
+  });
+});
+
+describe('package manager detection helpers (R-4)', () => {
+  it('reads corepack packageManager pins', () => {
+    assert.equal(packageManagerFromField('{"packageManager":"pnpm@9.15.0"}'), 'pnpm');
+    assert.equal(packageManagerFromField('{"packageManager":"yarn@4.9.2+sha512.abc"}'), 'yarn');
+    assert.equal(packageManagerFromField('{"packageManager":"bun@1.1.0"}'), undefined);
+    assert.equal(packageManagerFromField('{}'), undefined);
+    assert.equal(packageManagerFromField('not json'), undefined);
+  });
+
+  it('walks from the package folder up to the workspace root, nearest first', () => {
+    const root = resolve('/ws');
+    assert.deepEqual(dirsUpTo(resolve('/ws/packages/app'), root), [
+      resolve('/ws/packages/app'),
+      resolve('/ws/packages'),
+      root,
+    ]);
+    assert.deepEqual(dirsUpTo(root, root), [root]);
+    assert.deepEqual(dirsUpTo(resolve('/elsewhere/app'), root), [resolve('/elsewhere/app')]);
   });
 });

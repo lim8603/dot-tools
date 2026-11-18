@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { dirname, isAbsolute, relative } from 'node:path';
 import { DevSwitcherError } from '../../core/errors';
 
 /**
@@ -313,4 +314,48 @@ export function nodeShellCommand(
     return { executable: comSpec || 'cmd.exe', shellArgs: ['/d', '/s', '/c'], commandLine: `"${line}"` };
   }
   return { executable: '/bin/sh', shellArgs: ['-c'], commandLine: [command, ...args].map(escapePosixArg).join(' ') };
+}
+
+/**
+ * The package manager a package.json pins through corepack's `packageManager` field
+ * (`"pnpm@9.15.0"`, `"yarn@4.9.2+sha…"`), or undefined when absent/unknown.
+ */
+export function packageManagerFromField(packageJsonText: string): PackageManager | undefined {
+  let pkg: unknown;
+  try {
+    pkg = JSON.parse(packageJsonText);
+  } catch {
+    return undefined;
+  }
+  const field = (pkg as { packageManager?: unknown } | null)?.packageManager;
+  if (typeof field !== 'string') {
+    return undefined;
+  }
+  const name = field.split('@')[0];
+  return (PACKAGE_MANAGERS as string[]).includes(name) ? (name as PackageManager) : undefined;
+}
+
+/**
+ * The directories from `start` up to and including `root`, nearest first — where a
+ * monorepo package looks for the lockfile / `packageManager` field its workspace root
+ * holds. Just `[start]` when it is not inside `root`.
+ */
+export function dirsUpTo(start: string, root: string): string[] {
+  const rel = relative(root, start);
+  if (rel.startsWith('..') || isAbsolute(rel)) {
+    return [start];
+  }
+  const dirs: string[] = [];
+  let dir = start;
+  for (;;) {
+    dirs.push(dir);
+    if (relative(root, dir) === '') {
+      return dirs;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      return dirs;
+    }
+    dir = parent;
+  }
 }

@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { applyOption, setBuildEventLines, setRunArgsLine } from '../../core/invocationConfig';
 import type { OptionSpec } from '../../core/types';
+import { CARGO_OPTION_CATALOG } from '../../adapters/cargo/optionCatalog';
 
 function spec(partial: Partial<OptionSpec> & Pick<OptionSpec, 'id' | 'category'>): OptionSpec {
   return {
@@ -81,5 +82,22 @@ describe('setBuildEventLines', () => {
     const next = setBuildEventLines(original, 'postBuild', 'b');
     assert.deepEqual(original, { preBuild: ['a'] });
     assert.deepEqual(next, { preBuild: ['a'], postBuild: ['b'] });
+  });
+});
+
+describe('profile-dependent option defaults (R-4)', () => {
+  const realOptLevel = CARGO_OPTION_CATALOG.find((o) => o.id === 'opt-level')!;
+  const codegenUnits = CARGO_OPTION_CATALOG.find((o) => o.id === 'codegen-units')!;
+
+  it('stores 0 for opt-level — release defaults to 3, so 0 is a real choice', () => {
+    assert.deepEqual(applyOption({}, realOptLevel, '0').compiler, { 'opt-level': '0' });
+  });
+
+  it('"default" leaves opt-level to the profile (nothing stored, nothing injected)', () => {
+    assert.equal(applyOption({ compiler: { 'opt-level': '3' } }, realOptLevel, 'default').compiler, undefined);
+  });
+
+  it('stores 16 codegen units — dev defaults to 256', () => {
+    assert.deepEqual(applyOption({}, codegenUnits, 16).compiler, { 'codegen-units': 16 });
   });
 });

@@ -18,7 +18,7 @@ import {
   buildConfigArgs,
   buildLldbConfig,
   buildProfileList,
-  buildRustflags,
+  cargoOverlayFlags,
   cargoCleanArgs,
   cargoTargetKind,
   CargoTargetKind,
@@ -87,15 +87,31 @@ function activeProfile(sel: Selection): string {
   return typeof sel.values.profile === 'string' ? sel.values.profile : 'dev';
 }
 
-/** Merge the invocation overlay's env + outputDir + linker RUSTFLAGS for a Task. */
+/** Whether RUSTFLAGS reaches cargo from the environment (overlay env or the inherited one). */
+function rustflagsInEnv(config: InvocationConfig): boolean {
+  return config.env?.RUSTFLAGS !== undefined || process.env.RUSTFLAGS !== undefined;
+}
+
+/** The linker / extra-rustflags overlay (R-4): cargo `--config` args, or env when it must. */
+function overlayFlags(config: InvocationConfig): { args: string[]; envRustflags: string } {
+  return cargoOverlayFlags(config.linker ?? {}, config.compiler ?? {}, rustflagsInEnv(config));
+}
+
+/** Overlay args for a build/run: profile options (`--config profile.*`) + linker/rustflags. */
+function overlayArgsFor(sel: Selection, config: InvocationConfig): string[] {
+  return [...buildConfigArgs(config.compiler ?? {}, activeProfile(sel)), ...overlayFlags(config).args];
+}
+
+/** Merge the invocation overlay's env + outputDir (+ extras into an env RUSTFLAGS) for a Task. */
 function taskEnv(config: InvocationConfig): Record<string, string> | undefined {
   const env: Record<string, string> = { ...(config.env ?? {}) };
   if (config.outputDir) {
     env.CARGO_TARGET_DIR = config.outputDir;
   }
-  const rustflags = buildRustflags(config.linker ?? {}, config.compiler ?? {});
-  if (rustflags) {
-    env.RUSTFLAGS = env.RUSTFLAGS ? `${env.RUSTFLAGS} ${rustflags}` : rustflags;
+  const { envRustflags } = overlayFlags(config);
+  if (envRustflags) {
+    const base = env.RUSTFLAGS ?? process.env.RUSTFLAGS ?? '';
+    env.RUSTFLAGS = base ? `${base} ${envRustflags}` : envRustflags;
   }
   return Object.keys(env).length > 0 ? env : undefined;
 }
@@ -107,7 +123,7 @@ function makeCargoTask(
   sel: Selection,
   config: InvocationConfig,
 ): vscode.Task {
-  const overlayArgs = buildConfigArgs(config.compiler ?? {}, activeProfile(sel));
+  const overlayArgs = overlayArgsFor(sel, config);
   const args = assembleCargoArgs(
     action,
     project.name,
@@ -451,7 +467,7 @@ export const cargoAdapter: LanguageAdapter = {
   async resolveExecutable(project, sel, config) {
     // Build with JSON messages and read the artifact path cargo reports (DD-05) —
     // no path guessing. §7.4 leaves the cache warm, so this is fast.
-    const overlayArgs = buildConfigArgs(config.compiler ?? {}, activeProfile(sel));
+    const overlayArgs = overlayArgsFor(sel, config);
     const target = typeof sel.values.target === 'string' ? sel.values.target : undefined;
     // `cargo build` skips examples unless asked; build the selected one so it has an artifact.
     const exampleArgs = target && targetKindOf(project, sel) === 'example' ? ['--example', target] : [];

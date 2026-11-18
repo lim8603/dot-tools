@@ -17,13 +17,16 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     category: 'compiler',
     label: 'Optimization level',
     description:
-      'How much the compiler optimizes. Higher levels produce faster code but slower builds.',
+      'How much the compiler optimizes. Higher levels produce faster code but slower builds. ' +
+      '"default" keeps the profile\'s own level (dev 0, release 3).',
     example: '3',
     injectsAs: 'cargo --config profile.<profile>.opt-level=<value>',
     docUrl: 'https://doc.rust-lang.org/cargo/reference/profiles.html#opt-level',
     type: 'enum',
-    allowedValues: ['0', '1', '2', '3', 's', 'z'],
-    defaultValue: '0',
+    // The real default depends on the profile, so "default" is the unset choice (never
+    // injected); declaring '0' made picking 0 in release a silent no-op (R-4).
+    allowedValues: ['default', '0', '1', '2', '3', 's', 'z'],
+    defaultValue: 'default',
     injection: 'config',
   },
   {
@@ -45,12 +48,14 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     category: 'compiler',
     label: 'Codegen units',
     description:
-      'Parallel code-generation units. Fewer units allow more optimization; more units build faster.',
+      'Parallel code-generation units. Fewer units allow more optimization; more units build ' +
+      'faster. Empty keeps the profile\'s own value (dev 256, release 16).',
     example: '1',
     injectsAs: 'cargo --config profile.<profile>.codegen-units=<value>',
     docUrl: 'https://doc.rust-lang.org/cargo/reference/profiles.html#codegen-units',
+    // No defaultValue: it differs per profile, and a declared 16 made entering 16 in dev a
+    // silent no-op (R-4). Empty = unset.
     type: 'int',
-    defaultValue: 16,
     injection: 'config',
   },
   {
@@ -58,12 +63,13 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     category: 'compiler',
     label: 'Extra rustflags',
     description:
-      'Free-form escape hatch (L-1): raw rustc codegen flags passed through RUSTFLAGS, one ' +
+      'Free-form escape hatch (L-1): raw rustc codegen flags, one ' +
       'flag (with its value) per line — e.g. -C target-cpu=native. Do NOT put these in the ' +
       '"Linker program" field (that field takes only a program name like lld). Applies to the ' +
-      'whole build and forces a full rebuild when changed.',
+      'whole build, is added to the target rustflags your .cargo/config.toml sets, and forces ' +
+      'a full rebuild when changed.',
     example: '-C target-cpu=native',
-    injectsAs: 'RUSTFLAGS=… <flags>',
+    injectsAs: "cargo --config target.'cfg(all())'.rustflags=[<flags>]",
     docUrl: 'https://doc.rust-lang.org/rustc/codegen-options/index.html',
     type: 'stringList',
     injection: 'flag',
@@ -74,7 +80,7 @@ export const CARGO_OPTION_CATALOG: OptionSpec[] = [
     label: 'Linker program',
     description: 'Overrides the linker for the active target.',
     example: 'lld',
-    injectsAs: 'RUSTFLAGS=-C linker=<value>',
+    injectsAs: "cargo --config target.'cfg(all())'.linker=\"<value>\"",
     docUrl: 'https://doc.rust-lang.org/rustc/codegen-options/index.html#linker',
     type: 'string',
     injection: 'flag',

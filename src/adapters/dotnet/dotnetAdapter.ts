@@ -123,12 +123,18 @@ export const dotnetAdapter: LanguageAdapter = {
       id: 'Optimize',
       category: 'compiler',
       label: 'Optimize',
-      description: 'Enables compiler optimizations. On by default in Release, off in Debug.',
+      description:
+        'Enables compiler optimizations. "default" keeps the configuration\'s own setting ' +
+        '(on in Release, off in Debug).',
       example: 'true',
       injectsAs: 'dotnet build -p:Optimize=<value>',
       docUrl: 'https://learn.microsoft.com/dotnet/csharp/language-reference/compiler-options/code-generation#optimize',
-      type: 'bool',
-      defaultValue: false,
+      // A checkbox cannot say "leave it to the configuration", and with defaultValue false
+      // unticking it in Release was dropped as "the default" — Release stayed optimized
+      // (R-4). An earlier stored `true` still reads and injects as 'true'.
+      type: 'enum',
+      allowedValues: ['default', 'true', 'false'],
+      defaultValue: 'default',
       injection: 'flag',
     },
     {

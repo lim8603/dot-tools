@@ -245,8 +245,8 @@ VS2026식 속성을 각 어댑터가 "파일 무편집 주입"으로 어디까�
 | 카테고리 | Rust (cargo) | C++ (cmake) | C# (dotnet) | Python |
 |---|---|---|---|---|
 | **구성 축(=profile)** | dev/release/커스텀 `--profile` | `CMAKE_BUILD_TYPE` / `--config` | `-c Debug/Release` + 커스텀 | — (대신 environment 축, F11) |
-| **컴파일러 옵션** | `--config profile.*` / `RUSTFLAGS` | `-D CMAKE_CXX_FLAGS[_<CFG>]` | `-p:Optimize/LangVersion/DefineConstants` | 해석형 — `-O`/`PYTHONOPTIMIZE` 소수 |
-| **링커** | `--config target.*.linker` / `RUSTFLAGS -C linker=` | `-D CMAKE_EXE_LINKER_FLAGS` | 게시 옵션(`-p:PublishTrimmed/Aot`) | — |
+| **컴파일러 옵션** | `--config profile.*` / `--config target.'cfg(all())'.rustflags`(env에 RUSTFLAGS가 있으면 거기에 덧붙임, R-4) | `-D CMAKE_CXX_FLAGS[_<CFG>]` | `-p:Optimize/LangVersion/DefineConstants` | 해석형 — `-O`/`PYTHONOPTIMIZE` 소수 |
+| **링커** | `--config target.'cfg(all())'.linker` (R-4 — RUSTFLAGS는 프로젝트 rustflags를 대체하고 공백 경로를 쪼갬, 실측) | `-D CMAKE_EXE_LINKER_FLAGS` | 게시 옵션(`-p:PublishTrimmed/Aot`) | — |
 | **출력 위치** | `CARGO_TARGET_DIR` / `--config build.target-dir` | `-B <dir>` / `-D *_OUTPUT_DIRECTORY` | `-o` / `-p:OutputPath` | — |
 | **출력 이름** | `[[bin]].name` (정의 → v2) | 타깃 속성 (정의 → v2) | `-p:AssemblyName` (주입 가능) | — |
 | **환경변수** | Task env | Task env | Task env | Task env (PYTHONPATH 등 핵심) |

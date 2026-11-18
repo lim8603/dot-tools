@@ -488,3 +488,17 @@ export class VsBridge {
     }
   }
 }
+
+/**
+ * The solution platform to hand MSBuild when a member project's platform is used for the
+ * whole solution (R-4). Visual Studio names the 32-bit platform `Win32` in a .vcxproj but
+ * `x86` in the solution, and `/p:Platform=Win32` on a standard .sln fails with MSB4126.
+ * Unchanged when the solution lists the name as is, or when no counterpart exists.
+ */
+export function solutionPlatformFor(projectPlatform: string, solutionPlatforms: readonly string[]): string {
+  if (solutionPlatforms.includes(projectPlatform)) {
+    return projectPlatform;
+  }
+  const counterpart = projectPlatform === 'Win32' ? 'x86' : projectPlatform === 'x86' ? 'Win32' : undefined;
+  return counterpart && solutionPlatforms.includes(counterpart) ? counterpart : projectPlatform;
+}

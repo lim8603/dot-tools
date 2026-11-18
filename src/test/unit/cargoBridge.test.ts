@@ -7,7 +7,7 @@ import {
   buildConfigArgs,
   buildLldbConfig,
   buildProfileList,
-  buildRustflags,
+  cargoOverlayFlags,
   defaultBinTarget,
   featuresToArgs,
   formatFeatureCount,
@@ -220,21 +220,23 @@ describe('buildConfigArgs', () => {
   });
 });
 
-describe('buildRustflags', () => {
-  it('emits -C linker= for the linker option', () => {
-    assert.equal(buildRustflags({ linker: 'lld' }), '-C linker=lld');
-    assert.equal(buildRustflags({}), '');
+describe('cargoOverlayFlags (R-4)', () => {
+  it('passes the linker as one --config value, spaces and backslashes intact', () => {
+    const { args, envRustflags } = cargoOverlayFlags({ linker: 'C:\\Program Files\\LLVM\\bin\\lld-link.exe' }, {}, false);
+    assert.deepEqual(args, ['--config', "target.'cfg(all())'.linker=\"C:\\\\Program Files\\\\LLVM\\\\bin\\\\lld-link.exe\""]);
+    assert.equal(envRustflags, '');
+    assert.deepEqual(cargoOverlayFlags({}, {}, false), { args: [], envRustflags: '' });
   });
 
-  it('appends free-form extra rustflags (from compiler) after the linker flag (L-1)', () => {
-    assert.equal(
-      buildRustflags({ linker: 'lld' }, { rustflags: ['-C target-cpu=native', '-C opt-level=3'] }),
-      '-C linker=lld -C target-cpu=native -C opt-level=3',
-    );
+  it('passes extra rustflags as a config array, split on whitespace like RUSTFLAGS was (L-1)', () => {
+    const { args } = cargoOverlayFlags({}, { rustflags: ['-C target-cpu=native', '  ', '--cfg x'] }, false);
+    assert.deepEqual(args, ['--config', `target.'cfg(all())'.rustflags=["-C", "target-cpu=native", "--cfg", "x"]`]);
   });
 
-  it('emits extra rustflags alone and skips blank entries', () => {
-    assert.equal(buildRustflags({}, { rustflags: ['-C target-cpu=native', '  ', ''] }), '-C target-cpu=native');
+  it('falls back to the env when RUSTFLAGS is already set there (cargo would ignore config rustflags)', () => {
+    const result = cargoOverlayFlags({ linker: 'lld' }, { rustflags: ['-C target-cpu=native'] }, true);
+    assert.deepEqual(result.args, ['--config', `target.'cfg(all())'.linker="lld"`]);
+    assert.equal(result.envRustflags, '-C target-cpu=native');
   });
 });
 

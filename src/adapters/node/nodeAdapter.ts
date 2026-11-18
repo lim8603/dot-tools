@@ -16,6 +16,8 @@ import {
   PACKAGE_MANAGERS,
   PackageManager,
   assembleNodeArgs,
+  dirsUpTo,
+  packageManagerFromField,
   nodeShellCommand,
   buildNodeDebugConfig,
   nodeProjectName,
@@ -120,11 +122,22 @@ async function fileExists(fsPath: string): Promise<boolean> {
   }
 }
 
-/** The package manager to use for a project: the first lockfile that exists, else npm. */
-async function detectPackageManager(projectDir: string): Promise<PackageManager> {
-  for (const { file, pm } of LOCKFILES) {
-    if (await fileExists(join(projectDir, file))) {
-      return pm;
+/**
+ * The package manager to use for a project. From the package's own folder up to the
+ * workspace folder, nearest first: a `packageManager` field (corepack) wins, then the
+ * first lockfile. A pnpm/yarn monorepo keeps both at its root, so stopping at the package
+ * folder used to pick npm for every member. npm when nothing says otherwise.
+ */
+async function detectPackageManager(project: ProjectInfo): Promise<PackageManager> {
+  for (const dir of dirsUpTo(projectDirOf(project), project.workspaceFolder.uri.fsPath)) {
+    const pinned = packageManagerFromField(await readManifestText(join(dir, 'package.json')));
+    if (pinned) {
+      return pinned;
+    }
+    for (const { file, pm } of LOCKFILES) {
+      if (await fileExists(join(dir, file))) {
+        return pm;
+      }
     }
   }
   return 'npm';
@@ -216,7 +229,7 @@ export const nodeAdapter: LanguageAdapter = {
       label: 'Package Manager',
       // npm / pnpm / yarn. Auto-detected from the lockfile (default), overridable here.
       listItems: async () => PACKAGE_MANAGERS.map((pm): ChipItem => ({ id: pm, label: pm })),
-      defaultValue: async (project) => detectPackageManager(projectDirOf(project)),
+      defaultValue: async (project) => detectPackageManager(project),
     },
   ],
 

@@ -178,31 +178,49 @@ export function buildConfigArgs(compiler: Record<string, OptionValue>, profile: 
   return args;
 }
 
+/** A cargo config table that applies to every target (`target.<cfg>`; cargo ≥ 1.99 measured). */
+const ALL_TARGETS_TABLE = "target.'cfg(all())'";
+
+/** The extra-rustflags overlay (L-1) as rustc argv: entries split on whitespace, as RUSTFLAGS did. */
+function extraRustflags(compiler: Record<string, OptionValue>): string[] {
+  const extra = compiler['rustflags'];
+  if (!Array.isArray(extra)) {
+    return [];
+  }
+  return extra.flatMap((flag) => String(flag).split(/\s+/)).filter((token) => token.length > 0);
+}
+
 /**
- * RUSTFLAGS string (space-joined) assembled from the overlay: the linker option
- * (`-C linker=<value>`) plus the free-form `rustflags` escape hatch (L-1, stored under
- * compiler) whose entries are appended verbatim (RUSTFLAGS splits on whitespace, so
- * `-C target-cpu=native` becomes two args). Returns '' when nothing applies.
+ * The linker + extra-rustflags overlay (R-4). Measured on cargo 1.99: the `RUSTFLAGS`
+ * env var used before REPLACES every rustflags the project's `.cargo/config.toml` sets,
+ * and splits `-C linker=C:\Program Files\…` at the space. So:
+ * - the linker goes to `--config target.'cfg(all())'.linker="…"` — one argument however it
+ *   is spelled, and the project's rustflags are left alone;
+ * - extra rustflags go to `--config target.'cfg(all())'.rustflags=[…]`, which cargo joins
+ *   with the project's `target.*.rustflags` (a project using only `build.rustflags` still
+ *   loses those, exactly as with RUSTFLAGS before — never worse);
+ * - when RUSTFLAGS is set in the environment anyway, cargo ignores config rustflags
+ *   entirely, so the extras are returned for appending to it instead.
  */
-export function buildRustflags(
+export function cargoOverlayFlags(
   linker: Record<string, OptionValue>,
-  compiler: Record<string, OptionValue> = {},
-): string {
-  const flags: string[] = [];
+  compiler: Record<string, OptionValue>,
+  rustflagsInEnv: boolean,
+): { args: string[]; envRustflags: string } {
+  const args: string[] = [];
   const linkerValue = linker['linker'];
   if (typeof linkerValue === 'string' && linkerValue.length > 0) {
-    flags.push(`-C linker=${linkerValue}`);
+    args.push('--config', `${ALL_TARGETS_TABLE}.linker=${JSON.stringify(linkerValue)}`);
   }
-  const extra = compiler['rustflags'];
-  if (Array.isArray(extra)) {
-    for (const flag of extra) {
-      const token = String(flag).trim();
-      if (token.length > 0) {
-        flags.push(token);
-      }
-    }
+  const extras = extraRustflags(compiler);
+  if (extras.length === 0) {
+    return { args, envRustflags: '' };
   }
-  return flags.join(' ');
+  if (rustflagsInEnv) {
+    return { args, envRustflags: extras.join(' ') };
+  }
+  args.push('--config', `${ALL_TARGETS_TABLE}.rustflags=[${extras.map((t) => JSON.stringify(t)).join(', ')}]`);
+  return { args, envRustflags: '' };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

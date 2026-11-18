@@ -20,6 +20,7 @@ import {
   manifestStem,
   msbuildBuildArgs,
   parseSolutionConfigurations,
+  solutionPlatformFor,
   parseVcxprojConfigurations,
 } from './vsBridge';
 
@@ -114,6 +115,20 @@ async function metaFor(project: ProjectInfo): Promise<VsProjectMeta> {
   const meta = parseMeta(kind, content);
   metaCache.set(project.manifestPath, meta);
   return meta;
+}
+
+/** The member platform as the owning solution names it (Win32 ↔ x86), read from the .sln. */
+async function solutionPlatformOf(solution: string, projectPlatform: string): Promise<string> {
+  let meta = metaCache.get(solution);
+  if (!meta) {
+    const kind = manifestKind(solution);
+    const content = await readManifest(vscode.Uri.file(solution));
+    if (!content || (kind !== 'sln' && kind !== 'slnx')) {
+      return projectPlatform;
+    }
+    meta = parseMeta(kind, content);
+  }
+  return solutionPlatformFor(projectPlatform, meta.platforms);
 }
 
 /** The active configuration (profile chip), default Debug. */
@@ -287,6 +302,8 @@ export const vsAdapter: LanguageAdapter = {
    */
   async cleanScopes(project, sel) {
     const cfg = `${activeCfg(sel)}|${activePlatform(sel)}`;
+    const solutionCfg = async (solution: string): Promise<string> =>
+      `${activeCfg(sel)}|${await solutionPlatformOf(solution, activePlatform(sel))}`;
     if (isSolution(project)) {
       return [
         {
@@ -310,7 +327,7 @@ export const vsAdapter: LanguageAdapter = {
       scopes.push({
         id: 'all',
         label: `Clean the whole solution`,
-        description: `MSBuild "${basename(solution)}" /t:Clean (${cfg})`,
+        description: `MSBuild "${basename(solution)}" /t:Clean (${await solutionCfg(solution)})`,
         detail: 'Cleans every project in the solution, not just this one.',
       });
     }
@@ -320,10 +337,11 @@ export const vsAdapter: LanguageAdapter = {
   async createCleanTask(project, sel, config, scopeId) {
     const solution = scopeId === 'all' ? solutionPathOf(project) : undefined;
     const manifest = solution ?? project.manifestPath;
+    const platform = solution ? await solutionPlatformOf(solution, activePlatform(sel)) : activePlatform(sel);
     const execution = new vscode.ProcessExecution(
       bridge.peekMsbuild(),
       [
-        ...msbuildBuildArgs(manifest, activeCfg(sel), activePlatform(sel), solutionDirOf(project)),
+        ...msbuildBuildArgs(manifest, activeCfg(sel), platform, solutionDirOf(project)),
         '/t:Clean',
       ],
       { cwd: dirname(project.manifestPath), env: taskEnv(config) },

@@ -13,6 +13,7 @@ import {
   parseSlnProjects,
   parseSlnxProjects,
   parseSolutionConfigurations,
+  solutionPlatformFor,
   parseTargetPathOutput,
   parseVcxprojConfigurations,
   resolveSlnRef,
@@ -337,5 +338,15 @@ describe('VsBridge (exec-injected)', () => {
     assert.equal(bridge.peekTargetPath('a.vcxproj', 'Debug', 'x64'), undefined);
     await bridge.checkToolchain();
     assert.equal(probes, 2); // re-probed after invalidation
+  });
+});
+
+describe('solutionPlatformFor (R-4)', () => {
+  it('maps a member Win32 to the solution x86 (and back), else keeps the name', () => {
+    assert.equal(solutionPlatformFor('Win32', ['x64', 'x86']), 'x86');
+    assert.equal(solutionPlatformFor('x86', ['Win32']), 'Win32');
+    assert.equal(solutionPlatformFor('x64', ['x64', 'x86']), 'x64');
+    assert.equal(solutionPlatformFor('Win32', ['Win32', 'x64']), 'Win32');
+    assert.equal(solutionPlatformFor('ARM64', ['x64']), 'ARM64');
   });
 });
