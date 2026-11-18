@@ -108,3 +108,11 @@
 - 리뷰: URI 정규화는 비교 키에만 적용. 기존 ID·manifestPath·선택·Run Group 저장 계약 무변경. 전체 경로 소문자화 없음.
 - 소비자: 어댑터 목록·계층 정렬·설정 페이지 활성화 통합 테스트 통과. 사용자 dot-probe 화면 자체의 수동 재검증은 미실행.
 - VSIX 15 files, 255.59 KB 생성. 격리 user-data/extensions 경로 설치 성공, `lim8603.devswitcher-tools@1.3.2` 확인. Gate 5(v1.3.2) Pass: 패치 범위 검증·리뷰·릴리즈 문서·설치 스모크 완료. GitHub Release v1.3.2 게시·VSIX 첨부 완료. Marketplace 게시 완료(`vsce publish` DONE). 최초 PAT 인증 실패(TF400813)는 Human이 기존 저장소의 PAT를 새 저장소로 복사한 뒤 재시도하여 해소. TC-11(WSL) 기존 Known Issue 유지.
+
+## v1.3.3 패치 검증 (EV-026, 2026-11-18)
+
+- 대상: TASK-067(CMakePresets include·condition) + TASK-068(전체 코드리뷰 36건 중 18건 반영).
+- 재현·실측: 사용자 레이아웃(`modules/lockfree` → `../tools/presets/*.json` include) 재현 트리에서 수정 전 프리셋 0개 → 수정 후 `["win-msvc"]`. 실제 cmake 4.4와 대조 — 목록·순서 일치(혼합 트리 5개 포함), `cmake --preset` 실행 시 CMakeCache.txt가 계산한 binaryDir(`${fileDir}` 포함)에 생성. Go `go list -e` 유무 실측(풀 수 없는 import 시 exit 1 → 0). 준비 감지 ::1·리스너 테스트는 수정 전 코드에서 실패·수정 후 통과 확인.
+- 검증: tsc·eslint Pass, unit 404 Pass(384→404), 통합 11 Pass + POSIX 전용 1 pending(Windows, VS Code 1.147.0). 새 통합 2건은 워크스페이스 밖·다른 드라이브(C:) 임시 트리에서 Preset 칩 실측.
+- 패키지: `npm run package:vsix`(@vscode/vsce) 15 files, 258.88 KB. 격리 user-data/extensions 설치 성공, `lim8603.devswitcher-tools@1.3.3` 확인, 설치 번들에 수정 문자열(`--example`·`CMakeUserPresets.json`·`hostSystemName`·`::1`·`-e`) 존재 확인.
+- 미확인: 사용자 실제 레포에서의 F5 수동 확인(Preset 칩·빌드), Stop/디버그 흐름의 수동 확인. 이월 리뷰 항목은 project_state R-1~R-5. TC-11(WSL) Known Issue 유지.
