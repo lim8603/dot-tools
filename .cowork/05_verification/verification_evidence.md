@@ -133,3 +133,9 @@
 - 배포: main FF(`92dac37`) · `v1.4.0` 태그 push, GitHub Release v1.4.0 게시 · VSIX 첨부(269,156 bytes), Marketplace 게시(`vsce publish` DONE). Gate 5(v1.4.0) Pass.
 - 미확인: EV-027 미확인 항목 중 수동 4건(설정 패널 입력 보존 · 가져오기 확인 QuickPick · Node 디버그 인자 · VS 솔루션 Clean Win32)과 실사용 2건(CMake `build/<platform>` 재구성 · 멀티루트 저장 상태 이전). TC-11(WSL) Known Issue 유지.
 - 확인됨(Human, 2026-11-19): v1.3.3 프리셋 include 수정이 회사 실제 레포에서 동작.
+- 배포 후 보강(같은 날): 미확인 3건을 통합 테스트로 닫음. 모두 결함을 넣었을 때 실패하는지 확인함(mutation).
+  - VS 솔루션 Clean Win32(`vsSolutionClean.test.ts`): 실제 MSBuild(VS 18). 고치기 전 방식 `w32.sln /p:Platform=Win32` → MSB4126 exit 1 재현, 어댑터가 만든 인자(`/p:Platform=x86`) → exit 0 · 산출물 삭제.
+  - 멀티루트 저장 상태 이전(`integration-multiroot/stateMigration.test.ts`): 실호스트 스캔 결과로 v1.3.x id `node:package.json` → `node:alpha/package.json`(선택값 · 오버레이 · 활성 · 그룹 멤버). 이전 호출을 빼면 실패.
+  - 빌드 이벤트 정책(`buildEventsPolicy.test.ts`): 진짜 Orchestrator · GroupOrchestrator · TaskRunner + 내장 js-debug. Debug = pre → build → post → debug, 그룹 Run 멤버 = pre → run → post, 그룹 Debug 멤버 = pre → build → post → debug. pre-build 호출을 빼면 2건 실패.
+  - 검증: tsc · eslint, unit 428, 통합 단일 18 + 1 pending, 멀티루트 4.
+- 남은 미확인: 설정 패널 입력 보존 · 가져오기 확인 QuickPick 화면. GUI 확인을 시도했으나 SendKeys가 사용자의 다른 VS Code 창으로 들어가 중단(세션 #024 로그).

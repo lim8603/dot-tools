@@ -41,7 +41,7 @@
 
 ## 다음 시작점
 
-1. v1.4.0 실사용 확인 — CMake `build/<platform>` 재구성 · Node Run 인자 · 설정 패널 입력(목록은 project_state 이월 "수동 확인 대기").
+1. v1.4.0 남은 확인(AI 몫) — 설정 패널 입력 보존 · 가져오기 QuickPick 화면. 포커스를 뺏지 않는 방법으로. 목록은 project_state 이월 "확인 대기 (v1.4.0)".
 2. 다음 사이클 결정: MS-018 · INT-002 · 폴더별 RelativePattern 스캔 · TC-11.
 3. 이월 상세는 project_state.md의 이월 백로그 참조.
 
