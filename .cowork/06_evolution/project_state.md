@@ -42,12 +42,11 @@
 
 ### 한 줄 상태
 
-- **세션 #024 (2026-11-19): v1.4.0 게시 완료.** Human 일괄 리뷰 → 결정 3건 권고대로 승인(v1.4.0 · Node 셸 고정 ADR-023 · 빌드 이벤트 정책). `fix/review-backlog` main FF(`92dac37`) · 태그 · GitHub Release · Marketplace. unit 428 · 통합 단일 15 + 멀티루트 3 · 격리 설치 스모크(EV-028). v1.3.3 프리셋 수정은 Human이 회사 레포에서 실사용 확인.
+- **세션 #024 (2026-11-19): v1.4.0 게시 완료.** Human 일괄 리뷰 → 결정 3건 권고대로 승인(v1.4.0 · Node 셸 고정 ADR-023 · 빌드 이벤트 정책). `fix/review-backlog` main FF(`92dac37`) · 태그 · GitHub Release · Marketplace. unit 428 · 통합 단일 15 + 멀티루트 3 · 격리 설치 스모크(EV-028). v1.3.3 프리셋 수정은 Human이 회사 레포에서 실사용 확인. 배포 후 미확인 5건을 통합 테스트로 해소(VS Clean 실 MSBuild · 멀티루트 상태 이전 · 빌드 이벤트 정책 · 설정 패널 입력 보존 헤드리스 Chrome · 가져오기 QuickPick) → 통합 단일 24 + 멀티루트 4. 확인 주체 정정(회사 밖 언어·UI 확인은 AI 몫) · 공유 데스크톱 SendKeys 사고(안티패턴 #24) · `.claude/settings.json` 허용 목록.
 - **세션 #023 (2026-11-18): v1.3.3 게시 + 리뷰 이월 R-1~R-5 처리(미배포).** 후반: Node 인자 `a|b` 명령 주입을 3셸 실측으로 확인해 셸 고정+자체 이스케이프(ADR-023), CMake 칩 조회 문맥·플랫폼별 빌드 폴더(ADR-024), 멀티루트 폴더 접두 id·상태 자동 이전(ADR-025), 어댑터·core·UI 소결함 11건. unit 428·통합 단일 15+멀티루트 3(신설). 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md`. 전반: v1.3.3 게시 완료. 실사용 제보(공유 프리셋 파일만 include하는 모듈이 프리셋 0개 → `cmake -S . -B build`로 추락)를 cmake 규약대로 해석하도록 수정(TASK-067, 실제 cmake 4.4와 목록·순서·binaryDir 대조 일치). 이어 독립 리뷰 3영역 36건 중 18건 반영(TASK-068) — 매니페스트 저장 시 캐시 무효화, 소스 포함 폴더 삭제 거부, 그룹 형제 정리, Clean 무구성, CMake 재구성·`-B`, Cargo example·멤버 캐시, Go `-e`, Python venv, Run args, 프로필 검증, ::1 준비 감지, Stop. unit 404·통합 11. 이월 R-1~R-5.
 - **세션 #022 (2026-09-20): TASK-066 Done, v1.3.2 게시 완료.** Windows Cargo metadata의 D:/d: 혼재로 같은 프로젝트가 중복 표시되는 결함 재현·수정. Uri.fsPath로 비교 키만 통일, 원본 실행 경로·프로젝트 ID 유지. unit 384·통합 9 Pass(POSIX 전용 1 skip), lint·check-types·VSIX 격리 설치 Pass. main/태그 push·GitHub Release·Marketplace 게시 완료. 최초 PAT 실패는 Human의 기존 자격 증명 저장소→새 저장소 복사 후 재시도 성공으로 해소.
+- (#021 v1.3.1 완료 서사 → state_archive.md `#024 이관분`)
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
-
-- **🐛 v1.3.1 게시(2026-08-28, 세션 #021).** Human의 실사용 질문("특정 폴더 제외 어떻게 써?")에서 v1.3.0 기능의 **침묵 결함**이 드러났다 — `devSwitcher.scan.exclude`를 **폴더의 `.vscode/settings.json`에 쓰면 아무 일도 일어나지 않는다**. 원인은 `package.json`에 `scope` 미선언 → VS Code 기본값 `window` → 워크스페이스 폴더 레벨 설정 불가. 오류도 로그도 없고 **호버 툴팁 한 줄**이 전부였다. **D-27**: `scope: "resource"` 선언 + `excludeGlob()`이 **폴더 uri를 리소스 스코프로** 각 폴더 값을 읽어 합집합(선언만으론 부족 — `inspect()`를 리소스 없이 부르면 `workspaceFolderValue`가 계속 undefined). 폴더가 선언한 패턴도 스캔 전역 적용(**D-27a**, 스캔이 전역 `findFiles` 1회이므로). unit **384**·통합 6. **실사용 검증 PASS**(vsix 설치 후 Reload Window 필요). 부수적으로 **CLAUDE.md 컨텍스트 블록이 MS-004 시점에 멈춰 있던 것**을 Human 질문("MS-005는 뭐야?")으로 발견·정정. ▸ 남은 위험: 멀티루트 폴더 스코프는 **자동 테스트가 못 덮는다**(통합 테스트가 싱글루트 호스트).
 
 ### 현재 작업 스트림
 
