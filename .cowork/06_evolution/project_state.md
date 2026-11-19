@@ -16,18 +16,18 @@
 | 팀 규모 | 1인 |
 | 협업 모드 | Active(Task 할당 완료) |
 | 협업 실행 모드 | solo |
-| 현재 Phase | **Evolve** — v1.3.3 Marketplace·GitHub Release 게시 완료(2026-11-18, #023) |
+| 현재 Phase | **Evolve** — v1.4.0 Marketplace·GitHub Release 게시 완료(2026-11-19, #024) |
 | 활성 Intent | **없음** — 유지보수(MS-023까지 완료). INT-001 Closed(v1.0.0, D-23). INT-002(원격·크로스, Draft)는 착수 여부 Human 결정 대기 |
 | 활성 Milestone | **없음** — MS-023(v1.3.0) Done. v1.3.1은 실사용 제보발 패치로 Milestone 미배정. 다음 Milestone은 Human 결정 대기 |
-| 활성 Task | **TASK-069~073 Review** — 리뷰 이월 R-1~R-5 처리 완료, 브랜치 `fix/review-backlog`(미병합·미배포) Human 일괄 리뷰 대기 |
+| 활성 Task | **없음** — TASK-069~073 Done(v1.4.0 배포, #024) |
 | 상태 | Green |
 | 대화 언어 | 한국어 |
 | 작업 문서 언어 | 한국어 |
 | 공식 산출물 문서 언어 | 한국어 |
-| 마지막 갱신일 | 2026-11-18 |
+| 마지막 갱신일 | 2026-11-19 |
 | 마지막 갱신자 | AI |
-| 참조 세션 로그 | session_2026-11-18_023.md |
-| 최신 배포 | **v1.3.3 Marketplace·GitHub Release 완료**(2026-11-18). CMake 프리셋 include·condition 지원 + 코드리뷰 18건 반영. VSIX 258.88 KB |
+| 참조 세션 로그 | session_2026-11-19_024.md |
+| 최신 배포 | **v1.4.0 Marketplace·GitHub Release 완료**(2026-11-19). 리뷰 이월 18건(Node 인자 보안 · CMake 플랫폼별 빌드 폴더 · 멀티루트 id · 빌드 이벤트 정책). VSIX 262.85 KB |
 
 - `프로젝트 유형`: `Greenfield(신규)` / `Brownfield(기존)`
 - `팀 구성`: `1인` / `확정팀` / `사전배분`
@@ -42,6 +42,7 @@
 
 ### 한 줄 상태
 
+- **세션 #024 (2026-11-19): v1.4.0 게시 완료.** Human 일괄 리뷰 → 결정 3건 권고대로 승인(v1.4.0 · Node 셸 고정 ADR-023 · 빌드 이벤트 정책). `fix/review-backlog` main FF(`92dac37`) · 태그 · GitHub Release · Marketplace. unit 428 · 통합 단일 15 + 멀티루트 3 · 격리 설치 스모크(EV-028). v1.3.3 프리셋 수정은 Human이 회사 레포에서 실사용 확인.
 - **세션 #023 (2026-11-18): v1.3.3 게시 + 리뷰 이월 R-1~R-5 처리(미배포).** 후반: Node 인자 `a|b` 명령 주입을 3셸 실측으로 확인해 셸 고정+자체 이스케이프(ADR-023), CMake 칩 조회 문맥·플랫폼별 빌드 폴더(ADR-024), 멀티루트 폴더 접두 id·상태 자동 이전(ADR-025), 어댑터·core·UI 소결함 11건. unit 428·통합 단일 15+멀티루트 3(신설). 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md`. 전반: v1.3.3 게시 완료. 실사용 제보(공유 프리셋 파일만 include하는 모듈이 프리셋 0개 → `cmake -S . -B build`로 추락)를 cmake 규약대로 해석하도록 수정(TASK-067, 실제 cmake 4.4와 목록·순서·binaryDir 대조 일치). 이어 독립 리뷰 3영역 36건 중 18건 반영(TASK-068) — 매니페스트 저장 시 캐시 무효화, 소스 포함 폴더 삭제 거부, 그룹 형제 정리, Clean 무구성, CMake 재구성·`-B`, Cargo example·멤버 캐시, Go `-e`, Python venv, Run args, 프로필 검증, ::1 준비 감지, Stop. unit 404·통합 11. 이월 R-1~R-5.
 - **세션 #022 (2026-09-20): TASK-066 Done, v1.3.2 게시 완료.** Windows Cargo metadata의 D:/d: 혼재로 같은 프로젝트가 중복 표시되는 결함 재현·수정. Uri.fsPath로 비교 키만 통일, 원본 실행 경로·프로젝트 ID 유지. unit 384·통합 9 Pass(POSIX 전용 1 skip), lint·check-types·VSIX 격리 설치 Pass. main/태그 push·GitHub Release·Marketplace 게시 완료. 최초 PAT 실패는 Human의 기존 자격 증명 저장소→새 저장소 복사 후 재시도 성공으로 해소.
 > 현재 프로젝트 상태를 한두 문장으로만 요약한다.
@@ -50,9 +51,9 @@
 
 ### 현재 작업 스트림
 
-- TASK-069~073 Review: 리뷰 이월 R-1~R-5 처리, 브랜치 `fix/review-backlog` 커밋 6개(main 미병합·원격 미푸시·미배포).
-- 검증: unit 428 · 통합 단일 15(+1 pending) · 멀티루트 3 · tsc · eslint. 수동 미확인 항목은 처리 리포트에.
-- 다음: Human 일괄 리뷰 → 결정 3건(버전 v1.4.0 권고 · Node 셸 고정 수용 · 빌드 이벤트 정책 수용) → 병합·패키징·배포.
+- 활성 작업 없음. v1.4.0 배포 완료(TASK-069~073 Done).
+- 남은 것: v1.4.0 수동·실사용 확인 6건(이월 백로그 "수동 확인 대기").
+- 다음 사이클: Human 결정 대기.
 
 ---
 
@@ -61,7 +62,7 @@
 
 | Task ID | 제목 | 담당 | 상태 | 마지막 갱신일 | 다음 액션 |
 |---------|------|------|------|---------------|-----------|
-| TASK-069~073 | 리뷰 이월 R-1~R-5 처리 (ADR-023·024·025) | AI | Review | 2026-11-18 | Human 일괄 리뷰 — 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md` |
+| 없음 | — | — | — | — | 다음 작업 Human 결정 대기(TASK-069~073은 v1.4.0으로 Done) |
 
 > 과거 완료 Task 상세는 task_registry 및 state_archive.md의 #022 하베스트 참조.
 
@@ -72,9 +73,8 @@
 
 ## 다음 시작점
 
-1. **처리 리포트 리뷰(Human):** `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md` → 결정 요청 3건 → 브랜치 `fix/review-backlog` 병합·버전(권고 v1.4.0)·패키징·격리 설치·배포.
-2. **v1.3.3 사용 확인:** 제보 레포(`modules/lockfree`)에서 Preset 칩이 `win-msvc`로 뜨고 `cmake --preset`으로 구성되는지.
-3. 그 뒤 후보(Human 결정): INT-002, TC-11(WSL).
+1. **v1.4.0 실사용 확인(Human):** 업데이트 후 CMake x64 프로젝트가 `build/x64`에서 한 번 다시 구성되는지, Node Run 인자 · 설정 패널 입력이 정상인지. 목록은 이월 "수동 확인 대기".
+2. 그 뒤 후보(Human 결정): MS-018(Run Group 준비 감지) · INT-002(원격·크로스) · 폴더별 RelativePattern 스캔 · TC-11(WSL).
 
 ---
 
@@ -90,8 +90,9 @@
 | ~~R-4 어댑터 소결함~~ — **처리(#023, TASK-070, 미배포)** | Node 모노레포 lockfile·`packageManager` 감지 · RUSTFLAGS 공백 경로/config 덮어쓰기 · dotnet Optimize 기본값(값 형태 결정) · VS 솔루션 clean 플랫폼명 | #023 리뷰 C7·C10·C11·B11 |
 | ~~R-5 core·UI~~ — **처리(#023, TASK-071, 미배포)** | refresh/renderActive 경쟁(세대 카운터) · 설정 패널 이중 postState·입력 유실 · 그룹 멤버 경로 빌드 이벤트 누락(정책) · 가져온 pre/post-build 명령 확인 UI · 폴더 추가 시 재스캔 · 스캔 직렬/File API 반복 파싱 | #023 리뷰 A6·A9·A10·A11·A12·B12 |
 | ~~멀티루트 통합 테스트~~ | **해소(#023)** — 멀티루트 호스트 신설, 폴더 단위 scan.exclude 자동 확인 | #021 → #023 |
-| **리뷰 백로그 처리분 리뷰·릴리즈 결정** | 브랜치 `fix/review-backlog`(커밋 6개) Human 일괄 리뷰 → 병합·버전(권고 v1.4.0: 빌드 폴더·멀티루트 id 동작 변화)·배포. 처리 리포트 `members/Seunghyun/workspace/report_2026-11-18_review-backlog.md` | #023 |
-| 수동 확인 대기 | 설정 패널 입력 보존 · 가져오기 확인 QuickPick · Node 디버그 인자 · VS 솔루션 Clean(Win32) | #023 |
+| ~~리뷰 백로그 처리분 리뷰·릴리즈 결정~~ | **해소(#024)** — 결정 3건 승인, v1.4.0 게시(EV-028) | #023 → #024 |
+| ~~v1.3.3 사용 확인~~ | **해소(#024)** — Human이 회사 레포에서 프리셋 include 수정 동작 확인 | #023 → #024 |
+| 수동 확인 대기 (v1.4.0) | 설정 패널 입력 보존 · 가져오기 확인 QuickPick · Node 디버그 인자 · VS 솔루션 Clean(Win32) · CMake `build/<platform>` 재구성 · 멀티루트 저장 상태 이전 | #023 → #024 |
 | 폴더별 RelativePattern 스캔 | 폴더 제외 패턴을 해당 폴더에 한정하는 후속 개선 | #021, D-27a |
 | TC-11 WSL | 기존 Known Issue, 수동 검증 대기 | D-23 |
 
@@ -136,7 +137,7 @@
 - v1.3.2 배포 완료, TASK-066 Done. Windows Cargo metadata D:/d: 혼재를 Uri.fsPath 비교 키로 해소. ID·실행 경로·저장 스키마 유지.
 - PAT 오류는 `vsce login lim8603`의 이전 저장소→새 저장소 복사로 해소. 토큰 재발급 없이 재게시 성공.
 - 실제 사용자 화면 재확인은 다음 사용 시 수행. WSL·멀티루트 테스트·성능 리뷰 이월은 아래 백로그 기준.
-- 리뷰 이월 처리분은 **브랜치 `fix/review-backlog`에만** 있다(main은 v1.3.3). 다음 세션은 이 브랜치가 체크아웃된 상태로 시작한다.
+- v1.4.0 배포 완료(#024). 리뷰 이월 처리분은 main에 FF 병합됐고, `fix/review-backlog` 브랜치는 삭제했다. 다음 세션은 main에서 시작한다.
 - 과거 완료 서사는 `state_archive.md`의 **#022 세션 마감 하베스트** · **#023 이관분** 참조.
 
 ---
