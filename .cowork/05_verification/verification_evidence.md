@@ -137,5 +137,7 @@
   - VS 솔루션 Clean Win32(`vsSolutionClean.test.ts`): 실제 MSBuild(VS 18). 고치기 전 방식 `w32.sln /p:Platform=Win32` → MSB4126 exit 1 재현, 어댑터가 만든 인자(`/p:Platform=x86`) → exit 0 · 산출물 삭제.
   - 멀티루트 저장 상태 이전(`integration-multiroot/stateMigration.test.ts`): 실호스트 스캔 결과로 v1.3.x id `node:package.json` → `node:alpha/package.json`(선택값 · 오버레이 · 활성 · 그룹 멤버). 이전 호출을 빼면 실패.
   - 빌드 이벤트 정책(`buildEventsPolicy.test.ts`): 진짜 Orchestrator · GroupOrchestrator · TaskRunner + 내장 js-debug. Debug = pre → build → post → debug, 그룹 Run 멤버 = pre → run → post, 그룹 Debug 멤버 = pre → build → post → debug. pre-build 호출을 빼면 2건 실패.
-  - 검증: tsc · eslint, unit 428, 통합 단일 18 + 1 pending, 멀티루트 4.
-- 남은 미확인: 설정 패널 입력 보존 · 가져오기 확인 QuickPick 화면. GUI 확인을 시도했으나 SendKeys가 사용자의 다른 VS Code 창으로 들어가 중단(세션 #024 로그).
+  - 설정 패널 입력 보존(`settingsWebviewTyping.test.ts`): 실제 SettingsPanel이 만든 상태 + 실제 웹뷰 HTML을 헤드리스 Chrome에서 실행. 입력 중 배경 상태 → 칸 유지 · 글자 `--port 30` 유지 · 포커스 유지, 포커스가 빠지면 `setRunArgs --port 3001` 1회 + 미뤄 둔 상태 반영. 대조 실험(미루기 제거 = v1.3.3 동작)은 칸이 다시 그려져 글자를 잃음 — 테스트에 포함. (msedge.exe `--dump-dom`은 Windows에서 출력이 없어 Chrome 사용.)
+  - 가져오기 확인 QuickPick(`importConfirm.test.ts`): 테스트 호스트에서 실제 QuickPick을 VS Code 명령으로 응답. 포함 → pre/post · env 반영, 명령 빼고 → env만, Escape · 명령 항목 선택 → 아무것도 안 가져옴. 화면은 PrintWindow 캡처(DS_SHOT_DIR, 포커스 무관)로 확인 — 제목 · 선택지 2 · "Commands in this profile" 아래 명령 2개(프로젝트 · 프로필 · 단계).
+  - 검증: tsc · eslint, unit 428, 통합 단일 24 + 1 pending, 멀티루트 4.
+- 처음 GUI 확인은 SendKeys가 사용자의 다른 VS Code 창으로 들어가 중단(세션 #024 로그). 이후 위 방법(포커스 무관)으로 대체. **EV-027 · EV-028의 미확인 항목 모두 해소**(Node 디버그 인자는 이번 수정 범위 밖).

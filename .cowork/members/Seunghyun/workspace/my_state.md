@@ -41,9 +41,8 @@
 
 ## 다음 시작점
 
-1. v1.4.0 남은 확인(AI 몫) — 설정 패널 입력 보존 · 가져오기 QuickPick 화면. 포커스를 뺏지 않는 방법으로. 목록은 project_state 이월 "확인 대기 (v1.4.0)".
-2. 다음 사이클 결정: MS-018 · INT-002 · 폴더별 RelativePattern 스캔 · TC-11.
-3. 이월 상세는 project_state.md의 이월 백로그 참조.
+1. 다음 사이클 결정: MS-018 · INT-002 · 폴더별 RelativePattern 스캔 · TC-11. (v1.4.0 확인 항목은 #024에서 모두 통합 테스트로 해소)
+2. 이월 상세는 project_state.md의 이월 백로그 참조.
 
 ---
 
